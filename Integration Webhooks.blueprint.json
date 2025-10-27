@@ -1,0 +1,2300 @@
+{
+    "name": "Integration Webhooks",
+    "flow": [
+        {
+            "id": 1,
+            "module": "gateway:CustomWebHook",
+            "version": 1,
+            "parameters": {
+                "hook": 3026774,
+                "maxResults": 1
+            },
+            "mapper": {},
+            "metadata": {
+                "designer": {
+                    "x": 0,
+                    "y": 600
+                },
+                "restore": {
+                    "parameters": {
+                        "hook": {
+                            "data": {
+                                "editable": "true"
+                            },
+                            "label": "Law4us divorce"
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "hook",
+                        "type": "hook:gateway-webhook",
+                        "label": "Webhook",
+                        "required": true
+                    },
+                    {
+                        "name": "maxResults",
+                        "type": "number",
+                        "label": "Maximum number of results"
+                    }
+                ]
+            }
+        },
+        {
+            "id": 3,
+            "module": "google-drive:createAFolder",
+            "version": 4,
+            "parameters": {
+                "__IMTCONN__": 10907203
+            },
+            "mapper": {
+                "name": "{{1.basicInfo.fullName}} | תביעות",
+                "shared": false,
+                "folderId": "/1HhozMOm_6KUOS-f7fdW0IejG0eEFDhWU/1y41V7u0zpSILEc8jxx77rvi9vacGprMd",
+                "destination": "drive"
+            },
+            "metadata": {
+                "designer": {
+                    "x": 300,
+                    "y": 600
+                },
+                "restore": {
+                    "expect": {
+                        "folderId": {
+                            "mode": "chose",
+                            "path": [
+                                "Divorce",
+                                "Divorce Submissions"
+                            ]
+                        },
+                        "destination": {
+                            "label": "My Drive"
+                        }
+                    },
+                    "parameters": {
+                        "__IMTCONN__": {
+                            "data": {
+                                "scoped": "true",
+                                "connection": "google-restricted"
+                            },
+                            "label": "My Google Restricted connection (info@law-4-us.co.il)"
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "__IMTCONN__",
+                        "type": "account:google-restricted",
+                        "label": "Connection",
+                        "required": true
+                    }
+                ],
+                "expect": [
+                    {
+                        "type": "hidden"
+                    },
+                    {
+                        "name": "destination",
+                        "type": "select",
+                        "label": "New Drive Location",
+                        "required": true,
+                        "validate": {
+                            "enum": [
+                                "drive",
+                                "share",
+                                "team"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "folderId",
+                        "type": "folder",
+                        "label": "New Folder Location",
+                        "required": true
+                    },
+                    {
+                        "name": "name",
+                        "type": "text",
+                        "label": "New Folder's Name"
+                    },
+                    {
+                        "name": "shared",
+                        "type": "boolean",
+                        "label": "Share Folder",
+                        "required": true
+                    }
+                ]
+            }
+        },
+        {
+            "id": 4,
+            "module": "google-drive:uploadAFile",
+            "version": 4,
+            "parameters": {
+                "__IMTCONN__": 10907203
+            },
+            "mapper": {
+                "data": "{{toBinary(1.signatureBase64; \"base64\")}}",
+                "select": "map",
+                "convert": false,
+                "filename": "signature.png",
+                "folderId": "{{3.id}}"
+            },
+            "metadata": {
+                "designer": {
+                    "x": 600,
+                    "y": 600
+                },
+                "restore": {
+                    "expect": {
+                        "select": {
+                            "label": "Enter manually"
+                        }
+                    },
+                    "parameters": {
+                        "__IMTCONN__": {
+                            "data": {
+                                "scoped": "true",
+                                "connection": "google-restricted"
+                            },
+                            "label": "My Google Restricted connection (info@law-4-us.co.il)"
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "__IMTCONN__",
+                        "type": "account:google-restricted",
+                        "label": "Connection",
+                        "required": true
+                    }
+                ],
+                "expect": [
+                    {
+                        "type": "hidden"
+                    },
+                    {
+                        "name": "select",
+                        "type": "select",
+                        "label": "Enter a Folder ID",
+                        "required": true,
+                        "validate": {
+                            "enum": [
+                                "map",
+                                "value"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "title",
+                        "type": "text",
+                        "label": "New File Name"
+                    },
+                    {
+                        "name": "filename",
+                        "type": "text",
+                        "label": "File Name",
+                        "required": true
+                    },
+                    {
+                        "name": "data",
+                        "type": "buffer",
+                        "label": "Data",
+                        "required": true
+                    },
+                    {
+                        "name": "convert",
+                        "type": "boolean",
+                        "label": "Convert a File",
+                        "required": true
+                    },
+                    {
+                        "name": "folderId",
+                        "type": "text",
+                        "label": "Folder ID",
+                        "required": true
+                    }
+                ]
+            }
+        },
+        {
+            "id": 5,
+            "module": "google-drive:shareAFileFolder",
+            "version": 4,
+            "parameters": {
+                "__IMTCONN__": 10907203
+            },
+            "mapper": {
+                "file": "{{4.id}}",
+                "role": "reader",
+                "type": "anyone",
+                "select": "file",
+                "destination": "drive",
+                "allowFileDiscovery": true
+            },
+            "metadata": {
+                "designer": {
+                    "x": 900,
+                    "y": 600
+                },
+                "restore": {
+                    "expect": {
+                        "file": {
+                            "mode": "edit",
+                            "path": []
+                        },
+                        "role": {
+                            "mode": "chose",
+                            "label": "Reader"
+                        },
+                        "type": {
+                            "mode": "chose",
+                            "label": "Anyone"
+                        },
+                        "select": {
+                            "label": "File"
+                        },
+                        "destination": {
+                            "label": "My Drive"
+                        },
+                        "allowFileDiscovery": {
+                            "mode": "chose"
+                        }
+                    },
+                    "parameters": {
+                        "__IMTCONN__": {
+                            "data": {
+                                "scoped": "true",
+                                "connection": "google-restricted"
+                            },
+                            "label": "My Google Restricted connection (info@law-4-us.co.il)"
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "__IMTCONN__",
+                        "type": "account:google-restricted",
+                        "label": "Connection",
+                        "required": true
+                    }
+                ],
+                "expect": [
+                    {
+                        "type": "hidden"
+                    },
+                    {
+                        "name": "destination",
+                        "type": "select",
+                        "label": "Choose a Drive",
+                        "required": true,
+                        "validate": {
+                            "enum": [
+                                "drive",
+                                "share",
+                                "team"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "select",
+                        "type": "select",
+                        "label": "Select",
+                        "required": true,
+                        "validate": {
+                            "enum": [
+                                "file",
+                                "folder"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "role",
+                        "type": "select",
+                        "label": "Role",
+                        "required": true,
+                        "validate": {
+                            "enum": [
+                                "owner",
+                                "writer",
+                                "commenter",
+                                "reader"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "type",
+                        "type": "select",
+                        "label": "Type",
+                        "required": true,
+                        "validate": {
+                            "enum": [
+                                "user",
+                                "group",
+                                "domain",
+                                "anyone"
+                            ]
+                        }
+                    },
+                    {
+                        "mode": "edit",
+                        "name": "file",
+                        "type": "file",
+                        "label": "File ID",
+                        "required": true
+                    },
+                    {
+                        "name": "allowFileDiscovery",
+                        "type": "boolean",
+                        "label": "Allow File Discovery",
+                        "required": true
+                    }
+                ],
+                "interface": [
+                    {
+                        "name": "fileId",
+                        "type": "text",
+                        "label": "File ID"
+                    },
+                    {
+                        "name": "kind",
+                        "type": "text",
+                        "label": "Kind"
+                    },
+                    {
+                        "name": "id",
+                        "type": "text",
+                        "label": "Permission ID"
+                    },
+                    {
+                        "name": "type",
+                        "type": "text",
+                        "label": "Type"
+                    },
+                    {
+                        "name": "shareLink",
+                        "type": "url",
+                        "label": "Share Link"
+                    },
+                    {
+                        "name": "emailAddress",
+                        "type": "text",
+                        "label": "Email Address"
+                    },
+                    {
+                        "name": "domain",
+                        "type": "text",
+                        "label": "Domain"
+                    },
+                    {
+                        "name": "role",
+                        "type": "text",
+                        "label": "Role"
+                    },
+                    {
+                        "name": "allowFileDiscovery",
+                        "type": "boolean",
+                        "label": "Allow File Discovery"
+                    },
+                    {
+                        "name": "displayName",
+                        "type": "text",
+                        "label": "Display Name"
+                    },
+                    {
+                        "name": "photoLink",
+                        "type": "text",
+                        "label": "Photo Link"
+                    },
+                    {
+                        "name": "expirationTime",
+                        "type": "date",
+                        "label": "Expiration Time"
+                    },
+                    {
+                        "name": "teamDrivePermissionDetails",
+                        "spec": {
+                            "spec": [
+                                {
+                                    "name": "teamDrivePermissionType",
+                                    "type": "text",
+                                    "label": "Team Drive Permission Type"
+                                },
+                                {
+                                    "name": "role",
+                                    "type": "text",
+                                    "label": "Role"
+                                },
+                                {
+                                    "name": "inheritedFrom",
+                                    "type": "text",
+                                    "label": "Inherited From"
+                                },
+                                {
+                                    "name": "inherited",
+                                    "type": "boolean",
+                                    "label": "Inherited"
+                                }
+                            ],
+                            "type": "collection"
+                        },
+                        "type": "array",
+                        "label": "Team Drive Permission Details"
+                    },
+                    {
+                        "name": "permissionDetails",
+                        "spec": {
+                            "spec": [
+                                {
+                                    "name": "permissionType",
+                                    "type": "text",
+                                    "label": "Permission Type"
+                                },
+                                {
+                                    "name": "role",
+                                    "type": "text",
+                                    "label": "Role"
+                                },
+                                {
+                                    "name": "inheritedFrom",
+                                    "type": "text",
+                                    "label": "Inherited From"
+                                },
+                                {
+                                    "name": "inherited",
+                                    "type": "boolean",
+                                    "label": "Inherited"
+                                }
+                            ],
+                            "type": "collection"
+                        },
+                        "type": "array",
+                        "label": "Permission Details"
+                    },
+                    {
+                        "name": "deleted",
+                        "type": "boolean",
+                        "label": "Deleted"
+                    },
+                    {
+                        "name": "pendingOwner",
+                        "type": "boolean",
+                        "label": "Pending Owner"
+                    },
+                    {
+                        "name": "webContentLink",
+                        "type": "url",
+                        "label": "Web Content Link"
+                    }
+                ]
+            }
+        },
+        {
+            "id": 9,
+            "module": "google-docs:createADocumentFromTemplate",
+            "version": 1,
+            "parameters": {
+                "__IMTCONN__": 10907854
+            },
+            "mapper": {
+                "from": "drive",
+                "name": "ייפוי כוח | {{1.basicInfo.fullName}}",
+                "image": {
+                    "kix.iyvvmmnvuz9u-t.0": "{{5.webContentLink}}"
+                },
+                "select": "dropdown",
+                "document": "/1HhozMOm_6KUOS-f7fdW0IejG0eEFDhWU/13Z5mwAcRxcViuzv7T2TonyQ48iBXyQS9/12kXFFJRHRVFIUScpz_D-YZmJDyw-h5c652koZqihPUc",
+                "folderId": "{{3.id}}",
+                "requests": {
+                    "date": "{{1.paymentData.date}}",
+                    "fullName": "{{1.basicInfo.fullName}}",
+                    "idNumber": "{{1.basicInfo.idNumber}}",
+                    "typesOfClamis": "{{join(1.selectedClaimsLabels; \"\"\",\"\"\")}}"
+                },
+                "destination": "drive"
+            },
+            "metadata": {
+                "designer": {
+                    "x": 1200,
+                    "y": 600
+                },
+                "restore": {
+                    "expect": {
+                        "from": {
+                            "label": "My Drive"
+                        },
+                        "select": {
+                            "label": "By Dropdown"
+                        },
+                        "document": {
+                            "path": [
+                                "Divorce",
+                                "Divorce Templates",
+                                "יפוי כח"
+                            ]
+                        },
+                        "folderId": {
+                            "mode": "edit",
+                            "path": []
+                        },
+                        "destination": {
+                            "label": "My Drive"
+                        }
+                    },
+                    "parameters": {
+                        "__IMTCONN__": {
+                            "data": {
+                                "scoped": "true",
+                                "connection": "google"
+                            },
+                            "label": "My Google connection (info@law-4-us.co.il)"
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "__IMTCONN__",
+                        "type": "account:google",
+                        "label": "Connection",
+                        "required": true
+                    }
+                ],
+                "expect": [
+                    {
+                        "name": "select",
+                        "type": "select",
+                        "label": "Create a Document from a Template",
+                        "required": true,
+                        "validate": {
+                            "enum": [
+                                "map",
+                                "dropdown"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "name",
+                        "type": "text",
+                        "label": "Title",
+                        "required": true
+                    },
+                    {
+                        "name": "destination",
+                        "type": "select",
+                        "label": "New Drive Location",
+                        "required": true,
+                        "validate": {
+                            "enum": [
+                                "drive",
+                                "share",
+                                "team"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "from",
+                        "type": "select",
+                        "label": "Choose a Drive",
+                        "required": true,
+                        "validate": {
+                            "enum": [
+                                "drive",
+                                "share",
+                                "team"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "document",
+                        "type": "file",
+                        "label": "Document ID",
+                        "required": true
+                    },
+                    {
+                        "name": "requests",
+                        "spec": [
+                            {
+                                "name": "idNumber",
+                                "type": "any"
+                            },
+                            {
+                                "name": "fullName",
+                                "type": "any"
+                            },
+                            {
+                                "name": "typesOfClamis",
+                                "type": "any"
+                            },
+                            {
+                                "name": "date",
+                                "type": "any"
+                            }
+                        ],
+                        "type": "collection",
+                        "label": "Values"
+                    },
+                    {
+                        "name": "image",
+                        "spec": [
+                            {
+                                "name": "kix.iyvvmmnvuz9u-t.0",
+                                "type": "url",
+                                "label": "Tab (Tab 1) - Body: Image No. 1",
+                                "metadata": {
+                                    "tabId": "t.0"
+                                }
+                            }
+                        ],
+                        "type": "collection",
+                        "label": "Image URLs"
+                    },
+                    {
+                        "name": "folderId",
+                        "type": "folder",
+                        "label": "New Document's Location",
+                        "required": true
+                    }
+                ]
+            }
+        },
+        {
+            "id": 10,
+            "module": "builtin:BasicRouter",
+            "version": 1,
+            "mapper": null,
+            "metadata": {
+                "designer": {
+                    "x": 1500,
+                    "y": 600
+                }
+            },
+            "routes": [
+                {
+                    "flow": [
+                        {
+                            "id": 11,
+                            "module": "google-docs:createADocumentFromTemplate",
+                            "version": 1,
+                            "parameters": {
+                                "__IMTCONN__": 10907854
+                            },
+                            "mapper": {
+                                "from": "drive",
+                                "name": "הרצאת פרטים | {{1.basicInfo.fullName}}",
+                                "image": {
+                                    "kix.1u2oyit3kx42-t.0": "{{5.webContentLink}}"
+                                },
+                                "select": "dropdown",
+                                "document": "/1HhozMOm_6KUOS-f7fdW0IejG0eEFDhWU/13Z5mwAcRxcViuzv7T2TonyQ48iBXyQS9/16sCaJ5rHGf11eepf18lHeqg_-1idbaqsJeqJpBER8nM",
+                                "folderId": "{{3.id}}",
+                                "requests": {
+                                    "date": "{{1.paymentData.date}}",
+                                    "phone": "{{1.basicInfo.phone}}",
+                                    "phone2": "{{1.basicInfo.phone2}}",
+                                    "address": "{{1.basicInfo.address}}",
+                                    "address2": "{{1.basicInfo.address2}}",
+                                    "fullName": "{{1.basicInfo.fullName}}",
+                                    "idNumber": "{{1.basicInfo.idNumber}}",
+                                    "birthDate": "{{1.basicInfo.birthDate}}",
+                                    "claimType": "{{join(1.selectedClaimsLabels; \"\"\",\"\"\")}}",
+                                    "fullName2": "{{1.basicInfo.fullName2}}",
+                                    "idNumber2": "{{1.basicInfo.idNumber2}}",
+                                    "birthDate2": "{{1.basicInfo.birthDate2}}",
+                                    "weddingDay": "{{1.basicInfo.weddingDay}}",
+                                    "childrenBlock": "{{1.childrenBlock}}",
+                                    "marriedBefore": "{{1.formData.marriedBefore}}",
+                                    "marriedBefore2": "{{1.formData.marriedBefore2}}",
+                                    "partnerHomeType": "{{1.formData.partnerHomeType}}",
+                                    "contactedWelfare": "{{1.formData.contactedWelfare}}",
+                                    "applicantHomeType": "{{1.formData.applicantHomeType}}",
+                                    "protectionOrderDate": "{{1.formData.`protectionOrderRequested_כן_protectionOrderDate`}}",
+                                    "pastViolenceReported": "{{1.formData.pastViolenceReported}}",
+                                    "protectionOrderGiven": "{{1.formData.`protectionOrderRequested_כן_protectionOrderGiven`}}",
+                                    "protectionOrderJudge": "{{1.formData.`protectionOrderRequested_כן_protectionOrderJudge`}}",
+                                    "otherFamilyCasesBlock": "{{join(1.formData.otherFamilyCases; \"\"\",\"\"\")}}",
+                                    "protectionOrderAgainst": "{{1.formData.`protectionOrderRequested_כן_protectionOrderAgainst`}}",
+                                    "protectionOrderContent": "{{1.formData.`protectionOrderRequested_כן_protectionOrderGiven_כן_protectionOrderContent`}}",
+                                    "willingToJoinMediation": "{{1.formData.willingToJoinMediation}}",
+                                    "hadChildrenFromPrevious": "{{1.formData.hadChildrenFromPrevious}}",
+                                    "hadChildrenFromPrevious2": "{{1.formData.hadChildrenFromPrevious2}}",
+                                    "protectionOrderGivenDate": "{{1.formData.`protectionOrderRequested_כן_protectionOrderGiven_כן_protectionOrderGivenDate`}}",
+                                    "protectionOrderRequested": "{{1.formData.protectionOrderRequested}}",
+                                    "protectionOrderCaseNumber": "{{1.formData.`protectionOrderRequested_כן_protectionOrderCaseNumber`}}",
+                                    "contactedMarriageCounseling": "{{1.formData.contactedMarriageCounseling}}",
+                                    "pastViolenceReportedDetails": "{{1.formData.`pastViolenceReported_כן_pastViolenceReportedDetails`}}",
+                                    "willingToJoinFamilyCounseling": "{{1.formData.willingToJoinFamilyCounseling}}"
+                                },
+                                "destination": "drive"
+                            },
+                            "metadata": {
+                                "designer": {
+                                    "x": 1800,
+                                    "y": 450
+                                },
+                                "restore": {
+                                    "expect": {
+                                        "from": {
+                                            "label": "My Drive"
+                                        },
+                                        "select": {
+                                            "label": "By Dropdown"
+                                        },
+                                        "document": {
+                                            "path": [
+                                                "Divorce",
+                                                "Divorce Templates",
+                                                "הרצאת פרטים"
+                                            ]
+                                        },
+                                        "folderId": {
+                                            "mode": "edit",
+                                            "path": []
+                                        },
+                                        "destination": {
+                                            "label": "My Drive"
+                                        }
+                                    },
+                                    "parameters": {
+                                        "__IMTCONN__": {
+                                            "data": {
+                                                "scoped": "true",
+                                                "connection": "google"
+                                            },
+                                            "label": "My Google connection (info@law-4-us.co.il)"
+                                        }
+                                    }
+                                },
+                                "parameters": [
+                                    {
+                                        "name": "__IMTCONN__",
+                                        "type": "account:google",
+                                        "label": "Connection",
+                                        "required": true
+                                    }
+                                ],
+                                "expect": [
+                                    {
+                                        "name": "select",
+                                        "type": "select",
+                                        "label": "Create a Document from a Template",
+                                        "required": true,
+                                        "validate": {
+                                            "enum": [
+                                                "map",
+                                                "dropdown"
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "name": "name",
+                                        "type": "text",
+                                        "label": "Title",
+                                        "required": true
+                                    },
+                                    {
+                                        "name": "destination",
+                                        "type": "select",
+                                        "label": "New Drive Location",
+                                        "required": true,
+                                        "validate": {
+                                            "enum": [
+                                                "drive",
+                                                "share",
+                                                "team"
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "name": "from",
+                                        "type": "select",
+                                        "label": "Choose a Drive",
+                                        "required": true,
+                                        "validate": {
+                                            "enum": [
+                                                "drive",
+                                                "share",
+                                                "team"
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "name": "document",
+                                        "type": "file",
+                                        "label": "Document ID",
+                                        "required": true
+                                    },
+                                    {
+                                        "name": "requests",
+                                        "spec": [
+                                            {
+                                                "name": "claimType",
+                                                "type": "any"
+                                            },
+                                            {
+                                                "name": "fullName",
+                                                "type": "any"
+                                            },
+                                            {
+                                                "name": "idNumber",
+                                                "type": "any"
+                                            },
+                                            {
+                                                "name": "birthDate",
+                                                "type": "any"
+                                            },
+                                            {
+                                                "name": "address",
+                                                "type": "any"
+                                            },
+                                            {
+                                                "name": "phone",
+                                                "type": "any"
+                                            },
+                                            {
+                                                "name": "fullName2",
+                                                "type": "any"
+                                            },
+                                            {
+                                                "name": "idNumber2",
+                                                "type": "any"
+                                            },
+                                            {
+                                                "name": "birthDate2",
+                                                "type": "any"
+                                            },
+                                            {
+                                                "name": "address2",
+                                                "type": "any"
+                                            },
+                                            {
+                                                "name": "phone2",
+                                                "type": "any"
+                                            },
+                                            {
+                                                "name": "weddingDay",
+                                                "type": "any"
+                                            },
+                                            {
+                                                "name": "marriedBefore",
+                                                "type": "any"
+                                            },
+                                            {
+                                                "name": "hadChildrenFromPrevious",
+                                                "type": "any"
+                                            },
+                                            {
+                                                "name": "marriedBefore2",
+                                                "type": "any"
+                                            },
+                                            {
+                                                "name": "hadChildrenFromPrevious2",
+                                                "type": "any"
+                                            },
+                                            {
+                                                "name": "childrenBlock",
+                                                "type": "any"
+                                            },
+                                            {
+                                                "name": "applicantHomeType",
+                                                "type": "any"
+                                            },
+                                            {
+                                                "name": "partnerHomeType",
+                                                "type": "any"
+                                            },
+                                            {
+                                                "name": "protectionOrderRequested",
+                                                "type": "any"
+                                            },
+                                            {
+                                                "name": "protectionOrderDate",
+                                                "type": "any"
+                                            },
+                                            {
+                                                "name": "protectionOrderAgainst",
+                                                "type": "any"
+                                            },
+                                            {
+                                                "name": "protectionOrderCaseNumber",
+                                                "type": "any"
+                                            },
+                                            {
+                                                "name": "protectionOrderJudge",
+                                                "type": "any"
+                                            },
+                                            {
+                                                "name": "protectionOrderGiven",
+                                                "type": "any"
+                                            },
+                                            {
+                                                "name": "protectionOrderGivenDate",
+                                                "type": "any"
+                                            },
+                                            {
+                                                "name": "protectionOrderContent",
+                                                "type": "any"
+                                            },
+                                            {
+                                                "name": "pastViolenceReported",
+                                                "type": "any"
+                                            },
+                                            {
+                                                "name": "pastViolenceReportedDetails",
+                                                "type": "any"
+                                            },
+                                            {
+                                                "name": "otherFamilyCasesBlock",
+                                                "type": "any"
+                                            },
+                                            {
+                                                "name": "contactedWelfare",
+                                                "type": "any"
+                                            },
+                                            {
+                                                "name": "contactedMarriageCounseling",
+                                                "type": "any"
+                                            },
+                                            {
+                                                "name": "willingToJoinFamilyCounseling",
+                                                "type": "any"
+                                            },
+                                            {
+                                                "name": "willingToJoinMediation",
+                                                "type": "any"
+                                            },
+                                            {
+                                                "name": "date",
+                                                "type": "any"
+                                            }
+                                        ],
+                                        "type": "collection",
+                                        "label": "Values"
+                                    },
+                                    {
+                                        "name": "image",
+                                        "spec": [
+                                            {
+                                                "name": "kix.1u2oyit3kx42-t.0",
+                                                "type": "url",
+                                                "label": "Tab (Tab 1) - Body: Image No. 1",
+                                                "metadata": {
+                                                    "tabId": "t.0"
+                                                }
+                                            }
+                                        ],
+                                        "type": "collection",
+                                        "label": "Image URLs"
+                                    },
+                                    {
+                                        "name": "folderId",
+                                        "type": "folder",
+                                        "label": "New Document's Location",
+                                        "required": true
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "id": 12,
+                            "module": "google-drive:deleteAFile",
+                            "version": 4,
+                            "parameters": {
+                                "__IMTCONN__": 10907203
+                            },
+                            "mapper": {
+                                "file": "{{5.fileId}}",
+                                "select": "map",
+                                "select1": "file"
+                            },
+                            "metadata": {
+                                "designer": {
+                                    "x": 2100,
+                                    "y": 450
+                                },
+                                "restore": {
+                                    "expect": {
+                                        "select": {
+                                            "label": "Enter manually"
+                                        },
+                                        "select1": {
+                                            "label": "File"
+                                        }
+                                    },
+                                    "parameters": {
+                                        "__IMTCONN__": {
+                                            "data": {
+                                                "scoped": "true",
+                                                "connection": "google-restricted"
+                                            },
+                                            "label": "My Google Restricted connection (info@law-4-us.co.il)"
+                                        }
+                                    }
+                                },
+                                "parameters": [
+                                    {
+                                        "name": "__IMTCONN__",
+                                        "type": "account:google-restricted",
+                                        "label": "Connection",
+                                        "required": true
+                                    }
+                                ],
+                                "expect": [
+                                    {
+                                        "type": "hidden"
+                                    },
+                                    {
+                                        "name": "select",
+                                        "type": "select",
+                                        "label": "Enter a File/Folder ID",
+                                        "required": true,
+                                        "validate": {
+                                            "enum": [
+                                                "map",
+                                                "value"
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "name": "select1",
+                                        "type": "select",
+                                        "label": "Select File/Folder",
+                                        "required": true,
+                                        "validate": {
+                                            "enum": [
+                                                "file",
+                                                "folder"
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "name": "file",
+                                        "type": "text",
+                                        "label": "File ID",
+                                        "required": true
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "id": 27,
+                            "module": "builtin:BasicRouter",
+                            "version": 1,
+                            "mapper": null,
+                            "metadata": {
+                                "designer": {
+                                    "x": 2400,
+                                    "y": 450
+                                }
+                            },
+                            "routes": [
+                                {
+                                    "flow": [
+                                        {
+                                            "id": null,
+                                            "module": "placeholder:Placeholder",
+                                            "filter": {
+                                                "name": "has גירושין",
+                                                "conditions": [
+                                                    [
+                                                        {
+                                                            "a": "{{1.selectedClaims}}",
+                                                            "b": "divorce",
+                                                            "o": "text:equal"
+                                                        }
+                                                    ]
+                                                ]
+                                            },
+                                            "metadata": {
+                                                "designer": {
+                                                    "x": 2700,
+                                                    "y": 0
+                                                }
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "flow": [
+                                        {
+                                            "id": 28,
+                                            "module": "builtin:BasicFeeder",
+                                            "version": 1,
+                                            "parameters": {},
+                                            "filter": {
+                                                "name": "has רכושית or משמורת",
+                                                "conditions": [
+                                                    [
+                                                        {
+                                                            "a": "{{1.selectedClaims}}",
+                                                            "b": "property",
+                                                            "o": "text:contain"
+                                                        }
+                                                    ]
+                                                ]
+                                            },
+                                            "mapper": {
+                                                "array": "{{1.formData.children}}"
+                                            },
+                                            "metadata": {
+                                                "designer": {
+                                                    "x": 2700,
+                                                    "y": 300,
+                                                    "name": "Children Iterator"
+                                                },
+                                                "restore": {
+                                                    "expect": {
+                                                        "array": {
+                                                            "mode": "edit"
+                                                        }
+                                                    }
+                                                },
+                                                "expect": [
+                                                    {
+                                                        "mode": "edit",
+                                                        "name": "array",
+                                                        "spec": [],
+                                                        "type": "array",
+                                                        "label": "Array"
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        {
+                                            "id": 29,
+                                            "module": "util:TextAggregator",
+                                            "version": 1,
+                                            "parameters": {
+                                                "feeder": 28,
+                                                "rowSeparator": "\n"
+                                            },
+                                            "mapper": {
+                                                "value": "• שם: {{28.firstName}} {{28.lastName}} ת״ז: {{28.idNumber}} ת״ל: {{28.birthDate}}"
+                                            },
+                                            "metadata": {
+                                                "designer": {
+                                                    "x": 3000,
+                                                    "y": 300,
+                                                    "name": "Children"
+                                                },
+                                                "restore": {
+                                                    "extra": {
+                                                        "feeder": {
+                                                            "label": "Children Iterator [28]"
+                                                        }
+                                                    },
+                                                    "parameters": {
+                                                        "rowSeparator": {
+                                                            "label": "New row"
+                                                        }
+                                                    }
+                                                },
+                                                "parameters": [
+                                                    {
+                                                        "name": "rowSeparator",
+                                                        "type": "select",
+                                                        "label": "Row separator",
+                                                        "validate": {
+                                                            "enum": [
+                                                                "\n",
+                                                                "\t",
+                                                                "other"
+                                                            ]
+                                                        }
+                                                    }
+                                                ],
+                                                "expect": [
+                                                    {
+                                                        "name": "value",
+                                                        "type": "text",
+                                                        "label": "Text"
+                                                    }
+                                                ],
+                                                "advanced": true
+                                            }
+                                        },
+                                        {
+                                            "id": 30,
+                                            "module": "builtin:BasicFeeder",
+                                            "version": 1,
+                                            "parameters": {},
+                                            "mapper": {
+                                                "array": "{{1.formData.apartments}}"
+                                            },
+                                            "metadata": {
+                                                "designer": {
+                                                    "x": 3300,
+                                                    "y": 300,
+                                                    "name": "Apartments Iterator"
+                                                },
+                                                "restore": {
+                                                    "expect": {
+                                                        "array": {
+                                                            "mode": "edit"
+                                                        }
+                                                    }
+                                                },
+                                                "expect": [
+                                                    {
+                                                        "mode": "edit",
+                                                        "name": "array",
+                                                        "spec": [],
+                                                        "type": "array",
+                                                        "label": "Array"
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        {
+                                            "id": 31,
+                                            "module": "util:TextAggregator",
+                                            "version": 1,
+                                            "parameters": {
+                                                "feeder": 30,
+                                                "rowSeparator": "\n"
+                                            },
+                                            "mapper": {
+                                                "value": "נרכש ב: {{30.purchaseDate}} בעלים: {{30.owner}}"
+                                            },
+                                            "metadata": {
+                                                "designer": {
+                                                    "x": 3600,
+                                                    "y": 300,
+                                                    "name": "Apartments"
+                                                },
+                                                "restore": {
+                                                    "extra": {
+                                                        "feeder": {
+                                                            "label": "Apartments [30]"
+                                                        }
+                                                    },
+                                                    "parameters": {
+                                                        "rowSeparator": {
+                                                            "label": "New row"
+                                                        }
+                                                    }
+                                                },
+                                                "parameters": [
+                                                    {
+                                                        "name": "rowSeparator",
+                                                        "type": "select",
+                                                        "label": "Row separator",
+                                                        "validate": {
+                                                            "enum": [
+                                                                "\n",
+                                                                "\t",
+                                                                "other"
+                                                            ]
+                                                        }
+                                                    }
+                                                ],
+                                                "expect": [
+                                                    {
+                                                        "name": "value",
+                                                        "type": "text",
+                                                        "label": "Text"
+                                                    }
+                                                ],
+                                                "advanced": true
+                                            }
+                                        },
+                                        {
+                                            "id": 32,
+                                            "module": "builtin:BasicFeeder",
+                                            "version": 1,
+                                            "parameters": {},
+                                            "mapper": {
+                                                "array": "{{1.formData.vehicles}}"
+                                            },
+                                            "metadata": {
+                                                "designer": {
+                                                    "x": 3900,
+                                                    "y": 300,
+                                                    "name": "Vehicles Iterator"
+                                                },
+                                                "restore": {
+                                                    "expect": {
+                                                        "array": {
+                                                            "mode": "edit"
+                                                        }
+                                                    }
+                                                },
+                                                "expect": [
+                                                    {
+                                                        "mode": "edit",
+                                                        "name": "array",
+                                                        "spec": [],
+                                                        "type": "array",
+                                                        "label": "Array"
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        {
+                                            "id": 33,
+                                            "module": "util:TextAggregator",
+                                            "version": 1,
+                                            "parameters": {
+                                                "feeder": 32,
+                                                "rowSeparator": "\n"
+                                            },
+                                            "mapper": {
+                                                "value": "נרכש ב: {{32.purchaseDate}} בעלים: {{32.owner}}"
+                                            },
+                                            "metadata": {
+                                                "designer": {
+                                                    "x": 4200,
+                                                    "y": 300,
+                                                    "name": "Vehicles"
+                                                },
+                                                "restore": {
+                                                    "extra": {
+                                                        "feeder": {
+                                                            "label": "Vehicles Iterator [32]"
+                                                        }
+                                                    },
+                                                    "parameters": {
+                                                        "rowSeparator": {
+                                                            "label": "New row"
+                                                        }
+                                                    }
+                                                },
+                                                "parameters": [
+                                                    {
+                                                        "name": "rowSeparator",
+                                                        "type": "select",
+                                                        "label": "Row separator",
+                                                        "validate": {
+                                                            "enum": [
+                                                                "\n",
+                                                                "\t",
+                                                                "other"
+                                                            ]
+                                                        }
+                                                    }
+                                                ],
+                                                "expect": [
+                                                    {
+                                                        "name": "value",
+                                                        "type": "text",
+                                                        "label": "Text"
+                                                    }
+                                                ],
+                                                "advanced": true
+                                            }
+                                        },
+                                        {
+                                            "id": 34,
+                                            "module": "builtin:BasicFeeder",
+                                            "version": 1,
+                                            "parameters": {},
+                                            "mapper": {
+                                                "array": "{{1.formData.savings}}"
+                                            },
+                                            "metadata": {
+                                                "designer": {
+                                                    "x": 4500,
+                                                    "y": 300,
+                                                    "name": "Savings Iterator"
+                                                },
+                                                "restore": {
+                                                    "expect": {
+                                                        "array": {
+                                                            "mode": "edit"
+                                                        }
+                                                    }
+                                                },
+                                                "expect": [
+                                                    {
+                                                        "mode": "edit",
+                                                        "name": "array",
+                                                        "spec": [],
+                                                        "type": "array",
+                                                        "label": "Array"
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        {
+                                            "id": 35,
+                                            "module": "util:TextAggregator",
+                                            "version": 1,
+                                            "parameters": {
+                                                "feeder": 34,
+                                                "rowSeparator": "\n"
+                                            },
+                                            "mapper": {
+                                                "value": "על סך: {{34.amount}} בעלים: {{34.owner}}"
+                                            },
+                                            "metadata": {
+                                                "designer": {
+                                                    "x": 4800,
+                                                    "y": 300,
+                                                    "name": "Savings"
+                                                },
+                                                "restore": {
+                                                    "extra": {
+                                                        "feeder": {
+                                                            "label": "Savings Iterator [34]"
+                                                        }
+                                                    },
+                                                    "parameters": {
+                                                        "rowSeparator": {
+                                                            "label": "New row"
+                                                        }
+                                                    }
+                                                },
+                                                "parameters": [
+                                                    {
+                                                        "name": "rowSeparator",
+                                                        "type": "select",
+                                                        "label": "Row separator",
+                                                        "validate": {
+                                                            "enum": [
+                                                                "\n",
+                                                                "\t",
+                                                                "other"
+                                                            ]
+                                                        }
+                                                    }
+                                                ],
+                                                "expect": [
+                                                    {
+                                                        "name": "value",
+                                                        "type": "text",
+                                                        "label": "Text"
+                                                    }
+                                                ],
+                                                "advanced": true
+                                            }
+                                        },
+                                        {
+                                            "id": 36,
+                                            "module": "builtin:BasicFeeder",
+                                            "version": 1,
+                                            "parameters": {},
+                                            "mapper": {
+                                                "array": "{{1.formData.benefits}}"
+                                            },
+                                            "metadata": {
+                                                "designer": {
+                                                    "x": 5100,
+                                                    "y": 300,
+                                                    "name": "Benefits Iterator"
+                                                },
+                                                "restore": {
+                                                    "expect": {
+                                                        "array": {
+                                                            "mode": "edit"
+                                                        }
+                                                    }
+                                                },
+                                                "expect": [
+                                                    {
+                                                        "mode": "edit",
+                                                        "name": "array",
+                                                        "spec": [],
+                                                        "type": "array",
+                                                        "label": "Array"
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        {
+                                            "id": 37,
+                                            "module": "util:TextAggregator",
+                                            "version": 1,
+                                            "parameters": {
+                                                "feeder": 36,
+                                                "rowSeparator": "\n"
+                                            },
+                                            "mapper": {
+                                                "value": "על סך: {{36.amount}} בעלים: {{36.owner}}"
+                                            },
+                                            "metadata": {
+                                                "designer": {
+                                                    "x": 5400,
+                                                    "y": 300,
+                                                    "name": "Benefits"
+                                                },
+                                                "restore": {
+                                                    "extra": {
+                                                        "feeder": {
+                                                            "label": "Benefits Iterator [36]"
+                                                        }
+                                                    },
+                                                    "parameters": {
+                                                        "rowSeparator": {
+                                                            "label": "New row"
+                                                        }
+                                                    }
+                                                },
+                                                "parameters": [
+                                                    {
+                                                        "name": "rowSeparator",
+                                                        "type": "select",
+                                                        "label": "Row separator",
+                                                        "validate": {
+                                                            "enum": [
+                                                                "\n",
+                                                                "\t",
+                                                                "other"
+                                                            ]
+                                                        }
+                                                    }
+                                                ],
+                                                "expect": [
+                                                    {
+                                                        "name": "value",
+                                                        "type": "text",
+                                                        "label": "Text"
+                                                    }
+                                                ],
+                                                "advanced": true
+                                            }
+                                        },
+                                        {
+                                            "id": 38,
+                                            "module": "builtin:BasicFeeder",
+                                            "version": 1,
+                                            "parameters": {},
+                                            "mapper": {
+                                                "array": "{{1.formData.debts}}"
+                                            },
+                                            "metadata": {
+                                                "designer": {
+                                                    "x": 5700,
+                                                    "y": 300,
+                                                    "name": "Debts Iterator"
+                                                },
+                                                "restore": {
+                                                    "expect": {
+                                                        "array": {
+                                                            "mode": "edit"
+                                                        }
+                                                    }
+                                                },
+                                                "expect": [
+                                                    {
+                                                        "mode": "edit",
+                                                        "name": "array",
+                                                        "spec": [],
+                                                        "type": "array",
+                                                        "label": "Array"
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        {
+                                            "id": 39,
+                                            "module": "util:TextAggregator",
+                                            "version": 1,
+                                            "parameters": {
+                                                "feeder": 38,
+                                                "rowSeparator": "\n"
+                                            },
+                                            "mapper": {
+                                                "value": "על סך: {{38.amount}} בעלים: {{38.owner}}"
+                                            },
+                                            "metadata": {
+                                                "designer": {
+                                                    "x": 6000,
+                                                    "y": 300,
+                                                    "name": "Debts"
+                                                },
+                                                "restore": {
+                                                    "extra": {
+                                                        "feeder": {
+                                                            "label": "Debts Iterator [38]"
+                                                        }
+                                                    },
+                                                    "parameters": {
+                                                        "rowSeparator": {
+                                                            "label": "New row"
+                                                        }
+                                                    }
+                                                },
+                                                "parameters": [
+                                                    {
+                                                        "name": "rowSeparator",
+                                                        "type": "select",
+                                                        "label": "Row separator",
+                                                        "validate": {
+                                                            "enum": [
+                                                                "\n",
+                                                                "\t",
+                                                                "other"
+                                                            ]
+                                                        }
+                                                    }
+                                                ],
+                                                "expect": [
+                                                    {
+                                                        "name": "value",
+                                                        "type": "text",
+                                                        "label": "Text"
+                                                    }
+                                                ],
+                                                "advanced": true
+                                            }
+                                        },
+                                        {
+                                            "id": 40,
+                                            "module": "google-docs:createADocumentFromTemplate",
+                                            "version": 1,
+                                            "parameters": {
+                                                "__IMTCONN__": 10907854
+                                            },
+                                            "mapper": {
+                                                "from": "drive",
+                                                "name": "תביעה רכושית חלק א,ב | {{1.basicInfo.fullName}}",
+                                                "select": "dropdown",
+                                                "document": "/1HhozMOm_6KUOS-f7fdW0IejG0eEFDhWU/13Z5mwAcRxcViuzv7T2TonyQ48iBXyQS9/1MlCaYPBWLrw5I28Jntld3aM0xovXywxYs-z7_uJsYcc",
+                                                "folderId": "{{3.id}}",
+                                                "requests": {
+                                                    "email2": "{{1.basicInfo.email2}}",
+                                                    "phone2": "{{1.basicInfo.phone2}}",
+                                                    "address": "{{1.basicInfo.address}}",
+                                                    "fullName": "{{1.basicInfo.fullName}}",
+                                                    "idNumber": "{{1.basicInfo.idNumber}}",
+                                                    "remedies": "{{1.formData.remedies}}",
+                                                    "claimType": "{{join(1.selectedClaimsLabels; \"\"\",\"\"\")}}",
+                                                    "debtsList": "{{39.text}}",
+                                                    "fullName2": "{{1.basicInfo.fullName2}}",
+                                                    "idNumber2": "{{1.basicInfo.idNumber2}}",
+                                                    "occupation": "{{1.formData.employmentStatus_selfEmployed_occupation}}",
+                                                    "weddingDay": "{{1.basicInfo.weddingDay}}",
+                                                    "savingsList": "{{35.text}}",
+                                                    "benefitsList": "{{37.text}}",
+                                                    "childrenList": "{{29.text}}",
+                                                    "relationship": "{{1.formData.relationshipDescription}}",
+                                                    "vehiclesList": "{{33.text}}",
+                                                    "apartmentsList": "{{31.text}}",
+                                                    "husbandJobType": "{{if(1.formData.husbandJobType + \"=selfEmployed\"; \"עצמאי\"; \"שכיר\")}}",
+                                                    "livingTogether": "{{if(1.formData.livingTogether + \"=yes\"; \"כן\"; \"לא\")}}",
+                                                    "separationDate": "{{1.formData.livingTogether_no_separationDate}}",
+                                                    "establishedDate": "{{1.formData.employmentStatus_selfEmployed_establishedDate}}",
+                                                    "registeredOwner": "{{1.formData.employmentStatus_selfEmployed_registeredOwner}}",
+                                                    "courtProceedings": "{{if(1.formData.courtProceedings + \"=yes\"; \"כן\"; \"לא\")}}",
+                                                    "numberOfChildren": "{{length(1.formData.children)}}"
+                                                },
+                                                "destination": "drive"
+                                            },
+                                            "metadata": {
+                                                "designer": {
+                                                    "x": 6300,
+                                                    "y": 300
+                                                },
+                                                "restore": {
+                                                    "expect": {
+                                                        "from": {
+                                                            "label": "My Drive"
+                                                        },
+                                                        "select": {
+                                                            "label": "By Dropdown"
+                                                        },
+                                                        "document": {
+                                                            "path": [
+                                                                "Divorce",
+                                                                "Divorce Templates",
+                                                                "רכושית"
+                                                            ]
+                                                        },
+                                                        "folderId": {
+                                                            "mode": "edit",
+                                                            "path": [
+                                                                "Divorce",
+                                                                "Divorce Submissions"
+                                                            ]
+                                                        },
+                                                        "destination": {
+                                                            "label": "My Drive"
+                                                        }
+                                                    },
+                                                    "parameters": {
+                                                        "__IMTCONN__": {
+                                                            "data": {
+                                                                "scoped": "true",
+                                                                "connection": "google"
+                                                            },
+                                                            "label": "My Google connection (info@law-4-us.co.il)"
+                                                        }
+                                                    }
+                                                },
+                                                "parameters": [
+                                                    {
+                                                        "name": "__IMTCONN__",
+                                                        "type": "account:google",
+                                                        "label": "Connection",
+                                                        "required": true
+                                                    }
+                                                ],
+                                                "expect": [
+                                                    {
+                                                        "name": "select",
+                                                        "type": "select",
+                                                        "label": "Create a Document from a Template",
+                                                        "required": true,
+                                                        "validate": {
+                                                            "enum": [
+                                                                "map",
+                                                                "dropdown"
+                                                            ]
+                                                        }
+                                                    },
+                                                    {
+                                                        "name": "name",
+                                                        "type": "text",
+                                                        "label": "Title",
+                                                        "required": true
+                                                    },
+                                                    {
+                                                        "name": "destination",
+                                                        "type": "select",
+                                                        "label": "New Drive Location",
+                                                        "required": true,
+                                                        "validate": {
+                                                            "enum": [
+                                                                "drive",
+                                                                "share",
+                                                                "team"
+                                                            ]
+                                                        }
+                                                    },
+                                                    {
+                                                        "name": "from",
+                                                        "type": "select",
+                                                        "label": "Choose a Drive",
+                                                        "required": true,
+                                                        "validate": {
+                                                            "enum": [
+                                                                "drive",
+                                                                "share",
+                                                                "team"
+                                                            ]
+                                                        }
+                                                    },
+                                                    {
+                                                        "name": "document",
+                                                        "type": "file",
+                                                        "label": "Document ID",
+                                                        "required": true
+                                                    },
+                                                    {
+                                                        "name": "requests",
+                                                        "spec": [
+                                                            {
+                                                                "name": "fullName",
+                                                                "type": "any"
+                                                            },
+                                                            {
+                                                                "name": "idNumber",
+                                                                "type": "any"
+                                                            },
+                                                            {
+                                                                "name": "address",
+                                                                "type": "any"
+                                                            },
+                                                            {
+                                                                "name": "fullName2",
+                                                                "type": "any"
+                                                            },
+                                                            {
+                                                                "name": "idNumber2",
+                                                                "type": "any"
+                                                            },
+                                                            {
+                                                                "name": "phone2",
+                                                                "type": "any"
+                                                            },
+                                                            {
+                                                                "name": "email2",
+                                                                "type": "any"
+                                                            },
+                                                            {
+                                                                "name": "claimType",
+                                                                "type": "any"
+                                                            },
+                                                            {
+                                                                "name": "weddingDay",
+                                                                "type": "any"
+                                                            },
+                                                            {
+                                                                "name": "numberOfChildren",
+                                                                "type": "any"
+                                                            },
+                                                            {
+                                                                "name": "childrenList",
+                                                                "type": "any"
+                                                            },
+                                                            {
+                                                                "name": "remedies",
+                                                                "type": "any"
+                                                            },
+                                                            {
+                                                                "name": "relationship",
+                                                                "type": "any"
+                                                            },
+                                                            {
+                                                                "name": "apartmentsList",
+                                                                "type": "any"
+                                                            },
+                                                            {
+                                                                "name": "vehiclesList",
+                                                                "type": "any"
+                                                            },
+                                                            {
+                                                                "name": "savingsList",
+                                                                "type": "any"
+                                                            },
+                                                            {
+                                                                "name": "benefitsList",
+                                                                "type": "any"
+                                                            },
+                                                            {
+                                                                "name": "debtsList",
+                                                                "type": "any"
+                                                            },
+                                                            {
+                                                                "name": "husbandJobType",
+                                                                "type": "any"
+                                                            },
+                                                            {
+                                                                "name": "occupation",
+                                                                "type": "any"
+                                                            },
+                                                            {
+                                                                "name": "establishedDate",
+                                                                "type": "any"
+                                                            },
+                                                            {
+                                                                "name": "registeredOwner",
+                                                                "type": "any"
+                                                            },
+                                                            {
+                                                                "name": "grossSalary",
+                                                                "type": "any"
+                                                            },
+                                                            {
+                                                                "name": "courtProceedings",
+                                                                "type": "any"
+                                                            },
+                                                            {
+                                                                "name": "livingTogether",
+                                                                "type": "any"
+                                                            },
+                                                            {
+                                                                "name": "separationDate",
+                                                                "type": "any"
+                                                            }
+                                                        ],
+                                                        "type": "collection",
+                                                        "label": "Values"
+                                                    },
+                                                    {
+                                                        "name": "folderId",
+                                                        "type": "folder",
+                                                        "label": "New Document's Location",
+                                                        "required": true
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "flow": [
+                                        {
+                                            "id": 42,
+                                            "module": "builtin:BasicFeeder",
+                                            "version": 1,
+                                            "parameters": {},
+                                            "filter": {
+                                                "name": "has משמורת",
+                                                "conditions": [
+                                                    [
+                                                        {
+                                                            "a": "{{1.selectedClaims}}",
+                                                            "b": "custody",
+                                                            "o": "text:contain"
+                                                        }
+                                                    ]
+                                                ]
+                                            },
+                                            "mapper": {
+                                                "array": "{{1.formData.children}}"
+                                            },
+                                            "metadata": {
+                                                "designer": {
+                                                    "x": 2700,
+                                                    "y": 600,
+                                                    "name": "Children Complicated Iterator"
+                                                },
+                                                "restore": {
+                                                    "expect": {
+                                                        "array": {
+                                                            "mode": "edit"
+                                                        }
+                                                    }
+                                                },
+                                                "expect": [
+                                                    {
+                                                        "mode": "edit",
+                                                        "name": "array",
+                                                        "spec": [],
+                                                        "type": "array",
+                                                        "label": "Array"
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        {
+                                            "id": 43,
+                                            "module": "util:TextAggregator",
+                                            "version": 1,
+                                            "parameters": {
+                                                "feeder": 42,
+                                                "rowSeparator": "\n"
+                                            },
+                                            "mapper": {
+                                                "value": "• שם: {{42.firstName}} {{42.lastName}} {{42.idNumber}} ת״ז: {{42.idNumber}} ת״ל: {{42.birthDate}} כתובת: {{42.address}}\nשם ההורה שלא התובע: {{42.nameOfParent}}\nמערכת היחסים עם הילד: {{42.childRelationship}}"
+                                            },
+                                            "metadata": {
+                                                "designer": {
+                                                    "x": 3000,
+                                                    "y": 600,
+                                                    "name": "Children Complicated"
+                                                },
+                                                "restore": {
+                                                    "extra": {
+                                                        "feeder": {
+                                                            "label": "Children Complicated Iterator [42]"
+                                                        }
+                                                    },
+                                                    "parameters": {
+                                                        "rowSeparator": {
+                                                            "label": "New row"
+                                                        }
+                                                    }
+                                                },
+                                                "parameters": [
+                                                    {
+                                                        "name": "rowSeparator",
+                                                        "type": "select",
+                                                        "label": "Row separator",
+                                                        "validate": {
+                                                            "enum": [
+                                                                "\n",
+                                                                "\t",
+                                                                "other"
+                                                            ]
+                                                        }
+                                                    }
+                                                ],
+                                                "expect": [
+                                                    {
+                                                        "name": "value",
+                                                        "type": "text",
+                                                        "label": "Text"
+                                                    }
+                                                ],
+                                                "advanced": true
+                                            }
+                                        },
+                                        {
+                                            "id": 44,
+                                            "module": "google-docs:createADocumentFromTemplate",
+                                            "version": 1,
+                                            "parameters": {
+                                                "__IMTCONN__": 10907854
+                                            },
+                                            "mapper": {
+                                                "from": "drive",
+                                                "name": "תביעת משמורת חלק א,ב | {{1.basicInfo.fullName}}",
+                                                "select": "dropdown",
+                                                "document": "/1HhozMOm_6KUOS-f7fdW0IejG0eEFDhWU/13Z5mwAcRxcViuzv7T2TonyQ48iBXyQS9/14T68lTGeFyrhAtgvH2RZlF6KmUHGx9M8JTl9OSnDL_k",
+                                                "folderId": "{{3.id}}",
+                                                "requests": {
+                                                    "email": "{{1.basicInfo.email}}",
+                                                    "phone": "{{1.basicInfo.phone}}",
+                                                    "email2": "{{1.basicInfo.email2}}",
+                                                    "phone2": "{{1.basicInfo.phone2}}",
+                                                    "address": "{{1.basicInfo.address}}",
+                                                    "address2": "{{1.basicInfo.address2}}",
+                                                    "fullName": "{{1.basicInfo.fullName}}",
+                                                    "idNumber": "{{1.basicInfo.idNumber}}",
+                                                    "remedies": "{{1.formData.remedies}}",
+                                                    "claimType": "{{join(1.selectedClaimsLabels; \"\"\",\"\"\")}}",
+                                                    "fullName2": "{{1.basicInfo.fullName2}}",
+                                                    "idNumber2": "{{1.basicInfo.idNumber2}}",
+                                                    "weddingDay": "{{1.basicInfo.weddingDay}}",
+                                                    "childrenList": "{{43.text}}",
+                                                    "relationship": "{{1.formData.relationshipDescription}}",
+                                                    "numberOfChildren": "{{length(1.formData.children)}}"
+                                                },
+                                                "destination": "drive"
+                                            },
+                                            "metadata": {
+                                                "designer": {
+                                                    "x": 3300,
+                                                    "y": 600
+                                                },
+                                                "restore": {
+                                                    "expect": {
+                                                        "from": {
+                                                            "label": "My Drive"
+                                                        },
+                                                        "select": {
+                                                            "label": "By Dropdown"
+                                                        },
+                                                        "document": {
+                                                            "path": [
+                                                                "Divorce",
+                                                                "Divorce Templates",
+                                                                "משמורת"
+                                                            ]
+                                                        },
+                                                        "folderId": {
+                                                            "mode": "edit",
+                                                            "path": []
+                                                        },
+                                                        "destination": {
+                                                            "label": "My Drive"
+                                                        }
+                                                    },
+                                                    "parameters": {
+                                                        "__IMTCONN__": {
+                                                            "data": {
+                                                                "scoped": "true",
+                                                                "connection": "google"
+                                                            },
+                                                            "label": "My Google connection (info@law-4-us.co.il)"
+                                                        }
+                                                    }
+                                                },
+                                                "parameters": [
+                                                    {
+                                                        "name": "__IMTCONN__",
+                                                        "type": "account:google",
+                                                        "label": "Connection",
+                                                        "required": true
+                                                    }
+                                                ],
+                                                "expect": [
+                                                    {
+                                                        "name": "select",
+                                                        "type": "select",
+                                                        "label": "Create a Document from a Template",
+                                                        "required": true,
+                                                        "validate": {
+                                                            "enum": [
+                                                                "map",
+                                                                "dropdown"
+                                                            ]
+                                                        }
+                                                    },
+                                                    {
+                                                        "name": "name",
+                                                        "type": "text",
+                                                        "label": "Title",
+                                                        "required": true
+                                                    },
+                                                    {
+                                                        "name": "destination",
+                                                        "type": "select",
+                                                        "label": "New Drive Location",
+                                                        "required": true,
+                                                        "validate": {
+                                                            "enum": [
+                                                                "drive",
+                                                                "share",
+                                                                "team"
+                                                            ]
+                                                        }
+                                                    },
+                                                    {
+                                                        "name": "from",
+                                                        "type": "select",
+                                                        "label": "Choose a Drive",
+                                                        "required": true,
+                                                        "validate": {
+                                                            "enum": [
+                                                                "drive",
+                                                                "share",
+                                                                "team"
+                                                            ]
+                                                        }
+                                                    },
+                                                    {
+                                                        "name": "document",
+                                                        "type": "file",
+                                                        "label": "Document ID",
+                                                        "required": true
+                                                    },
+                                                    {
+                                                        "name": "requests",
+                                                        "spec": [
+                                                            {
+                                                                "name": "childrenList",
+                                                                "type": "any"
+                                                            },
+                                                            {
+                                                                "name": "fullName",
+                                                                "type": "any"
+                                                            },
+                                                            {
+                                                                "name": "idNumber",
+                                                                "type": "any"
+                                                            },
+                                                            {
+                                                                "name": "address",
+                                                                "type": "any"
+                                                            },
+                                                            {
+                                                                "name": "fullName2",
+                                                                "type": "any"
+                                                            },
+                                                            {
+                                                                "name": "idNumber2",
+                                                                "type": "any"
+                                                            },
+                                                            {
+                                                                "name": "phone2",
+                                                                "type": "any"
+                                                            },
+                                                            {
+                                                                "name": "email2",
+                                                                "type": "any"
+                                                            },
+                                                            {
+                                                                "name": "claimType",
+                                                                "type": "any"
+                                                            },
+                                                            {
+                                                                "name": "weddingDay",
+                                                                "type": "any"
+                                                            },
+                                                            {
+                                                                "name": "numberOfChildren",
+                                                                "type": "any"
+                                                            },
+                                                            {
+                                                                "name": "remedies",
+                                                                "type": "any"
+                                                            },
+                                                            {
+                                                                "name": "phone",
+                                                                "type": "any"
+                                                            },
+                                                            {
+                                                                "name": "email",
+                                                                "type": "any"
+                                                            },
+                                                            {
+                                                                "name": "address2",
+                                                                "type": "any"
+                                                            },
+                                                            {
+                                                                "name": "relationship",
+                                                                "type": "any"
+                                                            }
+                                                        ],
+                                                        "type": "collection",
+                                                        "label": "Values"
+                                                    },
+                                                    {
+                                                        "name": "folderId",
+                                                        "type": "folder",
+                                                        "label": "New Document's Location",
+                                                        "required": true
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "flow": [
+                                        {
+                                            "id": null,
+                                            "module": "placeholder:Placeholder",
+                                            "filter": {
+                                                "name": "has הסכם",
+                                                "conditions": [
+                                                    [
+                                                        {
+                                                            "a": "{{1.selectedClaims}}",
+                                                            "b": "divorceAgreement",
+                                                            "o": "text:equal"
+                                                        }
+                                                    ]
+                                                ]
+                                            },
+                                            "metadata": {
+                                                "designer": {
+                                                    "x": 2700,
+                                                    "y": 900
+                                                }
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "flow": [
+                        {
+                            "id": null,
+                            "module": "placeholder:Placeholder",
+                            "filter": {
+                                "name": "is only מזונות",
+                                "conditions": [
+                                    [
+                                        {
+                                            "a": "{{length(1.selectedClaims)}}",
+                                            "b": "1",
+                                            "o": "text:equal"
+                                        },
+                                        {
+                                            "a": "{{1.selectedClaims[1]}}",
+                                            "b": "alimony",
+                                            "o": "text:equal"
+                                        }
+                                    ]
+                                ]
+                            },
+                            "metadata": {
+                                "designer": {
+                                    "x": 1800,
+                                    "y": 1200
+                                }
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "metadata": {
+        "instant": true,
+        "version": 1,
+        "scenario": {
+            "roundtrips": 1,
+            "maxErrors": 3,
+            "autoCommit": true,
+            "autoCommitTriggerLast": true,
+            "sequential": false,
+            "slots": null,
+            "confidential": false,
+            "dataloss": false,
+            "dlq": false,
+            "freshVariables": false
+        },
+        "designer": {
+            "orphans": []
+        },
+        "zone": "eu2.make.com",
+        "notes": []
+    }
+}

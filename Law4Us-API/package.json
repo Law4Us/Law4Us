@@ -1,0 +1,43 @@
+{
+  "name": "law4us-api",
+  "version": "1.0.0",
+  "description": "Document generation backend for Law4Us",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "type-check": "tsc --noEmit"
+  },
+  "keywords": ["document-generation", "legal", "pdf", "docx"],
+  "author": "Law4Us",
+  "license": "PRIVATE",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "multer": "^1.4.5-lts.1",
+    "dotenv": "^16.4.5",
+    "docxtemplater": "^3.67.1",
+    "pizzip": "^3.2.0",
+    "groq-sdk": "^0.34.0",
+    "pdf-lib": "^1.17.1",
+    "sharp": "^0.33.5",
+    "pdf-parse": "^1.1.1",
+    "express-fileupload": "^1.5.1",
+    "helmet": "^7.1.0",
+    "express-rate-limit": "^7.4.1",
+    "compression": "^1.7.4"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/cors": "^2.8.17",
+    "@types/multer": "^1.4.12",
+    "@types/node": "^22.10.1",
+    "@types/compression": "^1.7.5",
+    "tsx": "^4.20.6",
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
