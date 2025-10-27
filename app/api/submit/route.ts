@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 /**
  * API route for form submission
- * Validates data and forwards to Make.com webhook
+ * Validates data and forwards to Railway backend
  */
 export async function POST(request: NextRequest) {
   try {
@@ -17,11 +17,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get Make.com webhook URL from environment
-    const makeWebhookUrl = process.env.NEXT_PUBLIC_MAKE_WEBHOOK_URL;
+    // Get backend URL from environment
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://law4us-production.up.railway.app';
 
-    if (!makeWebhookUrl) {
-      console.warn("Make.com webhook URL not configured");
+    if (!backendUrl) {
+      console.warn("Backend URL not configured");
       // In development, simulate success
       if (process.env.NODE_ENV === "development") {
         console.log("=== SIMULATED SUBMISSION ===");
@@ -39,8 +39,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Forward to Make.com webhook
-    const response = await fetch(makeWebhookUrl, {
+    // Forward to Railway backend
+    const response = await fetch(`${backendUrl}/api/submission/submit`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!response.ok) {
-      throw new Error(`Make.com webhook returned ${response.status}`);
+      throw new Error(`Backend returned ${response.status}`);
     }
 
     const result = await response.json();

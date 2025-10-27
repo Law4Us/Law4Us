@@ -18,6 +18,7 @@ dotenv.config();
 // Import routes
 import documentRoutes from './routes/document';
 import healthRoutes from './routes/health';
+import submissionRoutes from './routes/submission';
 
 // Create Express app
 const app = express();
@@ -63,6 +64,7 @@ ensureDirectories();
 // Routes
 app.use('/api/health', healthRoutes);
 app.use('/api/document', documentRoutes);
+app.use('/api/submission', submissionRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {
