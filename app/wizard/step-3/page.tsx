@@ -23,15 +23,15 @@ export default function Step3SignDocuments() {
     selectedClaims,
     signature,
     setSignature,
-    claimAnswers,
+    formData,
     nextStep,
     prevStep,
   } = useWizardStore();
 
   // Prepare document data
   const documentData: DocumentData = React.useMemo(() => {
-    // Get children from custody claim if exists
-    const children = claimAnswers.custody?.children || [];
+    // Get children from form data if exists
+    const children = formData.children || [];
 
     // Get claim labels
     const claimLabels: { [key: string]: string } = {};
@@ -59,7 +59,7 @@ export default function Step3SignDocuments() {
       signature: signature || "[חתימה תתווסף לאחר החתימה]",
       date: formatDate(new Date()),
     };
-  }, [basicInfo, selectedClaims, claimAnswers, signature]);
+  }, [basicInfo, selectedClaims, formData, signature]);
 
   // Fill templates
   const powerOfAttorney = React.useMemo(

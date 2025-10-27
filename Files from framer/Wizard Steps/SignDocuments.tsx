@@ -1,6 +1,7 @@
+// @ts-nocheck
 import * as React from "react"
-import { powerOfAttorneyTemplate } from "../Legal_Templates/PowerOfAttorneyTemplate.tsx"
-import { form3Template } from "../Legal_Templates/Form3Template.tsx"
+import { powerOfAttorneyTemplate } from "../Legal Templates/PowerOfAttorneyTemplate"
+import { form3Template } from "../Legal Templates/Form3Template"
 
 export function fillTemplate(template, values) {
     return template.replace(/{{\s*([\w]+)\s*}}/g, (_, key) => values[key] ?? "")

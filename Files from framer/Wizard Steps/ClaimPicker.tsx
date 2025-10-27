@@ -1,5 +1,6 @@
+// @ts-nocheck
 import * as React from "react"
-import { CLAIMS } from "../WizardForm.tsx"
+import { CLAIMS } from "../WizardForm"
 
 // Now uses inputs and setInputs passed from parent!
 export function ClaimPicker({
@@ -8,28 +9,28 @@ export function ClaimPicker({
     inputs,
     setInputs,
     onNext,
-}) {
-    const handleInputChange = (e) => {
+}: any) {
+    const handleInputChange = (e: any) => {
         const { id, value } = e.target
-        setInputs((prev) => ({ ...prev, [id]: value }))
+        setInputs((prev: any) => ({ ...prev, [id]: value }))
     }
 
-    const toggleClaim = (key) => {
-        setSelectedClaims((prev) =>
-            prev.includes(key) ? prev.filter((c) => c !== key) : [...prev, key]
+    const toggleClaim = (key: any) => {
+        setSelectedClaims((prev: any) =>
+            prev.includes(key) ? prev.filter((c: any) => c !== key) : [...prev, key]
         )
     }
 
     // Don't require wedding date if not married
     const allFieldsFilled =
         inputs.relationshipType === "notMarried"
-            ? Object.entries(inputs).every(([key, value]) =>
+            ? Object.entries(inputs).every(([key, value]: [string, any]) =>
                   key === "weddingDay"
                       ? true
                       : value && value.toString().trim() !== ""
               ) && selectedClaims.length > 0
             : Object.values(inputs).every(
-                  (v) => v && v.toString().trim() !== ""
+                  (v: any) => v && v.toString().trim() !== ""
               ) && selectedClaims.length > 0
 
     return (

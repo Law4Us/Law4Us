@@ -215,9 +215,12 @@ export default function DivorcePage() {
                   <p className="text-body text-neutral-dark mb-4 line-clamp-3">
                     {post.excerpt}
                   </p>
-                  <Button variant="outline" size="sm" asChild>
-                    <Link href={`/divorce/${post.id}`}>קרא עוד</Link>
-                  </Button>
+                  <Link
+                    href={`/divorce/${post.id}`}
+                    className="inline-flex items-center justify-center rounded font-medium transition-smooth bg-transparent text-primary border border-primary hover:bg-primary/5 text-body-small px-4 py-2"
+                  >
+                    קרא עוד
+                  </Link>
                 </div>
               </article>
             ))}
@@ -233,9 +236,12 @@ export default function DivorcePage() {
             <p className="text-body-large text-neutral-dark mb-8">
               קבלו ליווי מקצועי ומלא לאורך כל התהליך
             </p>
-            <Button size="lg" asChild>
-              <Link href="/wizard">התחילו בהליך גירושין</Link>
-            </Button>
+            <Link
+              href="/wizard"
+              className="inline-flex items-center justify-center rounded font-medium transition-smooth bg-primary text-white border border-primary-dark hover:bg-primary-dark text-body-large px-10 py-5"
+            >
+              התחילו בהליך גירושין
+            </Link>
           </div>
         </div>
       </section>

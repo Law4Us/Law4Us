@@ -72,9 +72,9 @@ export function NeedsTable({
   const handleAmountChange = (
     needId: string,
     childId: string,
-    value: string
+    inputValue: string
   ) => {
-    const numValue = parseFloat(value) || 0;
+    const numValue = parseFloat(inputValue) || 0;
     onChange(
       value.map((need) =>
         need.__id === needId

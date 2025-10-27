@@ -23,11 +23,10 @@ export default function Step5FinalSubmission() {
   const {
     basicInfo,
     selectedClaims,
-    globalQuestions,
-    claimAnswers,
+    formData,
     signature,
     paymentData,
-    resetStore,
+    reset,
     prevStep,
   } = useWizardStore();
 
@@ -38,7 +37,7 @@ export default function Step5FinalSubmission() {
 
   // Prepare filled documents
   const filledDocuments = React.useMemo(() => {
-    const children = claimAnswers.custody?.children || [];
+    const children = formData.children || [];
     const claimLabels: { [key: string]: string } = {};
     CLAIMS.forEach((claim) => {
       claimLabels[claim.key] = claim.label;
@@ -72,7 +71,7 @@ export default function Step5FinalSubmission() {
       ),
       form3: fillDocumentTemplate(FORM_3_TEMPLATE, documentData),
     };
-  }, [basicInfo, selectedClaims, claimAnswers, signature]);
+  }, [basicInfo, selectedClaims, formData, signature]);
 
   const handleSubmit = async () => {
     setSubmissionState("submitting");
@@ -82,8 +81,7 @@ export default function Step5FinalSubmission() {
       // Prepare data for submission
       const submissionData = {
         basicInfo,
-        globalQuestions,
-        claimAnswers,
+        formData,
         selectedClaims,
         selectedClaimsLabels: selectedClaims.map(
           (key) => CLAIMS.find((c) => c.key === key)?.label || key
@@ -114,7 +112,7 @@ export default function Step5FinalSubmission() {
         // Clear localStorage after successful submission
         setTimeout(() => {
           localStorage.removeItem("law4us-wizard-v1");
-          resetStore();
+          reset();
         }, 2000);
       } else {
         throw new Error(result.error || "שגיאה בשליחת הטופס");

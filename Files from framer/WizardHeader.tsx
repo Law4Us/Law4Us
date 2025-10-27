@@ -1,5 +1,5 @@
 import * as React from "react"
-import StepIndicator from "./WizardMenu.tsx"
+import StepIndicator from "./WizardMenu"
 
 export default function WizardHeader({
     step,

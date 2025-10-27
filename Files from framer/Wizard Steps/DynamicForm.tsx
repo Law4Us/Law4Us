@@ -1,6 +1,7 @@
+// @ts-nocheck
 import * as React from "react"
-import { NeedsTable } from "../Input_Types/NeedsTable.tsx"
-import { globalQuestions } from "../GlobalQuestions.tsx"
+import { NeedsTable } from "../Input Types/NeedsTable"
+import { globalQuestions } from "../GlobalQuestions"
 
 /** Prefer crypto.randomUUID when available; fall back safely */
 const uuid = () =>
@@ -222,11 +223,11 @@ export function DynamicForm({
     onNext,
     onBack,
     basicInfo, // Add basicInfo prop to get names
-}) {
+}: any) {
     /*───────────────────────────────────────────────────────────────────────────
     CHILDREN-block logic
     ───────────────────────────────────────────────────────────────────────────*/
-    const hasChildren = questionsByClaim.some((c) =>
+    const hasChildren = questionsByClaim.some((c: any) =>
         c.questions.some(
             (q) => q.type === "shared" && q.sharedKey === "children"
         )

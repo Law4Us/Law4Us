@@ -41,10 +41,7 @@ export default function Step4Payment() {
     // Mark as paid
     const paymentInfo = {
       paid: true,
-      amount: totalAmount,
-      date: new Date().toISOString(),
-      transactionId: `TRX-${Date.now()}`, // Placeholder
-      method: "placeholder", // Will be replaced with actual payment method
+      date: new Date(),
     };
 
     setPaymentData(paymentInfo);
@@ -132,9 +129,6 @@ export default function Step4Payment() {
               התשלום בוצע בהצלחה
             </h3>
           </div>
-          <p className="text-body text-green-700 mr-13">
-            מספר עסקה: {paymentData?.transactionId}
-          </p>
           <p className="text-body-small text-green-600 mr-13 mt-1">
             עוברים לשלב הסופי...
           </p>

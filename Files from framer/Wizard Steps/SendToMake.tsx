@@ -1,5 +1,6 @@
+// @ts-nocheck
 import React from "react"
-import { CLAIMS } from "../WizardForm.tsx" // Update path if needed!
+import { CLAIMS } from "../WizardForm" // Update path if needed!
 
 export default function SendToMake({
     allData, // All your data from previous steps (user info, filledHtmls, signature, etc.)

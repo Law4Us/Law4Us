@@ -71,33 +71,33 @@ function getFieldsForAITransformation(
   // Claim-specific fields
   if (claimType === "property") {
     fieldsToTransform.push(
-      ...textareaFields.filter(
-        (f) =>
-          formData[f.key] &&
-          typeof formData[f.key] === "string" &&
-          (formData[f.key] as string).length > 50
-      )
+      ...textareaFields
+        .filter(
+          (f) =>
+            formData[f.key] &&
+            typeof formData[f.key] === "string" &&
+            (formData[f.key] as string).length > 50
+        )
+        .map((f) => ({ ...f, value: formData[f.key] as string }))
     );
   }
 
   if (claimType === "custody") {
     fieldsToTransform.push(
-      ...textareaFields.filter(
-        (f) =>
-          formData[f.key] &&
-          typeof formData[f.key] === "string" &&
-          (formData[f.key] as string).length > 50
-      )
+      ...textareaFields
+        .filter(
+          (f) =>
+            formData[f.key] &&
+            typeof formData[f.key] === "string" &&
+            (formData[f.key] as string).length > 50
+        )
+        .map((f) => ({ ...f, value: formData[f.key] as string }))
     );
   }
 
   // Add more claim-specific rules as needed
 
-  return fieldsToTransform.map((f) => ({
-    key: f.key,
-    value: formData[f.key] as string,
-    label: f.label,
-  }));
+  return fieldsToTransform;
 }
 
 /**

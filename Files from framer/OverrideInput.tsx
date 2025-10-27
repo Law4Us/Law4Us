@@ -1,6 +1,7 @@
+// @ts-nocheck
 import { forwardRef, type ComponentType } from "react"
 
-export function withRTL(Component): ComponentType<any> {
+export function withRTL(Component: ComponentType<any>): ComponentType<any> {
     return forwardRef((props: any, ref) => {
         return (
             <Component

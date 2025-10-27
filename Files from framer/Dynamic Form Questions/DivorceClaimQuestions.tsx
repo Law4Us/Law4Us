@@ -1,4 +1,4 @@
-import { sharedFields } from "../Input_Types/SharedFields.tsx"
+import { sharedFields } from "../Input Types/SharedFields"
 
 export const divorceClaimQuestions = [
     {

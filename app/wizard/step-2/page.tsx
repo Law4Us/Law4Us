@@ -21,10 +21,8 @@ export default function Step2DynamicForm() {
   const {
     basicInfo,
     selectedClaims,
-    globalQuestions,
-    claimAnswers,
-    updateGlobalQuestions,
-    updateClaimAnswers,
+    formData,
+    updateFormData,
     nextStep,
     prevStep,
   } = useWizardStore();
@@ -79,15 +77,8 @@ export default function Step2DynamicForm() {
 
   // Prepare default values
   const defaultValues = React.useMemo(() => {
-    const values: any = { ...globalQuestions };
-
-    // Add claim-specific answers
-    selectedClaims.forEach((claimKey) => {
-      values[claimKey] = claimAnswers[claimKey] || {};
-    });
-
-    return values;
-  }, [globalQuestions, claimAnswers, selectedClaims]);
+    return formData || {};
+  }, [formData]);
 
   const methods = useForm({
     resolver: zodResolver(dynamicSchema),
@@ -107,48 +98,15 @@ export default function Step2DynamicForm() {
   // Auto-save on change (debounced)
   React.useEffect(() => {
     const timer = setTimeout(() => {
-      // Extract global questions
-      const global: any = {};
-      const claims: any = {};
-
-      Object.entries(watchedValues).forEach(([key, value]) => {
-        if (selectedClaims.includes(key as any)) {
-          // This is a claim-specific answer
-          claims[key] = value;
-        } else {
-          // This is a global question
-          global[key] = value;
-        }
-      });
-
-      updateGlobalQuestions(global);
-
-      // Update each claim's answers
-      Object.entries(claims).forEach(([claimKey, answers]) => {
-        updateClaimAnswers(claimKey, answers as any);
-      });
+      updateFormData(watchedValues);
     }, 500); // 500ms debounce
 
     return () => clearTimeout(timer);
-  }, [watchedValues, selectedClaims, updateGlobalQuestions, updateClaimAnswers]);
+  }, [watchedValues, updateFormData]);
 
   const onSubmit = (data: any) => {
     // Save before navigating
-    const global: any = {};
-    const claims: any = {};
-
-    Object.entries(data).forEach(([key, value]) => {
-      if (selectedClaims.includes(key as any)) {
-        claims[key] = value;
-      } else {
-        global[key] = value;
-      }
-    });
-
-    updateGlobalQuestions(global);
-    Object.entries(claims).forEach(([claimKey, answers]) => {
-      updateClaimAnswers(claimKey, answers as any);
-    });
+    updateFormData(data);
 
     nextStep();
     router.push("/wizard/step-3");

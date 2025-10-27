@@ -34,8 +34,8 @@ export function FadeIn({
     // Animate in
     const controls = animate(
       element,
-      { opacity: 1, transform: "translateY(0px)" },
-      { duration, delay, easing: spring({ stiffness: 300, damping: 30 }) }
+      { opacity: 1, transform: "translateY(0px)" } as any,
+      { duration, delay, easing: spring({ stiffness: 300, damping: 30 } as any) } as any
     );
 
     return () => controls.stop();

@@ -4,10 +4,8 @@ import * as React from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { Button, Input, Textarea, FormField } from "@/components/ui";
 import { cn } from "@/lib/utils";
-import {
-  formatIdNumber,
-  validateIsraeliId,
-} from "@/lib/utils/validation";
+import { formatIdNumber } from "@/lib/utils/format";
+import { validateIsraeliId } from "@/lib/utils/validation";
 
 export interface Child {
   __id: string;
@@ -182,7 +180,7 @@ export function ChildrenRepeater({
                   placeholder="000000000"
                   maxLength={11}
                   error={
-                    child.idNumber && !validateIsraeliId(child.idNumber)
+                    !!(child.idNumber && !validateIsraeliId(child.idNumber))
                   }
                 />
               </FormField>

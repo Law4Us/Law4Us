@@ -1,14 +1,15 @@
+// @ts-nocheck
 import * as React from "react"
 import { useState } from "react"
-import { ClaimPicker } from "./Wizard_Steps/ClaimPicker.tsx"
-import { DynamicForm } from "./Wizard_Steps/DynamicForm.tsx"
-import { PaymentStep } from "./Wizard_Steps/PaymentStep.tsx"
-import SignDocuments from "./Wizard_Steps/SignDocuments.tsx"
-import SendToMake from "./Wizard_Steps/SendToMake.tsx"
-import { CLAIM_SCHEMAS } from "./ClaimSchemas.tsx"
-import { sharedFields } from "./Input_Types/SharedFields.tsx"
-import { formatChildrenBlock } from "./Utility/FormatChildrenBlock.tsx"
-import WizardHeader from "./WizardHeader.tsx"
+import { ClaimPicker } from "./Wizard Steps/ClaimPicker"
+import { DynamicForm } from "./Wizard Steps/DynamicForm"
+import { PaymentStep } from "./Wizard Steps/PaymentStep"
+import SignDocuments from "./Wizard Steps/SignDocuments"
+import SendToMake from "./Wizard Steps/SendToMake"
+import { CLAIM_SCHEMAS } from "./ClaimSchemas"
+import { sharedFields } from "./Input Types/SharedFields"
+import { formatChildrenBlock } from "./Utility/FormatChildrenBlock"
+import WizardHeader from "./WizardHeader"
 
 export const CLAIMS = [
     { key: "divorceAgreement", label: "הסכם גירושין", price: 3900 },

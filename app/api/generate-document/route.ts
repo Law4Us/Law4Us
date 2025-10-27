@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
       console.log(`Document generated successfully: ${filePath}`);
 
       // Return the document as a downloadable file
-      return new NextResponse(buffer, {
+      return new Response(Buffer.from(buffer), {
         status: 200,
         headers: {
           "Content-Type":

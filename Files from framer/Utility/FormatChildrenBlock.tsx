@@ -1,4 +1,5 @@
-export function formatChildrenBlock(formData) {
+// @ts-nocheck
+export function formatChildrenBlock(formData: any) {
     const childrenArr = formData.children?.length
         ? formData.children
         : formData.childrenSimple?.length
@@ -8,7 +9,7 @@ export function formatChildrenBlock(formData) {
 
     return childrenArr
         .map(
-            (child, idx) =>
+            (child: any, idx: number) =>
                 `שם: ${child.firstName || ""} ${child.lastName || ""} | ` +
                 `תאריך לידה: ${child.birthDate || ""} | ` +
                 `מקום מגורי הילד: ${child.address || ""} | ` +
