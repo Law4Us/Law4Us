@@ -1,8 +1,8 @@
-import { propertyClaimQuestions } from "./Dynamic Form Questions/PropertyClaimQuestions.tsx"
-import { alimonyClaimQuestions } from "./Dynamic Form Questions/AlimonyClaimQuestions.tsx"
-import { custodyClaimQuestions } from "./Dynamic Form Questions/CustodyClaimQuestions.tsx"
-import { divorceClaimQuestions } from "./Dynamic Form Questions/DivorceClaimQuestions.tsx"
-import { divorceAgreementQuestions } from "./Dynamic Form Questions/DivorceAgreementQuestions.tsx"
+import { propertyClaimQuestions } from "./Dynamic Form Questions/PropertyClaimQuestions"
+import { alimonyClaimQuestions } from "./Dynamic Form Questions/AlimonyClaimQuestions"
+import { custodyClaimQuestions } from "./Dynamic Form Questions/CustodyClaimQuestions"
+import { divorceClaimQuestions } from "./Dynamic Form Questions/DivorceClaimQuestions"
+import { divorceAgreementQuestions } from "./Dynamic Form Questions/DivorceAgreementQuestions"
 
 export const CLAIM_SCHEMAS = {
     divorceAgreement: divorceAgreementQuestions,
