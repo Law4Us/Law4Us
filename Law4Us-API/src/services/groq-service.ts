@@ -5,10 +5,16 @@
 
 import Groq from "groq-sdk";
 
-// Initialize Groq client
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY,
-});
+// Lazy-load Groq client to ensure env vars are loaded
+let groq: Groq;
+function getGroqClient() {
+  if (!groq) {
+    groq = new Groq({
+      apiKey: process.env.GROQ_API_KEY,
+    });
+  }
+  return groq;
+}
 
 export interface TransformContext {
   claimType: string;
@@ -59,7 +65,7 @@ ${userText}
 המר את הטקסט לשפה משפטית מקצועית בגוף שלישי, כפי שתופיע בכתב תביעה. החזר רק את הטקסט המומר, ללא הסברים נוספים.`;
 
   try {
-    const response = await groq.chat.completions.create({
+    const response = await getGroqClient().chat.completions.create({
       model: "llama-3.3-70b-versatile", // Fast and capable model from Groq
       messages: [
         { role: "system", content: systemPrompt },
