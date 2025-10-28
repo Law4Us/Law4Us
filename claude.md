@@ -206,6 +206,293 @@ Legal documents (Power of Attorney, Form 3) are:
 4. Generated as PDFs on the server
 5. Sent to Make.com for processing
 
+#### Property Claim Generation System (תביעת רכושית)
+
+**Special Implementation**: Property claims use a **programmatic generator** instead of template-based generation, providing superior quality and eliminating placeholder dependencies.
+
+**Location**: `Law4Us-API/src/services/property-claim-generator.ts` (1,350+ lines)
+
+**Architecture**:
+- No LLM/AI required - fully deterministic generation
+- Uses `docx` library (NOT PDF) - generates .docx format
+- Complete RTL (Right-to-Left) support for Hebrew
+- Structured sections with proper legal formatting
+- Automatic Table of Contents with accurate page numbers
+
+**Document Structure** (5 main sections with page breaks):
+
+1. **Main Property Claim (כתב תביעה)** - Lines 506-787
+   - Court header (Tel Aviv Family Court)
+   - Plaintiff info (תובעת/תובע) with gendered terms
+   - Defendant info (נתבעת/נתבע) with gendered terms
+   - Nature of claim (מהות התביעה)
+   - Requested remedies (הסעדים המבוקשים)
+   - Summons (הזמנה לדין)
+   - Section B: Main Arguments (עיקר הטענות)
+   - Section C: Detailed Facts (פירוט העובדות)
+     - Relationship history (מערכת היחסים)
+     - Property details (הרכוש) - formatted from arrays
+     - Employment (השתכרות הצדדים)
+     - Determining date (היום הקובע)
+   - Remedies (סעדים) - 8 numbered requests
+   - Signature line
+
+2. **Form 3 - Statement of Details (הרצאת פרטים)** - Lines 855-1023
+   - Personal details (both parties)
+   - Marital status
+   - Children information
+   - Housing details
+   - Domestic violence history
+   - Other family cases
+   - Therapeutic contact
+   - Declaration with signature
+
+3. **Power of Attorney (יפוי כוח)** - Lines 1028-1122
+   - 15 numbered legal powers granted to attorney
+   - Client signature
+   - Lawyer confirmation with signature/stamp
+
+4. **Affidavit (תצהיר)** - Lines 1127-1228
+   - Lawyer's attestation (4 numbered items)
+   - Visual meeting confirmation (היוועדות חזותית)
+   - Lawyer signature with stamp
+
+5. **Attachments (נספחים)** - Lines 1251-1352
+   - **Automatic Table of Contents** with accurate page numbers
+   - Hebrew letter labels (א, ב, ג, ד...)
+   - Image insertion for each attachment page
+   - Proper page breaks between attachments
+
+**Property Type Handling** (Lines 350-441):
+
+The generator processes **6 distinct property arrays**:
+- `apartments` - Real estate properties
+- `vehicles` - Cars, motorcycles, etc.
+- `savings` - Bank accounts, savings
+- `benefits` - Pension, insurance, social benefits
+- `properties` - General/miscellaneous assets
+- `debts` - Mortgages, loans (separate subsection)
+
+Each property type creates numbered items with:
+- Description
+- Value (in ש"ח)
+- Owner (בבעלות)
+- RLM markers (U+200F) after colons for proper RTL display
+
+**Font System** (Lines 26-34):
+```typescript
+FONT_SIZES = {
+  MAIN_TITLE: 40,    // 20pt - כתב תביעה
+  SECTION: 32,       // 16pt - ב. עיקר הטענות, סעדים
+  TITLE: 32,         // 16pt - Court name
+  SUBSECTION: 28,    // 14pt - מערכת היחסים, הרכוש
+  HEADING_2: 26,     // 13pt - Numbered items
+  BODY: 24,          // 12pt - Body text
+  SMALL: 22,         // 11pt - Footer, captions
+}
+```
+
+**Spacing System** (Lines 36-43):
+```typescript
+SPACING = {
+  SECTION: 600,      // Large gap between sections
+  SUBSECTION: 400,   // Medium gap between subsections
+  PARAGRAPH: 240,    // Standard paragraph spacing
+  LINE: 120,         // Small gap between lines
+  MINIMAL: 60,       // Minimal spacing
+}
+```
+
+**RTL Support**:
+- All paragraphs have `rightToLeft: true` and `bidirectional: true`
+- RLM (Right-to-Left Mark, U+200F) inserted after punctuation
+- Uses David font (standard Hebrew legal font)
+- Proper alignment with `AlignmentType.START` (=right in RTL)
+
+**Gendered Terms** (Lines 60-83):
+- Automatic gender detection from basicInfo
+- Plaintiff: תובעת (female) / תובע (male)
+- Defendant: נתבעת (female) / נתבע (male)
+- Pronouns: היא/הוא, שלה/שלו
+
+**Table of Contents - Automatic & Accurate** (Lines 1264-1352):
+- Uses Word's `TableOfContents` field (NOT manual estimation!)
+- References Heading2 styles on attachment headers
+- Shows **accurate page numbers** when document opens in Word
+- Auto-updates in most Word configurations
+- Note added: "מספרי העמודים יעודכנו אוטומטית בעת פתיחת המסמך ב-Word"
+
+**Integration** (`document-generator.ts` lines 218-227):
+```typescript
+if (claimType === 'property') {
+  console.log('📝 Using programmatic generator (no LLM needed)...');
+  documentBuffer = await generatePropertyClaimDocument({
+    basicInfo,
+    formData,
+    signature: options.signature,
+    lawyerSignature: options.lawyerSignature,
+    attachments: options.attachments,
+  });
+}
+```
+
+**Testing**: Use `test-property-comprehensive.js` with complete test data including all property types, children, debts, and attachments.
+
+#### Custody Claim Generation System (תביעת משמורת)
+
+**Special Implementation**: Like property claims, custody claims use a **programmatic generator with AI enhancement** for transforming first-person user text to third-person legal language.
+
+**Location**: `Law4Us-API/src/services/custody-claim-generator.ts` (1,280+ lines)
+
+**Architecture**:
+- **Hybrid approach**: Programmatic structure + Groq AI for text transformation
+- Uses `docx` library (NOT PDF) - generates .docx format
+- Complete RTL (Right-to-Left) support for Hebrew
+- Groq AI (`llama-3.3-70b-versatile`) transforms user narratives to legal language
+- Automatic filtering of minors (קטינים) - only children under 18
+
+**Document Structure** (4 main sections with page breaks):
+
+1. **Main Custody Claim (תביעת משמורת)**
+   - Court header (Tel Aviv Family Court)
+   - "בעניין הקטינים" with bullet list of minors
+   - Plaintiff info (מבקש/ת) with gendered terms
+   - Defendant info (משיב/ה) with gendered terms
+   - Title: תביעת משמורת
+   - Introduction paragraph
+   - Court fee: 388₪
+   - Additional proceedings section
+   - Summons (הזמנה לדין)
+   - Section B: Main Arguments (חלק ב: עיקר הטענות)
+     - 1. Brief description of parties (תיאור תמציתי של בעלי הדין)
+       - Parents' marriage info + count of MINORS (קטינים not ילדים)
+       - Bullet points for each minor with full details
+     - 2. Summary of requested remedy (פירוט הסעד המבוקש) - **NUMBERED ITEMS**
+     - 3-4. Additional legal sections
+   - Section C: Detailed Facts (חלק ג: פירוט העובדות)
+     - Marriage date
+     - Children section with **AI-transformed** relationship descriptions
+     - Current living arrangement with **AI-transformed** visitation details
+     - **AI-transformed** custody summary
+     - **AI-transformed** explanation of why not other parent
+     - Legal section: "טובת הילד" (Best Interest of the Child)
+   - Remedies (סעדים) - **NUMBERED ITEMS**
+
+2. **Form 3 - Statement of Details (הרצאת פרטים)**
+   - Personal details (both parties)
+   - Marital status
+   - Children information
+   - Housing details
+   - Domestic violence history
+   - Other family cases
+   - Therapeutic contact
+   - Declaration with **CLIENT signature** only
+
+3. **Power of Attorney (יפוי כוח)**
+   - 15 numbered legal powers granted to attorney
+   - **CLIENT signature** at "ולראיה באתי על החתום"
+   - **LAWYER signature** at "אני מאשר את חתימת מרשי"
+
+4. **Affidavit (תצהיר)**
+   - Lawyer's attestation (4 numbered items)
+   - Visual meeting confirmation (היוועדות חזותית)
+   - **LAWYER signature** with stamp
+
+**Key Features**:
+
+**1. Minor Filtering (קטינים)**:
+- Automatic calculation of age from birthdate
+- Only children under 18 are included in custody documents
+- Uses term "קטינים" instead of "ילדים" for legal accuracy
+
+```typescript
+function isMinor(birthDate: string): boolean {
+  if (!birthDate) return true;
+  const birth = new Date(birthDate);
+  const today = new Date();
+  const age = today.getFullYear() - birth.getFullYear();
+  // Adjust for birthday not yet occurred this year
+  return age < 18;
+}
+```
+
+**2. Groq AI Text Transformation**:
+- Transforms first-person user text to third-person legal language
+- Used for 4 main sections:
+  1. Child relationship descriptions (per child)
+  2. Visitation arrangement details
+  3. Custody summary (why custody should be with applicant)
+  4. Why custody should NOT be with other parent
+
+Example transformation:
+```
+Input (User):  "אני מבלה איתו כל יום, עוזר לו בשיעורי בית"
+Output (AI):   "המבקשת מתארת מערכת יחסים קרובה עם הקטין, לרבות ליווי יומיומי וסיוע בלימודים"
+```
+
+**3. AI Prompt Configuration** (`groq-service.ts`):
+```typescript
+if (context.claimType === 'תביעת משמורת') {
+  systemPrompt += `
+כללים ספציפיים לתביעות משמורת:
+8. התמקד ב"טובת הילד" כעיקרון מנחה
+9. הדגש את יכולת המבקש/ת לספק סביבה יציבה ומטפחת
+10. תאר את מערכת היחסים באופן מקצועי ואמפתי
+11. הימנע משפה שלילית - התמקד בעובדות ובטובת הילדים
+12. השתמש במונחים: "הקטינים", "טובת הילד", "הסדרי ראיה"
+`;
+}
+```
+
+**4. RTL Support** (Same as property claim):
+- All paragraphs have `rightToLeft: true` and `bidirectional: true`
+- Uses `AlignmentType.START` (=right in RTL)
+- **CRITICAL**: Bullets and numbered items use `indent: { right: convertInchesToTwip(0.25) }`
+- RLM (U+200F) after colons
+
+**Font and Spacing** (Same as property claim):
+- David font (standard Hebrew legal font)
+- FONT_SIZES: Same hierarchy as property claim
+- SPACING: Same system as property claim
+
+**Gendered Terms**:
+- Automatic gender detection from basicInfo
+- Plaintiff: מבקש/מבקשת
+- Defendant: משיב/משיבה
+- Pronouns: הוא/היא, שלו/שלה
+
+**Integration** (`document-generator.ts`):
+```typescript
+if (claimType === 'custody') {
+  console.log('📝 Using programmatic generator with AI transformations...');
+  documentBuffer = await generateCustodyClaim({
+    basicInfo,
+    formData,
+    signature: options.signature,         // Client signature
+    lawyerSignature: options.lawyerSignature,  // Lawyer signature
+  });
+}
+```
+
+**Custody Questions** (`lib/constants/questions.ts`):
+1. Children repeater (inherited from property) with relationship description per child
+2. Living arrangement (radio: together/with_applicant/with_respondent/split)
+3. Since when date (conditional)
+4. Current visitation arrangement (conditional textarea)
+5. Split arrangement details (conditional textarea)
+6. Requested custody arrangement (radio)
+7. Visitation proposal (conditional textarea)
+8. Custody summary (required textarea, 2000 chars) - **AI TRANSFORMED**
+9. Why not other parent (textarea, 1000 chars) - **AI TRANSFORMED**
+
+**Important Notes**:
+- NO signature after "סעדים" section (removed in custody claims)
+- Remedies sections use **numbered items** (not body paragraphs)
+- Form 3 signature is CLIENT only (not lawyer)
+- Power of Attorney has TWO signatures: client first, then lawyer confirmation
+
+**Testing**: Use `test-custody-claim.js` with complete test data including children with relationship descriptions, visitation arrangements, and custody reasoning.
+
 ### 5. Validation
 
 All forms use Zod schemas for validation:
@@ -444,6 +731,198 @@ NEXT_PUBLIC_MAKE_WEBHOOK_URL=your_webhook_url
 3. Add to `CLAIMS` constant
 4. Update pricing logic if needed
 
+## Recent Updates & Improvements (October 2024)
+
+### Property Claim Document Generation
+
+The property claim generator ([property-claim-generator.ts](Law4Us-API/src/services/property-claim-generator.ts)) has been significantly enhanced with the following improvements:
+
+#### 1. Document Structure
+
+Property claims now generate a comprehensive Word document with four main sections:
+
+1. **Main Claim (כתב תביעה)** - 2-3 pages
+   - Opening statement with parties and marriage details
+   - Requested remedies with detailed reasoning
+   - Client signature (250x125px) at end of claim
+
+2. **Form 3 (הרצאת פרטים)** - 2-4 pages
+   - Detailed information about both parties
+   - Housing status with Hebrew translations
+   - Employment and income details
+   - Property and debt listings
+   - Yes/No answers properly distinguished from "not specified"
+
+3. **Power of Attorney (יפוי כוח)** - 2 pages
+   - 15 numbered powers granted to attorney
+   - Both client signature (250x125px) and lawyer signature (300x150px)
+
+4. **Affidavit (תצהיר)** - 1 page
+   - Lawyer's confirmation statement
+   - Lawyer signature with stamp (300x150px)
+
+5. **Attachments Section (נספחים)** - If files uploaded
+   - Automatic table of contents with correct page numbers
+   - Each attachment labeled (א, ב, ג, etc.) with description
+
+#### 2. Signature Implementation
+
+**Client Signature** (user-provided, created in Step 4):
+- Appears in 3 locations: Main claim page, Form 3, Power of Attorney
+- Size: 250x125 pixels
+- Format: Base64 PNG image embedded in document
+
+**Lawyer Signature** (Ariel Dror with stamp):
+- Loaded on-demand from `/Users/dortagger/Law4Us/Signature.png`
+- Appears in 2 locations: Power of Attorney, Affidavit
+- Size: 300x150 pixels
+- Implementation: `loadLawyerSignature()` function in [load-signature.ts](Law4Us-API/src/utils/load-signature.ts)
+- Cached after first load for performance
+- Tries multiple paths to ensure file is found
+
+#### 3. Hebrew Translation & Formatting
+
+**Housing Type Translation**:
+```typescript
+translateHousingType(type: string): string {
+  'jointOwnership' → 'בעלות משותפת'
+  'applicantOwnership' → 'בבעלות המבקש/ת'
+  'respondentOwnership' → 'בבעלות הנתבע/ת'
+  'rental' → 'שכירות'
+  'other' → 'אחר'
+}
+```
+
+**Yes/No Answer Logic**:
+```typescript
+yesNo(value: any): string {
+  if כן/yes/true → 'כן'
+  if לא/no/false → 'לא'
+  otherwise → 'לא צוין' (not specified)
+}
+```
+
+#### 4. Table of Contents Page Calculation
+
+The attachment table of contents now correctly calculates page numbers:
+- Accounts for title page + TOC page itself (+2)
+- Accurately estimates pages for each attachment type
+- Updates page numbers as attachments are added
+
+#### 5. Gender Fields
+
+Added gender selection in Step 1 (basic info):
+- Both plaintiff and defendant must select gender (male/female)
+- Required field with validation
+- Stored in `basicInfo.gender` and `basicInfo.gender2`
+- Used throughout document generation for proper pronoun usage
+
+### Form Questions Reorganization
+
+The wizard questions ([questions.ts](lib/constants/questions.ts)) have been completely reorganized to match the original Framer structure and improve UX:
+
+#### Global Questions (All Claims)
+
+1. **Previous Marriages** - For both parties
+2. **Housing Status** - Current living situation
+3. **Family Violence** - Protection orders and reports
+4. **Other Family Cases** - NEW: Repeater for other court proceedings
+5. **Welfare & Counseling** - Services contacted and willingness to participate
+
+#### Property Claim Questions
+
+Organized into clear sections:
+
+1. **Children & Relationship**
+   - Relationship description (5 lines about the relationship)
+   - Children repeater with individual relationship notes for each child
+
+2. **Property Listing** (All use repeaters - no redundant yes/no questions)
+   - Property regime (community/separation/unknown)
+   - Apartments & real estate
+   - Vehicles
+   - Savings & investments
+   - Social benefits (pensions, etc.)
+   - General property
+   - Debts
+
+3. **Employment & Income**
+   - Applicant employment status (employee/self-employed/unemployed)
+   - Conditional income fields based on employment type
+   - Respondent employment status
+   - Conditional income fields (with "estimate if unknown" guidance)
+
+4. **Legal Status**
+   - Court proceedings (with document upload if yes)
+   - Living together status
+   - Separation date if not living together
+   - Requested remedies (textarea)
+
+#### Custody Claim Questions
+
+Simplified to focus on essential information:
+- Explanation of why custody should be granted (textarea)
+- Children details handled by repeater (inherited from property)
+
+#### Alimony Claim Questions
+
+1. **Children Living Arrangement** - Where children currently reside
+2. **Employment & Income** - Same as property claim
+3. **Property Overview** - Brief description of assets
+
+#### Divorce Claim Questions
+
+1. **Relationship Description** - 5 lines about the relationship
+2. **Who Wants Divorce & Why** - Explanation of divorce reasons
+
+### Children Repeater Enhancement
+
+The children repeater ([CHILDREN_FIELDS](lib/constants/property-repeaters.ts)) now includes:
+
+1. **Relationship Description** (for each child individually)
+   - Textarea asking about relationship with THIS specific child
+   - 3 rows, not required
+   - Appears first in repeater
+
+2. **Child Details**
+   - First name (required)
+   - Last name (required)
+   - ID number
+   - Birth date (required)
+   - Address
+   - Name of other parent
+
+This ensures parents describe their relationship with EACH child separately, not all children together.
+
+### Removed Redundant Questions
+
+The following yes/no questions were removed as they're redundant with repeaters:
+- ~~"האם יש דירה משותפת?"~~ → Use apartments repeater
+- ~~"האם יש כלי רכב?"~~ → Use vehicles repeater
+- ~~"האם יש קרנות פנסיה?"~~ → Use benefits repeater
+- ~~"האם יש חובות משותפים?"~~ → Use debts repeater
+- ~~"נכסים נוספים (textarea)"~~ → Use property repeater
+
+### Backend Integration ([submission.ts](Law4Us-API/src/routes/submission.ts))
+
+1. Creates Google Drive folder for submission
+2. Uploads submission JSON
+3. Generates documents for each selected claim
+4. Loads lawyer signature if not provided by client
+5. Handles attachments with proper labeling
+6. Returns folder ID and name for user confirmation
+
+### Key Files Modified
+
+1. [property-claim-generator.ts](Law4Us-API/src/services/property-claim-generator.ts) - Main document generator
+2. [load-signature.ts](Law4Us-API/src/utils/load-signature.ts) - Lawyer signature loading
+3. [submission.ts](Law4Us-API/src/routes/submission.ts) - Form submission handler
+4. [questions.ts](lib/constants/questions.ts) - Wizard questions structure
+5. [property-repeaters.ts](lib/constants/property-repeaters.ts) - Repeater field configurations
+6. [basic-info.ts](lib/schemas/basic-info.ts) - Gender field validation
+7. [wizard-store.ts](lib/stores/wizard-store.ts) - Gender in initial state
+8. [app/wizard/page.tsx](app/wizard/page.tsx) - Gender dropdowns in UI
+
 ## Future Enhancements
 
 ### Phase 2 (Post-Launch)
@@ -501,6 +980,6 @@ For questions or issues:
 
 ---
 
-**Last Updated**: October 2024
-**Version**: 1.0.0
+**Last Updated**: October 27, 2024
+**Version**: 1.1.0
 **Maintained by**: Law4Us Development Team

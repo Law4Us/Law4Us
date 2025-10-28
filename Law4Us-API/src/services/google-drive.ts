@@ -1,21 +1,37 @@
 import { google } from 'googleapis';
 import { Readable } from 'stream';
 
-const GOOGLE_DRIVE_FOLDER_ID = process.env.GOOGLE_DRIVE_FOLDER_ID;
+// Don't cache env var at module level - it might not be loaded yet!
+function getSharedDriveId() {
+  return process.env.GOOGLE_DRIVE_FOLDER_ID;
+}
+
+// Singleton Drive client
+let driveClient: ReturnType<typeof google.drive> | null = null;
 
 /**
- * Initialize Google Drive client using service account
+ * Initialize Google Drive client using service account (singleton)
  */
 function getDriveClient() {
+  if (driveClient) {
+    console.log('♻️  Reusing existing Drive client');
+    return driveClient;
+  }
+
+  console.log('🔑 Creating new Drive client with scope: https://www.googleapis.com/auth/drive');
+  console.log(`   Service Account: ${process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL}`);
+  console.log(`   Shared Drive ID: ${getSharedDriveId()}`);
+
   const auth = new google.auth.GoogleAuth({
     credentials: {
       client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
       private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
     },
-    scopes: ['https://www.googleapis.com/auth/drive.file'],
+    scopes: ['https://www.googleapis.com/auth/drive'], // Full drive access for Shared Drives
   });
 
-  return google.drive({ version: 'v3', auth });
+  driveClient = google.drive({ version: 'v3', auth });
+  return driveClient;
 }
 
 interface UploadFileOptions {
@@ -33,6 +49,9 @@ export async function uploadToDrive(options: UploadFileOptions): Promise<string>
 
   const drive = getDriveClient();
 
+  const parentId = folderId || getSharedDriveId();
+  console.log(`📤 Uploading file "${fileName}" (${buffer.length} bytes) to parent: ${parentId}`);
+
   // Convert buffer to stream
   const bufferStream = new Readable();
   bufferStream.push(buffer);
@@ -42,8 +61,8 @@ export async function uploadToDrive(options: UploadFileOptions): Promise<string>
     name: fileName,
   };
 
-  if (folderId || GOOGLE_DRIVE_FOLDER_ID) {
-    fileMetadata.parents = [folderId || GOOGLE_DRIVE_FOLDER_ID];
+  if (parentId) {
+    fileMetadata.parents = [parentId];
   }
 
   const media = {
@@ -54,8 +73,11 @@ export async function uploadToDrive(options: UploadFileOptions): Promise<string>
   const response = await drive.files.create({
     requestBody: fileMetadata,
     media,
-    fields: 'id, webViewLink, webContentLink',
+    fields: 'id, webViewLink, webContentLink, parents',
+    supportsAllDrives: true,
   });
+
+  console.log(`✅ File uploaded with ID: ${response.data.id}`);
 
   return response.data.id || '';
 }
@@ -66,19 +88,26 @@ export async function uploadToDrive(options: UploadFileOptions): Promise<string>
 export async function createFolder(folderName: string, parentFolderId?: string): Promise<string> {
   const drive = getDriveClient();
 
+  const parentId = parentFolderId || getSharedDriveId();
+  console.log(`📂 Creating folder "${folderName}" in parent: ${parentId}`);
+
   const fileMetadata: any = {
     name: folderName,
     mimeType: 'application/vnd.google-apps.folder',
   };
 
-  if (parentFolderId || GOOGLE_DRIVE_FOLDER_ID) {
-    fileMetadata.parents = [parentFolderId || GOOGLE_DRIVE_FOLDER_ID];
+  if (parentId) {
+    fileMetadata.parents = [parentId];
   }
 
   const response = await drive.files.create({
     requestBody: fileMetadata,
-    fields: 'id',
+    fields: 'id, name, parents',
+    supportsAllDrives: true,
   });
+
+  console.log(`✅ Folder created with ID: ${response.data.id}`);
+  console.log(`   Parents: ${response.data.parents}`);
 
   return response.data.id || '';
 }
@@ -89,8 +118,8 @@ export async function createFolder(folderName: string, parentFolderId?: string):
 export async function listFiles(folderId?: string) {
   const drive = getDriveClient();
 
-  const query = folderId || GOOGLE_DRIVE_FOLDER_ID
-    ? `'${folderId || GOOGLE_DRIVE_FOLDER_ID}' in parents and trashed=false`
+  const query = folderId || getSharedDriveId()
+    ? `'${folderId || getSharedDriveId()}' in parents and trashed=false`
     : 'trashed=false';
 
   const response = await drive.files.list({
@@ -98,6 +127,8 @@ export async function listFiles(folderId?: string) {
     fields: 'files(id, name, mimeType, createdTime, webViewLink, webContentLink)',
     orderBy: 'createdTime desc',
     pageSize: 100,
+    supportsAllDrives: true,
+    includeItemsFromAllDrives: true,
   });
 
   return response.data.files || [];
@@ -112,6 +143,7 @@ export async function getFileMetadata(fileId: string) {
   const response = await drive.files.get({
     fileId,
     fields: 'id, name, mimeType, createdTime, modifiedTime, size, webViewLink, webContentLink',
+    supportsAllDrives: true,
   });
 
   return response.data;
@@ -127,6 +159,7 @@ export async function downloadFile(fileId: string): Promise<Buffer> {
     {
       fileId,
       alt: 'media',
+      supportsAllDrives: true,
     },
     { responseType: 'arraybuffer' }
   );

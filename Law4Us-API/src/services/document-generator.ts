@@ -15,6 +15,9 @@ import {
 } from './groq-service';
 import { processAttachments } from './pdf-converter';
 import { insertAttachmentPages } from './document-attachment-inserter';
+import { generatePropertyClaimDocument } from './property-claim-generator';
+import { generateCustodyClaim } from './custody-claim-generator';
+import { generateAlimonyClaim } from './alimony-claim-generator';
 import {
   ClaimType,
   BasicInfo,
@@ -28,8 +31,13 @@ export interface DocumentGenerationOptions {
   formData: FormData;
   selectedClaims: ClaimType[];
   claimType: ClaimType;
-  signature?: string; // base64
-  attachments?: Array<{ file: UploadedFile; label: string }>;
+  signature?: string; // base64 - client signature
+  lawyerSignature?: string; // base64 - lawyer signature with stamp
+  attachments?: Array<{
+    label: string;
+    description: string;
+    images: Buffer[];
+  }>;
 }
 
 /**
@@ -52,6 +60,12 @@ function getTemplatePath(claimType: ClaimType): string {
  * Check if template exists
  */
 export function templateExists(claimType: ClaimType): boolean {
+  // Property, custody, and alimony claims don't use templates - they're programmatically generated
+  if (claimType === 'property' || claimType === 'custody' || claimType === 'alimony') {
+    return true;
+  }
+
+  // For other claim types, check if template file exists
   try {
     const templatePath = getTemplatePath(claimType);
     return fs.existsSync(templatePath);
@@ -84,7 +98,7 @@ function getFieldsForAITransformation(
         formData[f.key] &&
         typeof formData[f.key] === 'string' &&
         (formData[f.key] as string).length > 50
-    )
+    ).map(f => ({ ...f, value: formData[f.key] as string })) // Add value property
   );
 
   return fieldsToTransform.map((f) => ({
@@ -200,27 +214,60 @@ async function fillTemplate(
 export async function generateDocument(
   options: DocumentGenerationOptions
 ): Promise<Buffer> {
-  const { claimType, attachments } = options;
+  const { claimType, attachments, basicInfo, formData } = options;
 
   console.log('\n' + '='.repeat(80));
   console.log(`🚀 GENERATING DOCUMENT: ${getClaimTypeInHebrew(claimType)}`);
   console.log('='.repeat(80));
 
   try {
-    // Step 1: Prepare data with AI transformation
-    const data = await prepareDocumentData(options);
+    let documentBuffer: Buffer;
 
-    // Step 2: Fill template with data
-    let documentBuffer = await fillTemplate(claimType, data);
+    // Use programmatic generator for property, custody, and alimony claims (better quality, no placeholders)
+    if (claimType === 'property') {
+      console.log('📝 Using programmatic generator (no LLM needed)...');
+      documentBuffer = await generatePropertyClaimDocument({
+        basicInfo,
+        formData,
+        signature: options.signature,
+        lawyerSignature: options.lawyerSignature,
+        attachments: options.attachments,
+      });
+    } else if (claimType === 'custody') {
+      console.log('📝 Using programmatic generator (no LLM needed)...');
+      documentBuffer = await generateCustodyClaim({
+        basicInfo,
+        formData,
+        signature: options.signature,
+        lawyerSignature: options.lawyerSignature,
+      });
+    } else if (claimType === 'alimony') {
+      console.log('📝 Using programmatic generator with Form 4 PDF integration...');
+      const document = await generateAlimonyClaim({
+        basicInfo,
+        formData,
+        signature: options.signature,
+      });
+
+      // Convert docx Document object to buffer
+      const { Packer } = await import('docx');
+      documentBuffer = await Packer.toBuffer(document);
+    } else {
+      // Step 1: Prepare data with AI transformation
+      const data = await prepareDocumentData(options);
+
+      // Step 2: Fill template with data
+      documentBuffer = await fillTemplate(claimType, data);
+    }
 
     // Step 3: Process and insert attachments (if any)
     if (attachments && attachments.length > 0) {
       console.log(`\n📎 Processing ${attachments.length} attachments...`);
 
-      const processedAttachments = await processAttachments(attachments);
+      const processedAttachments = await processAttachments(attachments as any); // Type assertion for attachment compatibility
 
       if (processedAttachments.length > 0) {
-        documentBuffer = await insertAttachmentPages(documentBuffer, processedAttachments);
+        documentBuffer = await insertAttachmentPages(documentBuffer, processedAttachments as any); // Type assertion for attachment compatibility
       }
     }
 

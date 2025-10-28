@@ -9,9 +9,12 @@ export interface RepeaterField {
   id: string;
   name: string;
   label: string;
-  type: "text" | "number" | "date" | "email" | "tel" | "textarea";
+  type: "text" | "number" | "date" | "email" | "tel" | "textarea" | "file" | "select";
   placeholder?: string;
   required?: boolean;
+  accept?: string; // For file inputs
+  helper?: string; // Helper text below field
+  options?: Array<{ value: string; label: string }>; // For select inputs
 }
 
 export interface RepeaterRow {
@@ -126,6 +129,60 @@ export function Repeater({
                     )}
                     rows={3}
                   />
+                ) : field.type === "file" ? (
+                  <div>
+                    <input
+                      id={`${row.__id}-${field.name}`}
+                      type="file"
+                      accept={field.accept || ".pdf,.jpg,.jpeg,.png"}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          handleFieldChange(row.__id, field.name, file);
+                        }
+                      }}
+                      className={cn(
+                        "w-full px-3 py-2 rounded bg-white",
+                        "border border-neutral transition-smooth",
+                        "focus:border-primary focus:ring-2 focus:ring-primary/20",
+                        "text-body-small text-neutral-darkest",
+                        "file:ml-2 file:py-1 file:px-3 file:rounded",
+                        "file:border-0 file:text-body-small file:font-medium",
+                        "file:bg-primary file:text-white file:cursor-pointer"
+                      )}
+                    />
+                    {row[field.name] && (
+                      <p className="mt-1 text-caption text-neutral-dark">
+                        {row[field.name].name || "קובץ נבחר"}
+                      </p>
+                    )}
+                    {field.helper && (
+                      <p className="mt-1 text-caption text-neutral-dark">
+                        {field.helper}
+                      </p>
+                    )}
+                  </div>
+                ) : field.type === "select" ? (
+                  <select
+                    id={`${row.__id}-${field.name}`}
+                    value={row[field.name] || ""}
+                    onChange={(e) =>
+                      handleFieldChange(row.__id, field.name, e.target.value)
+                    }
+                    className={cn(
+                      "w-full px-3 py-2 rounded bg-white",
+                      "border border-neutral transition-smooth",
+                      "focus:border-primary focus:ring-2 focus:ring-primary/20",
+                      "text-body text-neutral-darkest"
+                    )}
+                  >
+                    <option value="">בחר...</option>
+                    {field.options?.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
                 ) : (
                   <input
                     id={`${row.__id}-${field.name}`}
@@ -157,10 +214,10 @@ export function Repeater({
           type="button"
           variant="outline"
           onClick={handleAddRow}
-          className="w-full"
+          className="max-w-xs"
         >
-          <Plus className="w-4 h-4 ml-1" />
           {addButtonLabel}
+          <Plus className="w-4 h-4 mr-1" />
         </Button>
       )}
     </div>

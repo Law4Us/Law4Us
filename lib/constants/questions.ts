@@ -3,6 +3,17 @@
  * Organized by sections: global questions and claim-specific questions
  */
 
+import {
+  OTHER_FAMILY_CASES_FIELDS,
+  CHILDREN_FIELDS,
+  APARTMENT_FIELDS,
+  VEHICLE_FIELDS,
+  SAVINGS_FIELDS,
+  BENEFITS_FIELDS,
+  PROPERTY_FIELDS,
+  DEBT_FIELDS,
+} from "./property-repeaters";
+
 export type QuestionType =
   | "text"
   | "number"
@@ -14,7 +25,8 @@ export type QuestionType =
   | "radio"
   | "file"
   | "fileList"
-  | "heading";
+  | "heading"
+  | "repeater";
 
 export interface QuestionOption {
   value: string;
@@ -35,6 +47,12 @@ export interface Question {
   };
   maxLength?: number;
   accept?: string; // for file inputs
+  repeaterConfig?: {
+    fields: any[]; // RepeaterField[] from repeater component
+    addButtonLabel?: string;
+    minRows?: number;
+    maxRows?: number;
+  };
 }
 
 // ============================================================================
@@ -51,7 +69,7 @@ export const GLOBAL_QUESTIONS: Question[] = [
   {
     id: "marriedBefore",
     type: "radio",
-    label: "האם המבקש/ת היה/ה נשוי/אה בעבר?",
+    label: "האם [APPLICANT_NAME] היה/ה נשוי/אה בעבר?",
     required: true,
     options: [
       { value: "כן", label: "כן" },
@@ -61,7 +79,7 @@ export const GLOBAL_QUESTIONS: Question[] = [
   {
     id: "hadChildrenFromPrevious",
     type: "radio",
-    label: "האם למבקש/ת יש ילדים מנישואים קודמים?",
+    label: "האם ל[APPLICANT_NAME] יש ילדים מנישואים קודמים?",
     required: true,
     options: [
       { value: "כן", label: "כן" },
@@ -71,7 +89,7 @@ export const GLOBAL_QUESTIONS: Question[] = [
   {
     id: "marriedBefore2",
     type: "radio",
-    label: "האם הנתבע/ת היה/ה נשוי/אה בעבר?",
+    label: "האם [RESPONDENT_NAME] היה/ה נשוי/אה בעבר?",
     required: true,
     options: [
       { value: "כן", label: "כן" },
@@ -81,7 +99,7 @@ export const GLOBAL_QUESTIONS: Question[] = [
   {
     id: "hadChildrenFromPrevious2",
     type: "radio",
-    label: "האם לנתבע/ת יש ילדים מנישואים קודמים?",
+    label: "האם ל[RESPONDENT_NAME] יש ילדים מנישואים קודמים?",
     required: true,
     options: [
       { value: "כן", label: "כן" },
@@ -98,12 +116,12 @@ export const GLOBAL_QUESTIONS: Question[] = [
   {
     id: "applicantHomeType",
     type: "radio",
-    label: "סוג הדיור של המבקש/ת:",
+    label: "סוג הדיור של [APPLICANT_NAME]:",
     required: true,
     options: [
       { value: "jointOwnership", label: "בעלות משותפת" },
-      { value: "applicantOwnership", label: "בבעלות המבקש/ת" },
-      { value: "respondentOwnership", label: "בבעלות הנתבע/ת" },
+      { value: "applicantOwnership", label: "בבעלות [APPLICANT_NAME]" },
+      { value: "respondentOwnership", label: "בבעלות [RESPONDENT_NAME]" },
       { value: "rental", label: "שכירות" },
       { value: "other", label: "אחר" },
     ],
@@ -111,12 +129,12 @@ export const GLOBAL_QUESTIONS: Question[] = [
   {
     id: "partnerHomeType",
     type: "radio",
-    label: "סוג הדיור של הנתבע/ת:",
+    label: "סוג הדיור של [RESPONDENT_NAME]:",
     required: true,
     options: [
       { value: "jointOwnership", label: "בעלות משותפת" },
-      { value: "applicantOwnership", label: "בבעלות המבקש/ת" },
-      { value: "respondentOwnership", label: "בבעלות הנתבע/ת" },
+      { value: "applicantOwnership", label: "בבעלות [APPLICANT_NAME]" },
+      { value: "respondentOwnership", label: "בבעלות [RESPONDENT_NAME]" },
       { value: "rental", label: "שכירות" },
       { value: "other", label: "אחר" },
     ],
@@ -232,6 +250,20 @@ export const GLOBAL_QUESTIONS: Question[] = [
     },
   },
 
+  // Section 3.5: Other Family Cases
+  {
+    id: "otherFamilyCases",
+    type: "repeater",
+    label: "נתונים על תיקים אחרים בענייני המשפחה בין בני הזוג",
+    helper: "פרטו לגבי כל תיק בנפרד",
+    repeaterConfig: {
+      fields: OTHER_FAMILY_CASES_FIELDS,
+      addButtonLabel: "הוסף תיק",
+      minRows: 0,
+      maxRows: 10,
+    },
+  },
+
   // Section 4: Welfare and Counseling
   {
     id: "heading-welfare",
@@ -337,352 +369,749 @@ export const DIVORCE_QUESTIONS: Question[] = [
     label: "גירושין",
   },
   {
-    id: "divorce.separationDate",
-    type: "date",
-    label: "תאריך הפרידה בפועל:",
-    required: true,
-    helper: "מתי נפרדתם בפועל?",
-  },
-  {
-    id: "divorce.separationReason",
+    id: "divorce.relationshipDescription",
     type: "textarea",
-    label: "סיבת הפרידה:",
-    placeholder: "תארו בקצרה את הסיבות לפרידה...",
-    required: true,
-    maxLength: 1000,
-  },
-  {
-    id: "divorce.whoInitiated",
-    type: "radio",
-    label: "מי יזם את הפרידה?",
-    required: true,
-    options: [
-      { value: "applicant", label: "המבקש/ת" },
-      { value: "respondent", label: "הנתבע/ת" },
-      { value: "mutual", label: "הדדי" },
-    ],
-  },
-  {
-    id: "divorce.attemptedReconciliation",
-    type: "radio",
-    label: "האם נעשו ניסיונות לפייס?",
-    required: true,
-    options: [
-      { value: "כן", label: "כן" },
-      { value: "לא", label: "לא" },
-    ],
-  },
-  {
-    id: "divorce.reconciliationDetails",
-    type: "textarea",
-    label: "פרטו את ניסיונות הפיוס:",
-    placeholder: "תארו אילו ניסיונות נעשו...",
+    label: "אנא רשום עד 5 שורות על מערכת היחסים שלכם",
+    placeholder: "תארו את מערכת היחסים בינכם...",
     maxLength: 500,
-    conditional: {
-      dependsOn: "divorce.attemptedReconciliation",
-      showWhen: "כן",
-    },
+    required: true,
+  },
+  {
+    id: "divorce.whoWantsDivorceAndWhy",
+    type: "textarea",
+    label: "מי רוצה להתגרש ולמה?",
+    placeholder: "תארו מי יזם את הגירושין ומה הסיבות...",
+    maxLength: 1000,
+    required: true,
   },
 ];
 
 // Property Division (חלוקת רכוש)
 export const PROPERTY_QUESTIONS: Question[] = [
+  // Living situation (moved earlier)
   {
-    id: "heading-property",
+    id: "heading-living-situation",
     type: "heading",
-    label: "חלוקת רכוש",
+    label: "מצב מגורים",
   },
   {
-    id: "property.hasSharedProperty",
+    id: "property.livingTogether",
     type: "radio",
-    label: "האם יש רכוש משותף?",
+    label: "האם אתם מתגוררים יחד?",
     required: true,
     options: [
-      { value: "כן", label: "כן" },
-      { value: "לא", label: "לא" },
+      { value: "yes", label: "כן" },
+      { value: "no", label: "לא" },
     ],
   },
   {
-    id: "property.propertyRegime",
-    type: "radio",
-    label: "איזה משטר רכוש חל עליכם?",
-    required: true,
-    options: [
-      { value: "community", label: "שיתוף" },
-      { value: "separation", label: "הפרדה" },
-      { value: "unknown", label: "לא יודע/ת" },
-    ],
-    helper: "משטר שיתוף הוא ברירת המחדל בישראל",
+    id: "property.separationDate",
+    type: "date",
+    label: "ממתי לא מתגוררים יחד:",
     conditional: {
-      dependsOn: "property.hasSharedProperty",
-      showWhen: "כן",
+      dependsOn: "property.livingTogether",
+      showWhen: "no",
+    },
+  },
+
+  // Children
+  {
+    id: "heading-children",
+    type: "heading",
+    label: "ילדים",
+  },
+  {
+    id: "property.children",
+    type: "repeater",
+    label: "פרטי ילדים",
+    helper: "הוסיפו את פרטי כל הילדים מהנישואין",
+    repeaterConfig: {
+      fields: CHILDREN_FIELDS,
+      addButtonLabel: "הוסף ילד/ה",
+      minRows: 0,
+      maxRows: 10,
+    },
+  },
+
+  // Property listing
+  {
+    id: "heading-property-details",
+    type: "heading",
+    label: "פירוט נכסים וחובות",
+  },
+  {
+    id: "property.apartments",
+    type: "repeater",
+    label: "דירות ונדל\"ן",
+    helper: "פרטו את כל הנכסים המקרקעין (דירות, קרקעות, משרדים, וכו')",
+    repeaterConfig: {
+      fields: APARTMENT_FIELDS,
+      addButtonLabel: "הוסף דירה/נדל\"ן",
+      minRows: 0,
+      maxRows: 20,
     },
   },
   {
-    id: "property.hasApartment",
+    id: "property.vehicles",
+    type: "repeater",
+    label: "כלי רכב",
+    helper: "פרטו את כל כלי הרכב (רכבים, אופנועים, וכו')",
+    repeaterConfig: {
+      fields: VEHICLE_FIELDS,
+      addButtonLabel: "הוסף רכב",
+      minRows: 0,
+      maxRows: 10,
+    },
+  },
+  {
+    id: "property.savings",
+    type: "repeater",
+    label: "חסכונות ותיקי השקעות",
+    helper: "פרטו חשבונות בנק, חסכונות, תיקי השקעות, מניות, וכו'",
+    repeaterConfig: {
+      fields: SAVINGS_FIELDS,
+      addButtonLabel: "הוסף חיסכון/השקעה",
+      minRows: 0,
+      maxRows: 20,
+    },
+  },
+  {
+    id: "property.benefits",
+    type: "repeater",
+    label: "זכויות סוציאליות",
+    helper: "פרטו קרנות פנסיה, קופות גמל, ביטוח מנהלים, תגמולים, וכו'",
+    repeaterConfig: {
+      fields: BENEFITS_FIELDS,
+      addButtonLabel: "הוסף זכות סוציאלית",
+      minRows: 0,
+      maxRows: 20,
+    },
+  },
+  {
+    id: "property.properties",
+    type: "repeater",
+    label: "רכוש כללי",
+    helper: "פרטו ריהוט, תכשיטים, אומנות, וכל רכוש נוסף בעל ערך",
+    repeaterConfig: {
+      fields: PROPERTY_FIELDS,
+      addButtonLabel: "הוסף פריט רכוש",
+      minRows: 0,
+      maxRows: 50,
+    },
+  },
+  {
+    id: "property.debts",
+    type: "repeater",
+    label: "חובות",
+    helper: "פרטו משכנתאות, הלוואות, חובות כרטיסי אשראי, וכל חוב אחר",
+    repeaterConfig: {
+      fields: DEBT_FIELDS,
+      addButtonLabel: "הוסף חוב",
+      minRows: 0,
+      maxRows: 20,
+    },
+  },
+
+  // Employment section
+  {
+    id: "heading-employment",
+    type: "heading",
+    label: "תעסוקה והכנסות",
+  },
+  {
+    id: "property.applicantEmploymentStatus",
     type: "radio",
-    label: "האם יש דירה משותפת?",
+    label: "סטטוס תעסוקתי של [APPLICANT_NAME]:",
     required: true,
     options: [
-      { value: "כן", label: "כן" },
-      { value: "לא", label: "לא" },
+      { value: "employee", label: "שכיר/ה" },
+      { value: "selfEmployed", label: "עצמאי/ת" },
+      { value: "unemployed", label: "מובטל/ת" },
     ],
   },
   {
-    id: "property.apartmentValue",
+    id: "property.applicantGrossSalary",
     type: "number",
-    label: "שווי הדירה המשוער (בש\"ח):",
+    label: "כמה [APPLICANT_NAME] מרוויח/ה ברוטו:",
     placeholder: "0",
+    required: true,
     conditional: {
-      dependsOn: "property.hasApartment",
-      showWhen: "כן",
+      dependsOn: "property.applicantEmploymentStatus",
+      showWhen: "employee",
     },
   },
   {
-    id: "property.apartmentMortgage",
+    id: "property.applicantPaySlips",
+    type: "fileList",
+    label: "תלושים אחרונים:",
+    accept: ".pdf,.jpg,.jpeg,.png",
+    helper: "העלו את 3 התלושים האחרונים",
+    conditional: {
+      dependsOn: "property.applicantEmploymentStatus",
+      showWhen: "employee",
+    },
+  },
+  {
+    id: "property.applicantOccupation",
+    type: "text",
+    label: "מהות העיסוק:",
+    placeholder: "תיאור העיסוק",
+    required: true,
+    conditional: {
+      dependsOn: "property.applicantEmploymentStatus",
+      showWhen: "selfEmployed",
+    },
+  },
+  {
+    id: "property.applicantEstablishedDate",
+    type: "date",
+    label: "מתי הוקם העסק:",
+    conditional: {
+      dependsOn: "property.applicantEmploymentStatus",
+      showWhen: "selfEmployed",
+    },
+  },
+  {
+    id: "property.applicantRegisteredOwner",
+    type: "text",
+    label: "על שם מי רשום:",
+    placeholder: "שם בעל העסק",
+    conditional: {
+      dependsOn: "property.applicantEmploymentStatus",
+      showWhen: "selfEmployed",
+    },
+  },
+  {
+    id: "property.applicantGrossIncome",
     type: "number",
-    label: "יתרת משכנתא (בש\"ח):",
+    label: "כמה [APPLICANT_NAME] מרוויח/ה ברוטו:",
     placeholder: "0",
+    required: true,
     conditional: {
-      dependsOn: "property.hasApartment",
-      showWhen: "כן",
+      dependsOn: "property.applicantEmploymentStatus",
+      showWhen: "selfEmployed",
     },
   },
   {
-    id: "property.whoWantsApartment",
-    type: "radio",
-    label: "מי מעוניין לשמור על הדירה?",
-    options: [
-      { value: "applicant", label: "המבקש/ת" },
-      { value: "respondent", label: "הנתבע/ת" },
-      { value: "sell", label: "למכור" },
-      { value: "undecided", label: "לא הוחלט" },
-    ],
+    id: "property.applicantIncomeProof",
+    type: "file",
+    label: 'אישור רו"ח על השתכרות חודשית:',
+    accept: ".pdf,.jpg,.jpeg,.png",
     conditional: {
-      dependsOn: "property.hasApartment",
-      showWhen: "כן",
+      dependsOn: "property.applicantEmploymentStatus",
+      showWhen: "selfEmployed",
     },
   },
   {
-    id: "property.hasCars",
+    id: "property.respondentEmploymentStatus",
     type: "radio",
-    label: "האם יש כלי רכב?",
+    label: "סטטוס תעסוקתי של [RESPONDENT_NAME]:",
     required: true,
     options: [
-      { value: "כן", label: "כן" },
-      { value: "לא", label: "לא" },
+      { value: "employee", label: "שכיר/ה" },
+      { value: "selfEmployed", label: "עצמאי/ת" },
+      { value: "unemployed", label: "מובטל/ת" },
     ],
   },
   {
-    id: "property.hasPensions",
+    id: "property.respondentGrossSalary",
+    type: "number",
+    label: "כמה [RESPONDENT_NAME] מרוויח/ה ברוטו (במידה ולא ידוע - אומדן):",
+    placeholder: "הקלד סכום או אומדן",
+    required: true,
+    conditional: {
+      dependsOn: "property.respondentEmploymentStatus",
+      showWhen: "employee",
+    },
+  },
+  {
+    id: "property.respondentPaySlips",
+    type: "fileList",
+    label: "תלושים אחרונים (אם יש):",
+    accept: ".pdf,.jpg,.jpeg,.png",
+    helper: "העלו תלושים אם יש ברשותכם",
+    conditional: {
+      dependsOn: "property.respondentEmploymentStatus",
+      showWhen: "employee",
+    },
+  },
+  {
+    id: "property.respondentOccupation",
+    type: "text",
+    label: "מהות העיסוק (אם ידוע):",
+    placeholder: "תיאור העיסוק",
+    conditional: {
+      dependsOn: "property.respondentEmploymentStatus",
+      showWhen: "selfEmployed",
+    },
+  },
+  {
+    id: "property.respondentEstablishedDate",
+    type: "date",
+    label: "מתי הוקם העסק (אם ידוע):",
+    conditional: {
+      dependsOn: "property.respondentEmploymentStatus",
+      showWhen: "selfEmployed",
+    },
+  },
+  {
+    id: "property.respondentRegisteredOwner",
+    type: "text",
+    label: "על שם מי רשום (אם ידוע):",
+    placeholder: "שם בעל העסק",
+    conditional: {
+      dependsOn: "property.respondentEmploymentStatus",
+      showWhen: "selfEmployed",
+    },
+  },
+  {
+    id: "property.respondentGrossIncome",
+    type: "number",
+    label: "כמה [RESPONDENT_NAME] מרוויח/ה ברוטו (במידה ולא ידוע - אומדן):",
+    placeholder: "הקלד סכום או אומדן",
+    required: true,
+    conditional: {
+      dependsOn: "property.respondentEmploymentStatus",
+      showWhen: "selfEmployed",
+    },
+  },
+  {
+    id: "property.respondentIncomeProof",
+    type: "file",
+    label: 'אישור רו"ח על השתכרות חודשית (אם יש):',
+    accept: ".pdf,.jpg,.jpeg,.png",
+    conditional: {
+      dependsOn: "property.respondentEmploymentStatus",
+      showWhen: "selfEmployed",
+    },
+  },
+
+  // Legal status
+  {
+    id: "heading-legal-status",
+    type: "heading",
+    label: "הליכים משפטיים",
+  },
+  {
+    id: "property.courtProceedings",
     type: "radio",
-    label: "האם יש קרנות פנסיה/השתלמות/קופות גמל?",
+    label: "האם נפתחו הליכים בבית משפט?",
     required: true,
     options: [
-      { value: "כן", label: "כן" },
-      { value: "לא", label: "לא" },
+      { value: "yes", label: "כן" },
+      { value: "no", label: "לא" },
     ],
   },
   {
-    id: "property.hasDebts",
-    type: "radio",
-    label: "האם יש חובות משותפים?",
-    required: true,
-    options: [
-      { value: "כן", label: "כן" },
-      { value: "לא", label: "לא" },
-    ],
+    id: "property.courtCaseNumber",
+    type: "text",
+    label: "מספר תיק:",
+    placeholder: "מספר תיק בבית המשפט",
+    conditional: {
+      dependsOn: "property.courtProceedings",
+      showWhen: "yes",
+    },
   },
   {
-    id: "property.additionalAssets",
+    id: "property.courtName",
+    type: "text",
+    label: "שם בית המשפט:",
+    placeholder: "לדוגמה: בית משפט לענייני משפחה תל אביב",
+    conditional: {
+      dependsOn: "property.courtProceedings",
+      showWhen: "yes",
+    },
+  },
+  {
+    id: "property.courtJudge",
+    type: "text",
+    label: "בפני מי נדון:",
+    placeholder: "שם השופט/ת",
+    conditional: {
+      dependsOn: "property.courtProceedings",
+      showWhen: "yes",
+    },
+  },
+  {
+    id: "property.courtStatus",
     type: "textarea",
-    label: "נכסים נוספים:",
-    placeholder: "פרטו נכסים נוספים (תכשיטים, עסקים, מניות, וכו')...",
-    maxLength: 1000,
+    label: "מצב ההליכים:",
+    placeholder: "תארו בקצרה את מצב ההליכים...",
+    maxLength: 500,
+    conditional: {
+      dependsOn: "property.courtProceedings",
+      showWhen: "yes",
+    },
+  },
+  {
+    id: "property.courtDocument",
+    type: "file",
+    label: "נא לצרף מסמך מבית המשפט:",
+    accept: ".pdf,.doc,.docx",
+    helper: "כתב תביעה, כתב הגנה, או כל מסמך אחר מהתיק",
+    conditional: {
+      dependsOn: "property.courtProceedings",
+      showWhen: "yes",
+    },
   },
 ];
 
 // Custody (משמורת)
 export const CUSTODY_QUESTIONS: Question[] = [
+  // Children section
   {
-    id: "heading-custody",
+    id: "heading-children-custody",
     type: "heading",
-    label: "משמורת ילדים",
+    label: "ילדים",
   },
   {
-    id: "custody.hasChildren",
+    id: "custody.children",
+    type: "repeater",
+    label: "פרטי ילדים",
+    helper: "הוסיפו את פרטי כל הילדים מהנישואין. עבור כל ילד/ה, תארו את מערכת היחסים שלכם איתם",
+    repeaterConfig: {
+      fields: CHILDREN_FIELDS,
+      addButtonLabel: "הוסף ילד/ה",
+      minRows: 0,
+      maxRows: 10,
+    },
+  },
+
+  // Custody details
+  {
+    id: "heading-custody-details",
+    type: "heading",
+    label: "פרטי המשמורת",
+  },
+  {
+    id: "custody.whoShouldHaveCustody",
+    type: "textarea",
+    label: "סיכום מצב המשמורת - למה המשמורת צריכה להיות אצלך?",
+    placeholder: "הסבירו למה אתם מבקשים משמורת ומה לטובת הילדים. תארו את היכולת שלכם לדאוג לילדים, הסביבה הביתית, הזמינות שלכם, וכל גורם רלוונטי נוסף...",
+    maxLength: 2000,
+    required: true,
+    helper: "זהו הסיכום המרכזי של בקשת המשמורת שלכם"
+  },
+  {
+    id: "custody.currentLivingArrangement",
     type: "radio",
-    label: "האם יש ילדים משותפים?",
+    label: "היכן הקטינים מתגוררים כרגע?",
     required: true,
     options: [
-      { value: "כן", label: "כן" },
-      { value: "לא", label: "לא" },
+      { value: "together", label: "תחת קורת גג אחת עם שני ההורים" },
+      { value: "with_applicant", label: "אצל [APPLICANT_NAME]" },
+      { value: "with_respondent", label: "אצל [RESPONDENT_NAME]" },
+      { value: "split", label: "חלוקה - חלק מהזמן אצל כל אחד" },
     ],
   },
   {
-    id: "custody.custodyArrangement",
+    id: "custody.sinceWhen",
+    type: "date",
+    label: "מתי התחיל מצב זה?",
+    helper: "מתי הילדים התחילו לגור במצב הנוכחי",
+    conditional: {
+      dependsOn: "custody.currentLivingArrangement",
+      showWhen: ["with_applicant", "with_respondent", "split"],
+    },
+  },
+  {
+    id: "custody.currentVisitationArrangement",
+    type: "textarea",
+    label: "כיצד הסדרי הראיה עם ההורה השני?",
+    placeholder: "פרטו את הסדרי הראיה הנוכחיים - ימים, שעות, תדירות...\nלדוגמה: 'ההורה השני רואה את הילדים פעם בשבוע ביום חמישי אחר הצהריים, וסוף שבוע אחד בחודש'",
+    maxLength: 500,
+    required: true,
+    conditional: {
+      dependsOn: "custody.currentLivingArrangement",
+      showWhen: ["with_applicant", "with_respondent"],
+    },
+  },
+  {
+    id: "custody.splitArrangementDetails",
+    type: "textarea",
+    label: "פרטו את חלוקת הזמנים בפועל:",
+    placeholder: "תארו כיצד הזמן מתחלק בין שני ההורים...\nלדוגמה: 'שבוע אצל כל הורה לסירוגין' או 'ימים א׳-ד׳ אצל אמא, ה׳-ש׳ אצל אבא'",
+    maxLength: 500,
+    required: true,
+    conditional: {
+      dependsOn: "custody.currentLivingArrangement",
+      showWhen: "split",
+    },
+  },
+  {
+    id: "custody.requestedArrangement",
     type: "radio",
-    label: "סידור משמורת מבוקש:",
+    label: "איזה הסדר משמורת אתם מבקשים?",
     required: true,
     options: [
-      { value: "sole-applicant", label: "משמורת יחידה למבקש/ת" },
-      { value: "sole-respondent", label: "משמורת יחידה לנתבע/ת" },
-      { value: "joint", label: "משמורת משותפת" },
-      { value: "shared", label: "משמורת משותפת שוויונית" },
+      { value: "full_custody", label: "משמורת מלאה למבקש/ת" },
+      { value: "joint_custody", label: "משמורת משותפת" },
+      { value: "primary_with_visits", label: "משמורת ראשית עם הסדרי ראיה" },
     ],
+  },
+  {
+    id: "custody.visitationProposal",
+    type: "textarea",
+    label: "מה ההצעה שלך להסדרי ראיה?",
+    placeholder: "פרטו את הצעת הסדרי הראיה - ימים בשבוע, שעות, חגים, חופשות וכו'...",
+    maxLength: 1000,
+    helper: "לדוגמה: סופי שבוע מתחלפים, יום באמצע השבוע, חלוקת חגים",
     conditional: {
-      dependsOn: "custody.hasChildren",
-      showWhen: "כן",
+      dependsOn: "custody.requestedArrangement",
+      showWhen: "primary_with_visits",
     },
   },
   {
-    id: "custody.currentArrangement",
+    id: "custody.whyNotOtherParent",
     type: "textarea",
-    label: "סידור משמורת נוכחי:",
-    placeholder: "תארו איפה הילדים גרים כרגע ומה סידורי השהייה...",
-    maxLength: 500,
-    conditional: {
-      dependsOn: "custody.hasChildren",
-      showWhen: "כן",
-    },
-  },
-  {
-    id: "custody.proposedSchedule",
-    type: "textarea",
-    label: "הצעה לסידור שהייה:",
-    placeholder: "תארו את ההצעה שלכם לחלוקת זמן עם הילדים...",
-    maxLength: 500,
-    helper: "לדוגמה: שבוע-שבוע, חילופי ימים, סופי שבוע, וכו'",
-    conditional: {
-      dependsOn: "custody.hasChildren",
-      showWhen: "כן",
-    },
-  },
-  {
-    id: "custody.specialNeeds",
-    type: "textarea",
-    label: "צרכים מיוחדים של הילדים:",
-    placeholder: "האם יש לילדים צרכים מיוחדים, טיפולים, או דרישות מיוחדות?",
-    maxLength: 500,
-    conditional: {
-      dependsOn: "custody.hasChildren",
-      showWhen: "כן",
-    },
+    label: "למה המשמורת לא צריכה להיות אצל ההורה השני?",
+    placeholder: "הסבירו מדוע לדעתכם המשמורת לא צריכה להיות אצל ההורה השני, מבחינת טובת הילדים...",
+    maxLength: 1000,
   },
 ];
 
 // Alimony (מזונות)
+// NOTE: Alimony claims REUSE property.children, property.separationDate, and property employment questions
+// This section only contains UNIQUE alimony questions
 export const ALIMONY_QUESTIONS: Question[] = [
   {
     id: "heading-alimony",
     type: "heading",
-    label: "מזונות",
+    label: "מזונות - פרטים ספציפיים",
   },
+
+  // Relationship description
   {
-    id: "alimony.childSupportRequested",
-    type: "radio",
-    label: "האם מבוקשים מזונות ילדים?",
-    required: true,
-    options: [
-      { value: "כן", label: "כן" },
-      { value: "לא", label: "לא" },
-    ],
-  },
-  {
-    id: "alimony.spousalSupportRequested",
-    type: "radio",
-    label: "האם מבוקשים מזונות אישה/בעל?",
-    required: true,
-    options: [
-      { value: "כן", label: "כן" },
-      { value: "לא", label: "לא" },
-    ],
-  },
-  {
-    id: "alimony.applicantIncome",
-    type: "number",
-    label: "הכנסה חודשית של המבקש/ת (בש\"ח):",
-    placeholder: "0",
-    required: true,
-  },
-  {
-    id: "alimony.respondentIncome",
-    type: "number",
-    label: "הכנסה חודשית של הנתבע/ת (בש\"ח):",
-    placeholder: "0",
-    required: true,
-  },
-  {
-    id: "alimony.applicantEmploymentStatus",
-    type: "radio",
-    label: "סטטוס תעסוקתי של המבקש/ת:",
-    required: true,
-    options: [
-      { value: "employed", label: "שכיר/ה" },
-      { value: "selfEmployed", label: "עצמאי/ת" },
-      { value: "unemployed", label: "מובטל/ת" },
-      { value: "student", label: "סטודנט/ית" },
-      { value: "disabled", label: "נכה" },
-    ],
-  },
-  {
-    id: "alimony.respondentEmploymentStatus",
-    type: "radio",
-    label: "סטטוס תעסוקתי של הנתבע/ת:",
-    required: true,
-    options: [
-      { value: "employed", label: "שכיר/ה" },
-      { value: "selfEmployed", label: "עצמאי/ת" },
-      { value: "unemployed", label: "מובטל/ת" },
-      { value: "student", label: "סטודנט/ית" },
-      { value: "disabled", label: "נכה" },
-    ],
-  },
-  {
-    id: "alimony.requestedChildSupport",
-    type: "number",
-    label: "סכום מזונות ילדים מבוקש (לילד, בש\"ח):",
-    placeholder: "0",
-    helper: "הסכום הממוצע בישראל הוא כ-1,500-2,500 ₪ לילד",
-    conditional: {
-      dependsOn: "alimony.childSupportRequested",
-      showWhen: "כן",
-    },
-  },
-  {
-    id: "alimony.requestedSpousalSupport",
-    type: "number",
-    label: "סכום מזונות אישה/בעל מבוקש (בש\"ח):",
-    placeholder: "0",
-    conditional: {
-      dependsOn: "alimony.spousalSupportRequested",
-      showWhen: "כן",
-    },
-  },
-  {
-    id: "alimony.spousalSupportDuration",
-    type: "select",
-    label: "תקופת מזונות אישה/בעל:",
-    options: [
-      { value: "", label: "בחר..." },
-      { value: "temporary", label: "זמני (עד לפסיקה סופית)" },
-      { value: "1year", label: "שנה" },
-      { value: "2years", label: "שנתיים" },
-      { value: "3years", label: "3 שנים" },
-      { value: "ongoing", label: "קבוע" },
-      { value: "other", label: "אחר" },
-    ],
-    conditional: {
-      dependsOn: "alimony.spousalSupportRequested",
-      showWhen: "כן",
-    },
-  },
-  {
-    id: "alimony.additionalExpenses",
+    id: "alimony.relationshipDescription",
     type: "textarea",
-    label: "הוצאות מיוחדות:",
-    placeholder: "פרטו הוצאות מיוחדות (חינוך, בריאות, חוגים, וכו')...",
+    label: "תארו בקצרה את מערכת היחסים:",
+    placeholder: "תארו את מערכת היחסים בינכם...",
     maxLength: 500,
+    helper: "תיאור זה יעובד באמצעות AI לשפה משפטית מקצועית",
+  },
+
+  // Previous alimony payments
+  {
+    id: "heading-previous-alimony",
+    type: "heading",
+    label: "מזונות קודמים (אם רלוונטי)",
+  },
+  {
+    id: "alimony.wasPreviousAlimony",
+    type: "radio",
+    label: "האם שולמו מזונות בעבר?",
+    required: true,
+    options: [
+      { value: "yes", label: "כן" },
+      { value: "no", label: "לא" },
+    ],
+  },
+  {
+    id: "alimony.lastAlimonyAmount",
+    type: "number",
+    label: "סכום מזונות אחרון ששולם (חודשי):",
+    placeholder: "0",
+    conditional: {
+      dependsOn: "alimony.wasPreviousAlimony",
+      showWhen: "yes",
+    },
+  },
+  {
+    id: "alimony.lastAlimonyDate",
+    type: "date",
+    label: "מתי שולם סכום זה לאחרונה?",
+    conditional: {
+      dependsOn: "alimony.wasPreviousAlimony",
+      showWhen: "yes",
+    },
+  },
+
+  // Children's needs (expense table)
+  {
+    id: "heading-children-needs",
+    type: "heading",
+    label: "צרכי הקטינים - הוצאות חודשיות",
+  },
+  {
+    id: "alimony.childrenNeeds",
+    type: "repeater",
+    label: "פירוט הוצאות חודשיות לילדים:",
+    helper: "הוסיפו את כל ההוצאות החודשיות הקשורות לילדים",
+    addButtonLabel: "+ הוסף הוצאה",
+    fields: [
+      {
+        id: "category",
+        type: "select",
+        label: "קטגוריה:",
+        required: true,
+        options: [
+          { value: "food", label: "מזון" },
+          { value: "clothing", label: "לבוש והנעלה" },
+          { value: "education", label: "חינוך (שכר לימוד, ספרים)" },
+          { value: "medical", label: "רפואה (ביטוח, תרופות)" },
+          { value: "activities", label: "פעילויות חוץ (חוגים)" },
+          { value: "transportation", label: "הסעות ותחבורה" },
+          { value: "other", label: "אחר" },
+        ],
+      },
+      {
+        id: "description",
+        type: "text",
+        label: "פירוט:",
+        placeholder: "תיאור קצר של ההוצאה",
+        maxLength: 100,
+        required: true,
+      },
+      {
+        id: "monthlyAmount",
+        type: "number",
+        label: "סכום חודשי (₪):",
+        placeholder: "0",
+        required: true,
+      },
+    ],
+  },
+
+  // Household needs (expense table)
+  {
+    id: "heading-household-needs",
+    type: "heading",
+    label: "צורכי המדור - הוצאות חודשיות",
+  },
+  {
+    id: "alimony.householdNeeds",
+    type: "repeater",
+    label: "פירוט הוצאות חודשיות למדור:",
+    helper: "הוסיפו את כל ההוצאות החודשיות של משק הבית",
+    addButtonLabel: "+ הוסף הוצאה",
+    fields: [
+      {
+        id: "category",
+        type: "select",
+        label: "קטגוריה:",
+        required: true,
+        options: [
+          { value: "rent", label: "שכר דירה / משכנתא" },
+          { value: "tax", label: "ארנונה" },
+          { value: "electricity", label: "חשמל" },
+          { value: "water", label: "מים" },
+          { value: "gas", label: "גז" },
+          { value: "building", label: "ועד בית" },
+          { value: "maintenance", label: "תיקונים ותחזוקה" },
+          { value: "internet", label: "אינטרנט וטלפון" },
+          { value: "insurance", label: "ביטוחים (דירה, תכולה)" },
+          { value: "other", label: "אחר" },
+        ],
+      },
+      {
+        id: "description",
+        type: "text",
+        label: "פירוט:",
+        placeholder: "תיאור קצר של ההוצאה",
+        maxLength: 100,
+        required: true,
+      },
+      {
+        id: "monthlyAmount",
+        type: "number",
+        label: "סכום חודשי (₪):",
+        placeholder: "0",
+        required: true,
+      },
+    ],
+  },
+
+  // Bank accounts
+  {
+    id: "heading-bank-accounts",
+    type: "heading",
+    label: "חשבונות בנק",
+  },
+  {
+    id: "alimony.hasBankAccounts",
+    type: "radio",
+    label: "האם יש לך חשבונות בנק?",
+    required: true,
+    options: [
+      { value: "yes", label: "כן" },
+      { value: "no", label: "לא" },
+    ],
+  },
+  {
+    id: "alimony.bankAccounts",
+    type: "repeater",
+    label: "פרטי חשבונות הבנק:",
+    helper: "הוסיפו את כל חשבונות הבנק שלכם",
+    addButtonLabel: "+ הוסף חשבון בנק",
+    conditional: {
+      dependsOn: "alimony.hasBankAccounts",
+      showWhen: "yes",
+    },
+    fields: [
+      {
+        id: "bankName",
+        type: "text",
+        label: "שם הבנק:",
+        placeholder: "לאומי, הפועלים, וכו'",
+        required: true,
+      },
+      {
+        id: "accountNumber",
+        type: "text",
+        label: "מספר חשבון:",
+        placeholder: "מספר החשבון",
+        required: true,
+      },
+      {
+        id: "balance",
+        type: "number",
+        label: "יתרה משוערת (אם ידוע):",
+        placeholder: "0",
+      },
+    ],
+  },
+
+  // Vehicle details
+  {
+    id: "heading-vehicle",
+    type: "heading",
+    label: "רכב",
+  },
+  {
+    id: "alimony.hasVehicle",
+    type: "radio",
+    label: "האם יש לך רכב?",
+    required: true,
+    options: [
+      { value: "yes", label: "כן" },
+      { value: "no", label: "לא" },
+    ],
+  },
+  {
+    id: "alimony.vehicleDetails",
+    type: "textarea",
+    label: "פרטי הרכב:",
+    placeholder: "יצרן, דגם, שנה, מספר רישוי",
+    maxLength: 200,
+    conditional: {
+      dependsOn: "alimony.hasVehicle",
+      showWhen: "yes",
+    },
+  },
+
+  // Requested alimony amount
+  {
+    id: "heading-requested-amount",
+    type: "heading",
+    label: "סכום המזונות המבוקש",
+  },
+  {
+    id: "alimony.requestedAmount",
+    type: "number",
+    label: "סכום המזונות החודשיים המבוקש (₪):",
+    placeholder: "0",
+    required: true,
+    helper: "הסכום שאתם מבקשים מבית המשפט לפסוק כמזונות חודשיים",
   },
 ];
 

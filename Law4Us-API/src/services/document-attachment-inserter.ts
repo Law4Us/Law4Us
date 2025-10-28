@@ -7,6 +7,12 @@ import Docxtemplater from 'docxtemplater';
 import PizZip from 'pizzip';
 import { ProcessedAttachment } from '../types';
 
+// Type declarations for DOM types used in XML manipulation
+declare global {
+  type Document = any;
+  type Element = any;
+}
+
 /**
  * Insert attachment pages at the end of a Word document
  *

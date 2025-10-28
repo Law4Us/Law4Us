@@ -11,12 +11,14 @@ export interface BasicInfo {
   phone: string;
   email: string;
   birthDate: string;
+  gender?: "male" | "female"; // Person 1 gender
   fullName2: string;
   idNumber2: string;
   address2: string;
   phone2: string;
   email2: string;
   birthDate2: string;
+  gender2?: "male" | "female"; // Person 2 gender
   relationshipType: "married" | "commonLaw" | "separated" | "notMarried";
   weddingDay: string;
 }
@@ -42,14 +44,16 @@ export interface Child {
 }
 
 export interface Property {
-  purchaseDate: string;
-  owner: string;
+  purchaseDate?: string;
+  owner?: string;
   description?: string;
+  value?: string; // Property value in NIS
 }
 
 export interface Financial {
-  amount: string;
-  owner: string;
+  amount?: string;
+  value?: string; // Alternative to amount
+  owner?: string;
   description?: string;
 }
 

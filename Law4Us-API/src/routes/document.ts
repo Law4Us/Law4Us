@@ -134,7 +134,7 @@ router.post('/generate', upload.array('attachments', 20), async (req: Request, r
         selectedClaims,
         claimType: claimType as ClaimType,
         signature,
-        attachments,
+        attachments: attachments as any, // Type assertion for attachment compatibility
       });
 
       // Save document
@@ -157,7 +157,7 @@ router.post('/generate', upload.array('attachments', 20), async (req: Request, r
         formData,
         selectedClaims,
         signature,
-        attachments,
+        attachments: attachments as any, // Type assertion for attachment compatibility
       });
 
       if (documentsMap.size === 0) {

@@ -215,29 +215,29 @@ export function prepareFormattedData(
     // Formatted arrays
     childrenList: formatChildrenBasic(formData.children || []),
     childrenListDetailed: formatChildrenDetailed(formData.children || []),
-    apartmentsList: formatApartments(formData.apartments || []),
-    vehiclesList: formatVehicles(formData.vehicles || []),
-    savingsList: formatSavings(formData.savings || []),
-    benefitsList: formatBenefits(formData.benefits || []),
-    debtsList: formatDebts(formData.debts || []),
+    apartmentsList: formatApartments((formData.apartments || []) as any),
+    vehiclesList: formatVehicles((formData.vehicles || []) as any),
+    savingsList: formatSavings((formData.savings || []) as any),
+    benefitsList: formatBenefits((formData.benefits || []) as any),
+    debtsList: formatDebts((formData.debts || []) as any),
 
     // Counts
     numberOfChildren: (formData.children || []).length,
 
     // Financial totals
-    totalDebts: calculateTotalDebts(formData.debts || []),
-    totalSavings: calculateTotalSavings(formData.savings || []),
-    totalBenefits: calculateTotalBenefits(formData.benefits || []),
+    totalDebts: calculateTotalDebts((formData.debts || []) as any),
+    totalSavings: calculateTotalSavings((formData.savings || []) as any),
+    totalBenefits: calculateTotalBenefits((formData.benefits || []) as any),
 
     // Formatted totals
     totalDebtsFormatted: formatCurrency(
-      calculateTotalDebts(formData.debts || [])
+      calculateTotalDebts((formData.debts || []) as any)
     ),
     totalSavingsFormatted: formatCurrency(
-      calculateTotalSavings(formData.savings || [])
+      calculateTotalSavings((formData.savings || []) as any)
     ),
     totalBenefitsFormatted: formatCurrency(
-      calculateTotalBenefits(formData.benefits || [])
+      calculateTotalBenefits((formData.benefits || []) as any)
     ),
 
     // Other formatted fields

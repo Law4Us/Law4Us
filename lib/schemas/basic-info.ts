@@ -38,6 +38,9 @@ export const basicInfoSchema = z
         },
         "יש להיות מעל גיל 18"
       ),
+    gender: z.enum(["male", "female"], {
+      required_error: "יש לבחור מגדר",
+    }),
 
     // Defendant (נתבע/בעל/אישה)
     fullName2: z
@@ -70,6 +73,9 @@ export const basicInfoSchema = z
         },
         "יש להיות מעל גיל 18"
       ),
+    gender2: z.enum(["male", "female"], {
+      required_error: "יש לבחור מגדר",
+    }),
 
     // Relationship info
     relationshipType: z.enum(["married", "commonLaw", "separated", "notMarried"], {

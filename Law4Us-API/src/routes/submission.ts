@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { generateDocument } from '../services/document-generator';
 import { uploadToDrive, createFolder } from '../services/google-drive';
+import { loadLawyerSignature } from '../utils/load-signature';
 
 const router = Router();
 
@@ -14,7 +15,13 @@ interface SubmissionData {
   };
   formData: any;
   selectedClaims: string[];
-  signature: string; // base64
+  signature: string; // base64 - client signature
+  lawyerSignature?: string; // base64 - lawyer signature with stamp
+  attachments?: Array<{
+    label: string;
+    description: string;
+    images: Buffer[];
+  }>;
   paymentData: any;
   filledDocuments: any;
   submittedAt: string;
@@ -36,6 +43,12 @@ router.post('/submit', async (req: Request, res: Response) => {
 
     console.log('📁 Created Google Drive folder:', folderName);
 
+    // Load lawyer signature if not provided by client
+    const lawyerSignature = submissionData.lawyerSignature || loadLawyerSignature();
+    if (!submissionData.lawyerSignature) {
+      console.log('📷 Using default lawyer signature (Ariel Dror)');
+    }
+
     // Save submission JSON
     const jsonBuffer = Buffer.from(JSON.stringify(submissionData, null, 2));
     await uploadToDrive({
@@ -45,54 +58,39 @@ router.post('/submit', async (req: Request, res: Response) => {
       folderId: submissionFolderId,
     });
 
-    // Generate and upload Power of Attorney document
-    if (submissionData.filledDocuments?.powerOfAttorney) {
-      console.log('📄 Generating Power of Attorney document...');
+    // Generate documents for each selected claim
+    for (const claimType of submissionData.selectedClaims) {
+      console.log(`📄 Generating ${claimType} document...`);
 
-      const poaDoc = await generateDocument({
-        template: 'power-of-attorney',
-        data: {
-          ...submissionData.basicInfo,
-          ...submissionData.formData,
-          selectedClaims: submissionData.selectedClaims,
-          signature: submissionData.signature,
-        },
-        claimType: submissionData.selectedClaims[0], // Use first claim for context
+      const claimDoc = await generateDocument({
+        basicInfo: submissionData.basicInfo as any, // Type assertion for request data
+        formData: submissionData.formData,
+        selectedClaims: submissionData.selectedClaims as any,
+        claimType: claimType as any,
+        signature: submissionData.signature,
+        lawyerSignature: lawyerSignature,
+        attachments: submissionData.attachments,
       });
 
+      // Use Hebrew filename
+      const hebrewNames: Record<string, string> = {
+        divorce: 'תביעת-גירושין',
+        custody: 'תביעת-משמורת',
+        property: 'תביעת-רכושית',
+        alimony: 'תביעת-מזונות',
+        divorceAgreement: 'הסכם-גירושין',
+      };
+
+      const fileName = `${hebrewNames[claimType] || claimType}.docx`;
+
       await uploadToDrive({
-        fileName: 'ייפוי-כוח.docx',
+        fileName,
         mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        buffer: poaDoc,
+        buffer: claimDoc,
         folderId: submissionFolderId,
       });
 
-      console.log('✅ Power of Attorney uploaded');
-    }
-
-    // Generate and upload Form 3 document
-    if (submissionData.filledDocuments?.form3) {
-      console.log('📄 Generating Form 3 document...');
-
-      const form3Doc = await generateDocument({
-        template: 'form-3',
-        data: {
-          ...submissionData.basicInfo,
-          ...submissionData.formData,
-          selectedClaims: submissionData.selectedClaims,
-          signature: submissionData.signature,
-        },
-        claimType: submissionData.selectedClaims[0],
-      });
-
-      await uploadToDrive({
-        fileName: 'טופס-3.docx',
-        mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        buffer: form3Doc,
-        folderId: submissionFolderId,
-      });
-
-      console.log('✅ Form 3 uploaded');
+      console.log(`✅ ${fileName} uploaded`);
     }
 
     // Handle attachments if any

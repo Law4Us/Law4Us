@@ -173,6 +173,27 @@ export default function Step1ClaimPicker() {
               error={!!errors.birthDate}
             />
           </FormField>
+
+          <FormField
+            label="מגדר"
+            htmlFor="gender"
+            required
+            error={errors.gender?.message}
+          >
+            <Select
+              id="gender"
+              {...register("gender")}
+              onChange={(e) => {
+                register("gender").onChange(e);
+                updateBasicInfo({ gender: e.target.value as any });
+              }}
+              error={!!errors.gender}
+            >
+              <option value="">בחרו מגדר</option>
+              <option value="male">זכר</option>
+              <option value="female">נקבה</option>
+            </Select>
+          </FormField>
         </div>
 
         {/* Column 2: Defendant */}
@@ -269,6 +290,27 @@ export default function Step1ClaimPicker() {
               onBlur={(e) => handleFieldBlur("birthDate2", e.target.value)}
               error={!!errors.birthDate2}
             />
+          </FormField>
+
+          <FormField
+            label="מגדר"
+            htmlFor="gender2"
+            required
+            error={errors.gender2?.message}
+          >
+            <Select
+              id="gender2"
+              {...register("gender2")}
+              onChange={(e) => {
+                register("gender2").onChange(e);
+                updateBasicInfo({ gender2: e.target.value as any });
+              }}
+              error={!!errors.gender2}
+            >
+              <option value="">בחרו מגדר</option>
+              <option value="male">זכר</option>
+              <option value="female">נקבה</option>
+            </Select>
           </FormField>
         </div>
 

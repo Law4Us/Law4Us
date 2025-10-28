@@ -6,7 +6,7 @@ import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui";
 import { useWizardStore } from "@/lib/stores/wizard-store";
-import { QuestionsList } from "@/components/wizard/question-renderer";
+import { QuestionsSections } from "@/components/wizard/question-renderer";
 import {
   GLOBAL_QUESTIONS,
   CLAIM_QUESTIONS_MAP,
@@ -14,6 +14,7 @@ import {
 } from "@/lib/constants/questions";
 import { globalQuestionsSchema } from "@/lib/schemas/global-questions";
 import { CLAIMS } from "@/lib/constants/claims";
+import { processQuestionsNames } from "@/lib/utils/name-replacement";
 import { z } from "zod";
 
 export default function Step2DynamicForm() {
@@ -62,18 +63,10 @@ export default function Step2DynamicForm() {
     return questions;
   }, [selectedClaims]);
 
-  // Replace dynamic names in question labels
+  // Replace dynamic names in question labels, placeholders, and options
   const processedQuestions = React.useMemo(() => {
-    const applicantName = basicInfo.fullName || "המבקש/ת";
-    const respondentName = basicInfo.fullName2 || "הנתבע/ת";
-
-    return allQuestions.map((q) => ({
-      ...q,
-      label: q.label
-        .replace(/המבקש\/ת/g, applicantName)
-        .replace(/הנתבע\/ת/g, respondentName),
-    }));
-  }, [allQuestions, basicInfo.fullName, basicInfo.fullName2]);
+    return processQuestionsNames(allQuestions, basicInfo);
+  }, [allQuestions, basicInfo]);
 
   // Prepare default values
   const defaultValues = React.useMemo(() => {
@@ -142,9 +135,9 @@ export default function Step2DynamicForm() {
           </div>
         </div>
 
-        {/* Questions */}
-        <div className="bg-white rounded-lg p-8 mb-8">
-          <QuestionsList
+        {/* Questions organized by sections */}
+        <div className="mb-8">
+          <QuestionsSections
             questions={processedQuestions}
             watchFields={watchedValues}
           />
