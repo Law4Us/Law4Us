@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generateDocument } from '@/Law4Us-API/src/services/document-generator';
-import { uploadToDrive, createFolder, searchFolders, downloadFile } from '@/Law4Us-API/src/services/google-drive';
+import { generateDocument } from '@/lib/api/services/document-generator';
+import { uploadToDrive, createFolder, searchFolders, downloadFile } from '@/lib/api/services/google-drive';
 
 interface SubmissionData {
   basicInfo: {

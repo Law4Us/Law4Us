@@ -37,22 +37,34 @@ npm run dev
 - **Forms**: React Hook Form + Zod
 - **State**: Zustand with localStorage
 - **Animations**: Motion One (lightweight)
-- **PDF Generation**: Puppeteer (server-side HTML→PDF)
+- **Document Generation**: docx library (programmatic Word documents)
+- **Storage**: Google Drive API
+- **AI**: Groq SDK (legal language transformation)
 - **Icons**: Lucide React
+- **Deployment**: Vercel (monorepo)
 
 ## 📁 Project Structure
 
 ```
 ├── app/              # Next.js pages and routes
+│   └── api/         # API routes (submission, document generation)
 ├── components/       # Reusable React components
 │   ├── ui/          # Base UI components
 │   ├── wizard/      # Wizard-specific components
 │   └── layout/      # Layout components
 ├── lib/             # Utilities and business logic
+│   ├── api/         # Backend services (Vercel serverless functions)
+│   │   ├── services/  # Document generators, Google Drive, Groq AI
+│   │   ├── types/     # API type definitions
+│   │   ├── utils/     # API utilities
+│   │   └── templates/ # Word document templates
 │   ├── schemas/     # Zod validation schemas
 │   ├── utils/       # Helper functions
 │   ├── types/       # TypeScript types
 │   └── stores/      # Zustand stores
+├── tests/           # Test files for document generation
+├── docs/            # Documentation
+│   └── archive/     # Archived documentation
 └── public/          # Static assets
 ```
 
@@ -68,10 +80,19 @@ The application uses a carefully crafted design system optimized for Hebrew/RTL:
 
 ## 🔐 Environment Variables
 
-Create `.env.local` from `.env.local.example`:
+Create `.env.local` with the following variables:
 
 ```env
-NEXT_PUBLIC_MAKE_WEBHOOK_URL=your_make_webhook_url
+# Google Drive API
+GOOGLE_PRIVATE_KEY=your_private_key
+GOOGLE_CLIENT_EMAIL=your_service_account_email
+GOOGLE_DRIVE_FOLDER_ID=your_folder_id
+
+# Groq AI
+GROQ_API_KEY=your_groq_api_key
+
+# Lawyer Signature
+LAWYER_SIGNATURE_FILE_ID=google_drive_file_id
 ```
 
 ## 📝 Available Scripts
@@ -93,12 +114,9 @@ This divorce services module is designed to be part of a larger legal services p
 
 ## 📚 Documentation
 
-See [claude.md](./claude.md) for comprehensive documentation including:
-- Architecture details
-- Component patterns
-- Form system design
-- API documentation
-- Development guidelines
+- **[MIGRATION_TO_VERCEL_MONOREPO.md](./MIGRATION_TO_VERCEL_MONOREPO.md)** - Migration guide from Railway to Vercel-only architecture
+- **[VERCEL_DEPLOYMENT.md](./VERCEL_DEPLOYMENT.md)** - Vercel deployment guide
+- **[docs/archive/](./docs/archive/)** - Archived documentation (old deployment guides, implementation summaries)
 
 ## 🤝 Contributing
 

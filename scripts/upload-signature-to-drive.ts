@@ -4,7 +4,7 @@
  */
 
 import { config } from 'dotenv';
-import { uploadToDrive } from '../Law4Us-API/src/services/google-drive';
+import { uploadToDrive } from '../lib/api/services/google-drive';
 import * as fs from 'fs';
 import * as path from 'path';
 
