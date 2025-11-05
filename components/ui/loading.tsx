@@ -38,7 +38,7 @@ export function PageLoading() {
     <div className="min-h-[50vh] flex items-center justify-center">
       <div className="text-center">
         <LoadingSpinner size="lg" className="mb-4" />
-        <p className="text-body text-neutral-dark">טוען...</p>
+        <p className="text-body text-neutral-700">טוען...</p>
       </div>
     </div>
   );

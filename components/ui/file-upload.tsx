@@ -104,7 +104,7 @@ export function FileUpload({
           "flex flex-col items-center justify-center gap-3",
           "transition-smooth cursor-pointer",
           isDragging && "border-primary bg-primary/5",
-          !isDragging && !error && "border-neutral hover:border-neutral-dark",
+          !isDragging && !error && "border-neutral-300 hover:border-neutral-700",
           error && "border-red-500",
           disabled && "opacity-50 cursor-not-allowed"
         )}
@@ -122,25 +122,25 @@ export function FileUpload({
         <div
           className={cn(
             "w-12 h-12 rounded-full flex items-center justify-center",
-            "bg-neutral-light transition-smooth",
+            "bg-neutral-200 transition-smooth",
             isDragging && "bg-primary/10"
           )}
         >
           <Upload
             className={cn(
               "w-6 h-6 transition-smooth",
-              isDragging ? "text-primary" : "text-neutral-dark"
+              isDragging ? "text-primary" : "text-neutral-700"
             )}
           />
         </div>
 
         <div className="text-center">
-          <p className="text-body font-medium text-neutral-darkest mb-1">
+          <p className="text-body font-medium text-neutral-900 mb-1">
             {isDragging
               ? "שחררו לצירוף הקובץ"
               : "גררו קובץ לכאן או לחצו לבחירה"}
           </p>
-          <p className="text-body-small text-neutral-dark">
+          <p className="text-body-small text-neutral-700">
             {accept
               ? `קבצים נתמכים: ${accept}`
               : "כל סוגי הקבצים נתמכים"}
@@ -156,16 +156,16 @@ export function FileUpload({
           {files.map((file, index) => (
             <div
               key={index}
-              className="flex items-center gap-3 px-4 py-3 bg-neutral-lightest rounded-lg"
+              className="flex items-center gap-3 px-4 py-3 bg-neutral-100 rounded-lg"
             >
               <div className="flex-shrink-0 w-10 h-10 rounded bg-primary/10 flex items-center justify-center">
                 <File className="w-5 h-5 text-primary" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-body font-medium text-neutral-darkest truncate">
+                <p className="text-body font-medium text-neutral-900 truncate">
                   {file.name}
                 </p>
-                <p className="text-caption text-neutral-dark">
+                <p className="text-caption text-neutral-700">
                   {formatFileSize(file.size)}
                 </p>
               </div>
@@ -179,7 +179,7 @@ export function FileUpload({
                 className={cn(
                   "flex-shrink-0 w-8 h-8 rounded-full",
                   "flex items-center justify-center",
-                  "hover:bg-red-50 text-neutral-dark hover:text-red-500",
+                  "hover:bg-red-50 text-neutral-700 hover:text-red-500",
                   "transition-smooth",
                   disabled && "opacity-50 cursor-not-allowed"
                 )}

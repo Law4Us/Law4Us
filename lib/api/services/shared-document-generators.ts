@@ -1061,6 +1061,57 @@ export function generateAffidavit(
   return paragraphs;
 }
 
+function getPngDimensions(buffer: Buffer | Uint8Array): { width: number; height: number } | null {
+  const nodeBuffer = Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer);
+
+  if (nodeBuffer.length < 24) {
+    return null;
+  }
+
+  const pngSignature = Buffer.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
+  if (!nodeBuffer.subarray(0, 8).equals(pngSignature)) {
+    return null;
+  }
+
+  if (nodeBuffer.toString('ascii', 12, 16) !== 'IHDR') {
+    return null;
+  }
+
+  const width = nodeBuffer.readUInt32BE(16);
+  const height = nodeBuffer.readUInt32BE(20);
+
+  if (!width || !height) {
+    return null;
+  }
+
+  return { width, height };
+}
+
+function fitImageDimensions(
+  buffer: Buffer | Uint8Array,
+  maxWidth: number,
+  maxHeight: number
+): { width: number; height: number } {
+  const dimensions = getPngDimensions(buffer);
+
+  if (!dimensions) {
+    return {
+      width: maxWidth,
+      height: maxHeight,
+    };
+  }
+
+  const { width, height } = dimensions;
+  const widthScale = maxWidth / width;
+  const heightScale = maxHeight / height;
+  const scale = Math.min(widthScale, heightScale, 1);
+
+  const fittedWidth = Math.max(1, Math.round(width * scale));
+  const fittedHeight = Math.max(1, Math.round(height * scale));
+
+  return { width: fittedWidth, height: fittedHeight };
+}
+
 /**
  * Generate נספחים (Attachments) section with automatic table of contents and page ranges
  * @param attachments Array of attachments with labels, descriptions, and images
@@ -1145,17 +1196,19 @@ export function generateAttachmentsSection(
 
     // Add each page of the attachment as an image
     attachment.images.forEach((imageBuffer) => {
-      // Convert to Uint8Array which docx library handles better
-      const uint8Array = new Uint8Array(imageBuffer);
+      const { width, height } = fitImageDimensions(imageBuffer, 550, 750);
+      const imageData = Buffer.isBuffer(imageBuffer)
+        ? new Uint8Array(imageBuffer)
+        : imageBuffer;
 
       paragraphs.push(
         new Paragraph({
           children: [
             new ImageRun({
-              data: uint8Array,
+              data: imageData,
               transformation: {
-                width: 550, // A4 width in points minus margins
-                height: 750, // Maintain aspect ratio for typical document
+                width,
+                height,
               },
             } as any), // Type assertion for docx 9.x compatibility
           ],

@@ -41,7 +41,7 @@ export function Header() {
         borderBottomWidth: '1px'
       }}
     >
-      <nav className="container-custom">
+      <nav className="max-w-[1200px] mx-auto px-6">
         <div className="flex items-center justify-between h-20">
           {/* Logo + Navigation Links - RIGHT SIDE */}
           <div className="hidden lg:flex items-center gap-8">

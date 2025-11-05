@@ -16,10 +16,10 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
         <textarea
           className={cn(
             // Base styles
-            "flex min-h-[120px] w-full rounded bg-neutral-lightest px-4 py-3",
-            "text-body-small font-medium text-neutral-darkest",
-            "border border-neutral transition-smooth",
-            "placeholder:text-neutral-darkest/40 placeholder:font-normal",
+            "flex min-h-[120px] w-full rounded bg-neutral-100 px-4 py-3",
+            "text-body-small font-medium text-neutral-900",
+            "border border-neutral-300 transition-smooth",
+            "placeholder:text-neutral-900/40 placeholder:font-normal",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-0 focus-visible:border-primary",
             "disabled:cursor-not-allowed disabled:opacity-50",
             "resize-y",
@@ -35,7 +35,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
           {...props}
         />
         {showCount && maxLength && (
-          <div className="absolute left-3 bottom-2 text-caption text-neutral-dark">
+          <div className="absolute left-3 bottom-2 text-caption text-neutral-700">
             {currentLength} / {maxLength}
           </div>
         )}

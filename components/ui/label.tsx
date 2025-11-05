@@ -13,7 +13,7 @@ const Label = React.forwardRef<HTMLLabelElement, LabelProps>(
       <label
         ref={ref}
         className={cn(
-          "text-h3 font-medium text-neutral-darkest",
+          "text-h3 font-medium text-neutral-900",
           "inline-flex items-center gap-1",
           className
         )}
@@ -22,7 +22,7 @@ const Label = React.forwardRef<HTMLLabelElement, LabelProps>(
         {children}
         {required && <span className="text-red-500">*</span>}
         {optional && (
-          <span className="text-caption text-neutral-dark font-normal">
+          <span className="text-caption text-neutral-700 font-normal">
             (אופציונלי)
           </span>
         )}

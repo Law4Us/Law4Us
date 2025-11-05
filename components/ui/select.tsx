@@ -12,9 +12,9 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
       <select
         className={cn(
           // Base styles
-          "flex w-full rounded bg-neutral-lightest px-4 py-3",
-          "text-body-small font-medium text-neutral-darkest",
-          "border border-neutral transition-smooth",
+          "flex w-full rounded bg-neutral-100 px-4 py-3",
+          "text-body-small font-medium text-neutral-900",
+          "border border-neutral-300 transition-smooth",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-0 focus-visible:border-primary",
           "disabled:cursor-not-allowed disabled:opacity-50",
           "cursor-pointer",

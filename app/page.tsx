@@ -188,7 +188,7 @@ export default function Home() {
   return (
     <>
       {/* Hero Section */}
-      <section className="relative bg-[#eef2f3] pt-16 pb-20">
+      <section className="relative pt-16 pb-20">
         <div className="max-w-[1200px] mx-auto px-6 text-center">
           {/* Badge/Tag */}
           <div
@@ -311,7 +311,7 @@ export default function Home() {
       </section>
 
       {/* Video Section */}
-      <section className="bg-[#EEF2F3]" id="video">
+      <section id="video">
         <div className="max-w-[900px] mx-auto px-6">
           {/* Container for video and decorative border */}
           <div className="relative">
@@ -374,7 +374,7 @@ export default function Home() {
       </section>
 
       {/* How It Works - 3 Steps */}
-      <section className="bg-[#EEF2F3] py-20" id="how">
+      <section className="py-20" id="how">
         <div className="max-w-[1200px] mx-auto px-6">
           <div className="text-center mb-12">
             {/* Eyebrow */}
@@ -472,7 +472,7 @@ export default function Home() {
       </section>
 
       {/* Benefits - 4 Cards */}
-      <section className="bg-[#EEF2F3] py-20">
+      <section className="py-20">
         <div className="max-w-[1200px] mx-auto px-6">
           <div className="text-center mb-12">
             {/* Eyebrow */}
@@ -574,7 +574,7 @@ export default function Home() {
       </section>
 
       {/* Claim Types Section */}
-      <section className="bg-[#EEF2F3] py-20" id="claim-types">
+      <section className="py-20" id="claim-types">
         <div className="max-w-[1200px] mx-auto px-6">
           <div className="text-center mb-12">
             {/* Eyebrow */}
@@ -733,7 +733,7 @@ export default function Home() {
       </section>
 
       {/* Testimonials Section */}
-      <section className="bg-[#EEF2F3] py-20" id="testimonials">
+      <section className="py-20" id="testimonials">
         <div className="max-w-[1200px] mx-auto px-6">
           <div className="text-center mb-12">
             {/* Eyebrow */}
@@ -860,7 +860,7 @@ export default function Home() {
       </section>
 
       {/* CTA Section - Ready to Take the Next Step */}
-      <section className="bg-[#EEF2F3] py-20">
+      <section className="py-20">
         <div className="max-w-[1200px] mx-auto px-6">
           <div
             className="rounded-3xl overflow-hidden flex flex-col md:flex-row items-stretch relative"
@@ -988,7 +988,7 @@ export default function Home() {
       </section>
 
       {/* FAQ Section */}
-      <section className="bg-[#EEF2F3] py-20" id="faq">
+      <section className="py-20" id="faq">
         <div className="max-w-[900px] mx-auto px-6">
           <div className="text-center mb-12">
             {/* Eyebrow */}
@@ -1063,7 +1063,7 @@ export default function Home() {
       </section>
 
       {/* About Section */}
-      <section className="bg-[#EEF2F3] py-20">
+      <section className="py-20">
         <div className="max-w-[1100px] mx-auto px-6">
           <div className="flex gap-16 items-start">
             {/* Right side (appears first in RTL) - Sticky Title */}

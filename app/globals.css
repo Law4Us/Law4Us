@@ -11,6 +11,12 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
+  /* Set background for entire page - matches neutral-200 from design tokens */
+  html,
+  body {
+    @apply bg-neutral-200;
+  }
+
   /* RTL-specific adjustments */
   [dir="rtl"] input[type="tel"],
   [dir="rtl"] input[type="number"] {
@@ -40,15 +46,15 @@
   }
 
   ::-webkit-scrollbar-track {
-    @apply bg-neutral-light;
+    @apply bg-neutral-200;
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply bg-neutral rounded-full;
+    @apply bg-neutral-300 rounded-full;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-neutral-dark;
+    @apply bg-neutral-700;
   }
 }
 
@@ -79,5 +85,39 @@
   /* Smooth transitions */
   .transition-smooth {
     @apply transition-all duration-300 ease-in-out;
+  }
+
+  /* Reduced motion support for accessibility */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  /* CSS containment for better performance */
+  .contain-layout {
+    contain: layout;
+  }
+
+  .contain-paint {
+    contain: paint;
+  }
+
+  .contain-strict {
+    contain: layout style paint;
+  }
+
+  /* Will-change optimization for animations */
+  .will-change-transform {
+    will-change: transform;
+  }
+
+  .will-change-opacity {
+    will-change: opacity;
   }
 }

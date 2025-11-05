@@ -36,7 +36,7 @@ const FormField = React.forwardRef<HTMLDivElement, FormFieldProps>(
         )}
         {children}
         {helper && !error && (
-          <p className="text-caption text-neutral-dark">{helper}</p>
+          <p className="text-caption text-neutral-700">{helper}</p>
         )}
         {error && (
           <p className="text-caption text-red-500 font-medium animate-slide-up">
