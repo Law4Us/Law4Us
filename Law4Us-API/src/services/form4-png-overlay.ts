@@ -39,6 +39,28 @@ interface FieldCoordinate {
   align?: 'right' | 'left' | 'center'; // Text alignment (default: right for Hebrew)
 }
 
+const CHILDREN_NEEDS_LAYOUT = {
+  startY: 260,
+  rowSpacing: 55,
+  maxRows: 15,
+  categoryX: 450,
+  descriptionX: 260,
+  amountX: 110,
+  fontSize: 20,
+  totalOffset: 30,
+};
+
+const HOUSEHOLD_NEEDS_LAYOUT = {
+  startY: 260,
+  rowSpacing: 55,
+  maxRows: 15,
+  categoryX: 450,
+  descriptionX: 260,
+  amountX: 110,
+  fontSize: 20,
+  totalOffset: 30,
+};
+
 /**
  * Form 4 field coordinate mappings
  * Measured for 150 DPI PNG templates (1654×2339 pixels per page)
@@ -62,159 +84,142 @@ const FORM4_FIELD_COORDINATES: Record<string, FieldCoordinate> = {
 
   // Header boxes (top of page) - Adjusted to center text inside boxes
   // Right box (plaintiff): x=500-815, center≈657, y=305-365, text baseline≈340
-  'header_plaintiff_name': { x: 657, y: 340, fontSize: 24, align: 'center' },
+  'header_plaintiff_name': { x: 1300, y: 600, fontSize: 40, align: 'center' },
   // Left box (defendant): x=120-370, center≈245, y=305-365, text baseline≈340
-  'header_defendant_name': { x: 245, y: 340, fontSize: 24, align: 'center' },
+  'header_defendant_name': { x: 500, y: 600, fontSize: 40, align: 'center' },
 
   // Section A - Main personal info table (5 columns)
   // Table starts at y≈435, row height≈55px
   // Columns (left to right): Col5 (Relationship), Col4 (Birthdate), Col3 (Address), Col2 (ID), Col1 (Name)
 
   // Row 1: Plaintiff/Applicant (first data row, y≈465-520, text baseline≈492)
-  'table_row1_col1_name': { x: 730, y: 492, fontSize: 20, align: 'center' },        // Rightmost column
-  'table_row1_col2_id': { x: 590, y: 492, fontSize: 20, align: 'center' },
-  'table_row1_col3_address': { x: 390, y: 492, fontSize: 18, align: 'center', maxWidth: 180 },
-  'table_row1_col4_birthdate': { x: 210, y: 492, fontSize: 18, align: 'center' },
-  'table_row1_col5_relationship': { x: 85, y: 492, fontSize: 18, align: 'center' }, // Leftmost column
-
-  // Row 2: Defendant/Respondent (second data row, y≈520-575, text baseline≈547)
-  'table_row2_col1_name': { x: 730, y: 547, fontSize: 20, align: 'center' },
-  'table_row2_col2_id': { x: 590, y: 547, fontSize: 20, align: 'center' },
-  'table_row2_col3_address': { x: 390, y: 547, fontSize: 18, align: 'center', maxWidth: 180 },
-  'table_row2_col4_birthdate': { x: 210, y: 547, fontSize: 18, align: 'center' },
+  'table_row1_col1_name': { x: 1400, y: 870, fontSize: 24, align: 'center' },        // Rightmost column
+  'table_row1_col2_id': { x: 1130, y: 870, fontSize: 24, align: 'center' },
+  'table_row1_col3_address': { x: 900, y: 870, fontSize: 24, align: 'center', maxWidth: 180 },
+  'table_row1_col4_birthdate': { x: 650, y: 870, fontSize: 24, align: 'center' },
+  'table_row1_col5_relationship': { x: 380, y: 870, fontSize: 24, align: 'center' }, // Leftmost column
 
   // Field 6: Previous proceedings (checkboxes y≈630 and y≈672)
   // Checkboxes are at x≈745 (right side)
-  'field6_checkbox_yes': { x: 745, y: 645, fontSize: 28, align: 'center' },
-  'field6_checkbox_no': { x: 745, y: 687, fontSize: 28, align: 'center' },
-  'field6_details': { x: 800, y: 660, fontSize: 20, align: 'right', maxWidth: 600 },
+  'field6_checkbox_yes': { x: 1420, y: 970, fontSize: 28, align: 'center' },
+  'field6_checkbox_no': { x: 1420, y: 1070, fontSize: 28, align: 'center' },
+  'field6_details': { x: 1200, y: 1000, fontSize: 20, align: 'right', maxWidth: 600 },
 
   // Field 7: Last alimony (text baseline≈760)
-  'field7_amount': { x: 500, y: 760, fontSize: 22, align: 'right' },
-  'field7_date': { x: 250, y: 760, fontSize: 22, align: 'right' },
+  'field7_amount': { x: 1200, y: 1180, fontSize: 22, align: 'right' },
+  'field7_date': { x: 600, y: 1180, fontSize: 22, align: 'right' },
 
   // Field 8: Employment table - First data row baseline≈965
   // Table has 3 columns from right to left: התקופה (Period), ברוטו (Amount 1), ברוטו (Amount 2)
   // Each row is about 50px apart
-  'field8_row1_col1': { x: 700, y: 965, fontSize: 20, align: 'center' },  // Period (rightmost)
-  'field8_row1_col2': { x: 500, y: 965, fontSize: 20, align: 'center' },  // Respondent amount
-  'field8_row1_col3': { x: 290, y: 965, fontSize: 20, align: 'center' },  // Applicant amount (leftmost)
+  'field8_row1_col1': { x: 1200, y: 1350, fontSize: 20, align: 'center' },  // Period (rightmost)
+  'field8_row1_col2': { x: 820, y: 1350, fontSize: 20, align: 'center' },  // Respondent amount
+  'field8_row1_col3': { x: 400, y: 1350, fontSize: 20, align: 'center' },  // Applicant amount (leftmost)
 
-  'field8_row2_col1': { x: 715, y: 965, fontSize: 9, align: 'center' },
-  'field8_row2_col2': { x: 505, y: 965, fontSize: 9, align: 'center' },
-  'field8_row2_col3': { x: 295, y: 965, fontSize: 9, align: 'center' },
+  'field8_row2_col1': { x: 1200, y: 1400, fontSize: 9, align: 'center' },
+  'field8_row2_col2': { x: 820, y: 1400, fontSize: 9, align: 'center' },
+  'field8_row2_col3': { x: 400, y: 1400, fontSize: 9, align: 'center' },
 
-  'field8_row3_col1': { x: 715, y: 1015, fontSize: 9, align: 'center' },
-  'field8_row3_col2': { x: 505, y: 1015, fontSize: 9, align: 'center' },
-  'field8_row3_col3': { x: 295, y: 1015, fontSize: 9, align: 'center' },
+  'field8_row3_col1': { x: 1200, y: 1450, fontSize: 9, align: 'center' },
+  'field8_row3_col2': { x: 820, y: 1450, fontSize: 9, align: 'center' },
+  'field8_row3_col3': { x: 400, y: 1450, fontSize: 9, align: 'center' },
 
-  'field8_row4_col1': { x: 715, y: 1065, fontSize: 9, align: 'center' },
-  'field8_row4_col2': { x: 505, y: 1065, fontSize: 9, align: 'center' },
-  'field8_row4_col3': { x: 295, y: 1065, fontSize: 9, align: 'center' },
+  'field8_row4_col1': { x: 1200, y: 1500, fontSize: 9, align: 'center' },
+  'field8_row4_col2': { x: 820, y: 1500, fontSize: 9, align: 'center' },
+  'field8_row4_col3': { x: 400, y: 1500, fontSize: 9, align: 'center' },
 
-  'field8_row5_col1': { x: 715, y: 1115, fontSize: 9, align: 'center' },
-  'field8_row5_col2': { x: 505, y: 1115, fontSize: 9, align: 'center' },
-  'field8_row5_col3': { x: 295, y: 1115, fontSize: 9, align: 'center' },
+  'field8_row5_col1': { x: 1200, y: 1550, fontSize: 9, align: 'center' },
+  'field8_row5_col2': { x: 820, y: 1550, fontSize: 9, align: 'center' },
+  'field8_row5_col3': { x: 400, y: 1550, fontSize: 9, align: 'center' },
 
-  'field8_row6_col1': { x: 715, y: 1165, fontSize: 9, align: 'center' },
-  'field8_row6_col2': { x: 505, y: 1165, fontSize: 9, align: 'center' },
-  'field8_row6_col3': { x: 295, y: 1165, fontSize: 9, align: 'center' },
+  'field8_row6_col1': { x: 1200, y: 1600, fontSize: 9, align: 'center' },
+  'field8_row6_col2': { x: 820, y: 1600, fontSize: 9, align: 'center' },
+  'field8_row6_col3': { x: 400, y: 1600, fontSize: 9, align: 'center' },
 
-  'field8_row7_col1': { x: 715, y: 1215, fontSize: 9, align: 'center' },
-  'field8_row7_col2': { x: 505, y: 1215, fontSize: 9, align: 'center' },
-  'field8_row7_col3': { x: 295, y: 1215, fontSize: 9, align: 'center' },
+  'field8_row7_col1': { x: 1200, y: 1650, fontSize: 9, align: 'center' },
+  'field8_row7_col2': { x: 820, y: 1650, fontSize: 9, align: 'center' },
+  'field8_row7_col3': { x: 400, y: 1650, fontSize: 9, align: 'center' },
 
-  'field8_row8_col1': { x: 715, y: 1265, fontSize: 9, align: 'center' },
-  'field8_row8_col2': { x: 505, y: 1265, fontSize: 9, align: 'center' },
-  'field8_row8_col3': { x: 295, y: 1265, fontSize: 9, align: 'center' },
+  'field8_row8_col1': { x: 1200, y: 1700, fontSize: 9, align: 'center' },
+  'field8_row8_col2': { x: 820, y: 1700, fontSize: 9, align: 'center' },
+  'field8_row8_col3': { x: 400, y: 1700, fontSize: 9, align: 'center' },
 
-  'field8_row9_col1': { x: 715, y: 1315, fontSize: 9, align: 'center' },
-  'field8_row9_col2': { x: 505, y: 1315, fontSize: 9, align: 'center' },
-  'field8_row9_col3': { x: 295, y: 1315, fontSize: 9, align: 'center' },
+  'field8_row9_col1': { x: 1200, y: 1750, fontSize: 9, align: 'center' },
+  'field8_row9_col2': { x: 820, y: 1750, fontSize: 9, align: 'center' },
+  'field8_row9_col3': { x: 400, y: 1750, fontSize: 9, align: 'center' },
 
-  'field8_row10_col1': { x: 715, y: 1365, fontSize: 9, align: 'center' },
-  'field8_row10_col2': { x: 505, y: 1365, fontSize: 9, align: 'center' },
-  'field8_row10_col3': { x: 295, y: 1365, fontSize: 9, align: 'center' },
+  'field8_row10_col1': { x: 1200, y: 1800, fontSize: 9, align: 'center' },
+  'field8_row10_col2': { x: 820, y: 1800, fontSize: 9, align: 'center' },
+  'field8_row10_col3': { x: 400, y: 1800, fontSize: 9, align: 'center' },
 
-  'field8_row11_col1': { x: 715, y: 1415, fontSize: 9, align: 'center' },
-  'field8_row11_col2': { x: 505, y: 1415, fontSize: 9, align: 'center' },
-  'field8_row11_col3': { x: 295, y: 1415, fontSize: 9, align: 'center' },
+  'field8_row11_col1': { x: 1200, y: 1850, fontSize: 9, align: 'center' },
+  'field8_row11_col2': { x: 820, y: 1850, fontSize: 9, align: 'center' },
+  'field8_row11_col3': { x: 400, y: 1850, fontSize: 9, align: 'center' },
 
-  'field8_row12_col1': { x: 715, y: 1465, fontSize: 9, align: 'center' },
-  'field8_row12_col2': { x: 505, y: 1465, fontSize: 9, align: 'center' },
-  'field8_row12_col3': { x: 295, y: 1465, fontSize: 9, align: 'center' },
+  'field8_row12_col1': { x: 1200, y: 1900, fontSize: 9, align: 'center' },
+  'field8_row12_col2': { x: 820, y: 1900, fontSize: 9, align: 'center' },
+  'field8_row12_col3': { x: 400, y: 1900, fontSize: 9, align: 'center' },
 
   //==========================================================================
   // PAGE 2 - Employment continuation, Property, Housing
   //==========================================================================
 
   // Field 8 continuation - Next 12 rows (Page 2 starts around y=100)
-  'field8_row13_col1': { x: 715, y: 135, fontSize: 9, align: 'center' },
-  'field8_row13_col2': { x: 505, y: 135, fontSize: 9, align: 'center' },
-  'field8_row13_col3': { x: 295, y: 135, fontSize: 9, align: 'center' },
+  'field8_row13_col1': { x: 1200, y: 1950, fontSize: 9, align: 'center' },
+  'field8_row13_col2': { x: 820, y: 1950, fontSize: 9, align: 'center' },
+  'field8_row13_col3': { x: 400, y: 1950, fontSize: 9, align: 'center' },
 
   // ... (rows 14-24 follow same pattern, incrementing y by 50)
 
   // Field 10: Property details table (around y=750)
-  'field10_plaintiff_property': { x: 620, y: 770, fontSize: 18, align: 'center', maxWidth: 350 },
-  'field10_respondent_property': { x: 200, y: 770, fontSize: 18, align: 'center', maxWidth: 350 },
+  'field10_plaintiff_property': { x: 1400, y: 1050, fontSize: 18, align: 'center', maxWidth: 350 },
+  'field10_respondent_property': { x: 800, y: 1050, fontSize: 18, align: 'center', maxWidth: 350 },
 
   // Field 11: Debts table (around y=950)
-  'field11_plaintiff_income': { x: 620, y: 975, fontSize: 20, align: 'center' },
-  'field11_plaintiff_payments': { x: 480, y: 975, fontSize: 20, align: 'center' },
-  'field11_plaintiff_debts': { x: 340, y: 975, fontSize: 18, align: 'center' },
+  'field11_plaintiff_income': { x: 1400, y: 1600, fontSize: 20, align: 'center' },
+  'field11_plaintiff_payments': { x: 1000, y: 1600, fontSize: 20, align: 'center' },
+  'field11_plaintiff_debts': { x: 600, y: 1600, fontSize: 18, align: 'center' },
 
-  'field11_respondent_income': { x: 620, y: 1055, fontSize: 20, align: 'center' },
-  'field11_respondent_payments': { x: 480, y: 1055, fontSize: 20, align: 'center' },
-  'field11_respondent_debts': { x: 340, y: 1055, fontSize: 18, align: 'center' },
+  'field11_respondent_income': { x: 1400, y: 1750, fontSize: 20, align: 'center' },
+  'field11_respondent_payments': { x: 1000, y: 1750, fontSize: 20, align: 'center' },
+  'field11_respondent_debts': { x: 600, y: 1750, fontSize: 18, align: 'center' },
 
   // Field 12: Housing details (around y=1230)
-  'field12_plaintiff_address': { x: 600, y: 1255, fontSize: 18, align: 'center' },
-  'field12_plaintiff_rooms': { x: 400, y: 1255, fontSize: 20, align: 'center' },
-  'field12_plaintiff_expense': { x: 200, y: 1255, fontSize: 20, align: 'center' },
+  'field12_plaintiff_address': { x: 1400, y: 1950, fontSize: 18, align: 'center' },
+  'field12_plaintiff_rooms': { x: 1000, y: 1950, fontSize: 20, align: 'center' },
+  'field12_plaintiff_expense': { x: 600, y: 1950, fontSize: 20, align: 'center' },
 
-  'field12_respondent_address': { x: 600, y: 1335, fontSize: 18, align: 'center' },
-  'field12_respondent_rooms': { x: 400, y: 1335, fontSize: 20, align: 'center' },
-  'field12_respondent_expense': { x: 200, y: 1335, fontSize: 20, align: 'center' },
+  'field12_respondent_address': { x: 1400, y: 2090, fontSize: 18, align: 'center' },
+  'field12_respondent_rooms': { x: 1000, y: 2090, fontSize: 20, align: 'center' },
+  'field12_respondent_expense': { x: 600, y: 2090, fontSize: 20, align: 'center' },
 
   //==========================================================================
   // PAGE 3 - Bank Accounts, Vehicle, Requested Amount, Section B
   //==========================================================================
 
   // Field 13: Bank accounts (4 rows starting around y=200)
-  'field13_bank1_serial': { x: 760, y: 230, fontSize: 20, align: 'center' },
-  'field13_bank1_name': { x: 510, y: 230, fontSize: 20, align: 'center' },
-  'field13_bank1_account': { x: 230, y: 230, fontSize: 20, align: 'center' },
+  'field13_bank1_name': { x: 1300, y: 350, fontSize: 20, align: 'center' },
+  'field13_bank1_account': { x: 750, y: 350, fontSize: 20, align: 'center' },
 
-  'field13_bank2_serial': { x: 760, y: 280, fontSize: 20, align: 'center' },
-  'field13_bank2_name': { x: 510, y: 280, fontSize: 20, align: 'center' },
-  'field13_bank2_account': { x: 230, y: 280, fontSize: 20, align: 'center' },
+  'field13_bank2_name': { x: 1300, y: 375, fontSize: 20, align: 'center' },
+  'field13_bank2_account': { x: 750, y: 375, fontSize: 20, align: 'center' },
 
-  'field13_bank3_serial': { x: 760, y: 330, fontSize: 20, align: 'center' },
-  'field13_bank3_name': { x: 510, y: 330, fontSize: 20, align: 'center' },
-  'field13_bank3_account': { x: 230, y: 330, fontSize: 20, align: 'center' },
+  'field13_bank3_name': { x: 1300, y: 425, fontSize: 20, align: 'center' },
+  'field13_bank3_account': { x: 750, y: 425, fontSize: 20, align: 'center' },
 
-  'field13_bank4_serial': { x: 760, y: 380, fontSize: 20, align: 'center' },
-  'field13_bank4_name': { x: 510, y: 380, fontSize: 20, align: 'center' },
-  'field13_bank4_account': { x: 230, y: 380, fontSize: 20, align: 'center' },
+  'field13_bank4_name': { x: 1300, y: 475, fontSize: 20, align: 'center' },
+  'field13_bank4_account': { x: 750, y: 475, fontSize: 20, align: 'center' },
 
   // Field 14: Vehicle (around y=470)
-  'field14_checkbox_yes': { x: 700, y: 475, fontSize: 28, align: 'center' },
-  'field14_checkbox_no': { x: 650, y: 475, fontSize: 28, align: 'center' },
-  'field14_details': { x: 400, y: 475, fontSize: 20, align: 'right', maxWidth: 500 },
+  'field14_details': { x: 600, y: 550, fontSize: 20, align: 'right', maxWidth: 500 },
 
   // Field 15: Requested amount (around y=510)
-  'field15_amount': { x: 400, y: 515, fontSize: 24, align: 'right' },
 
   // Section B: Spouse alimony (starting around y=650)
-  'sectionB_marriage_date': { x: 400, y: 750, fontSize: 22, align: 'right' },
-  'sectionB_plaintiff_residence': { x: 400, y: 820, fontSize: 20, align: 'right' },
-  'sectionB_marital_status_checkbox': { x: 700, y: 920, fontSize: 28, align: 'center' },
-  'sectionB_separation_reason': { x: 400, y: 970, fontSize: 20, align: 'right', maxWidth: 600 },
+  'sectionB_marriage_date': { x: 1400, y: 880, fontSize: 22, align: 'right' },
+  'sectionB_plaintiff_residence': { x: 1100, y: 1000, fontSize: 20, align: 'right' },
 
   // More Section B fields...
-  'sectionB_plaintiff_religion': { x: 620, y: 1150, fontSize: 20, align: 'center' },
-  'sectionB_respondent_religion': { x: 200, y: 1150, fontSize: 20, align: 'center' },
 };
 
 /**
@@ -286,9 +291,10 @@ async function addTextOverlayToPng(
   ctx.drawImage(image, 0, 0);
 
   // Configure canvas for Hebrew text
-  ctx.textBaseline = 'top';
+  ctx.textBaseline = 'middle';
   ctx.fillStyle = '#000000'; // Black text
   ctx.direction = 'rtl'; // Right-to-left for Hebrew
+  const lineHeightMultiplier = 1.2;
 
   // Add text overlays
   textElements.forEach((element, index) => {
@@ -299,9 +305,16 @@ async function addTextOverlayToPng(
     if (element.maxWidth) {
       // Wrap text if maxWidth specified
       const lines = wrapText(ctx, element.text, element.maxWidth);
-      lines.forEach((line, lineIndex) => {
-        ctx.fillText(line, element.x, element.y + (lineIndex * element.fontSize * 1.2));
-      });
+      if (lines.length > 0) {
+        const lineHeight = element.fontSize * lineHeightMultiplier;
+        const totalHeight = lines.length * lineHeight;
+        const startY = element.y - (totalHeight - lineHeight) / 2;
+
+        lines.forEach((line, lineIndex) => {
+          const lineY = startY + lineIndex * lineHeight;
+          ctx.fillText(line, element.x, lineY);
+        });
+      }
     } else {
       // Draw text at position
       ctx.fillText(element.text, element.x, element.y);
@@ -318,7 +331,12 @@ async function addTextOverlayToPng(
  * Wrap text to fit within maxWidth
  */
 function wrapText(ctx: any, text: string, maxWidth: number): string[] {
-  const words = text.split(' ');
+  const sanitized = (text || '').toString().trim();
+  if (!sanitized) {
+    return [];
+  }
+
+  const words = sanitized.split(/\s+/);
   const lines: string[] = [];
   let currentLine = '';
 
@@ -476,7 +494,104 @@ function mapDataToTextOverlays(data: Form4Data, pageIndex: number): TextElement[
   //============================================================================
   // PAGES 4-6 - Expense tables
   //============================================================================
-  // TODO: Add expense table mappings when coordinates are calibrated
+  else if (pageIndex === 3) {
+    const layout = CHILDREN_NEEDS_LAYOUT;
+    const needs = data.childrenNeeds || [];
+    const rows = Math.min(needs.length, layout.maxRows);
+    for (let i = 0; i < rows; i++) {
+      const need = needs[i];
+      const rowY = layout.startY + i * layout.rowSpacing;
+      overlays.push({
+        text: need.category,
+        x: layout.categoryX,
+        y: rowY,
+        fontSize: layout.fontSize,
+        align: 'center',
+      });
+      overlays.push({
+        text: (need.description || '').substring(0, 40),
+        x: layout.descriptionX,
+        y: rowY,
+        fontSize: layout.fontSize - 2,
+        align: 'center',
+      });
+      overlays.push({
+        text: `₪${need.monthlyAmount.toLocaleString('he-IL')}`,
+        x: layout.amountX,
+        y: rowY,
+        fontSize: layout.fontSize,
+        align: 'center',
+      });
+    }
+
+    if (needs.length > 0) {
+      const total = needs.reduce((sum, item) => sum + item.monthlyAmount, 0);
+      const totalY = layout.startY + rows * layout.rowSpacing + layout.totalOffset;
+      overlays.push({
+        text: 'סה"כ',
+        x: layout.categoryX,
+        y: totalY,
+        fontSize: layout.fontSize,
+        align: 'center',
+      });
+      overlays.push({
+        text: `₪${total.toLocaleString('he-IL')}`,
+        x: layout.amountX,
+        y: totalY,
+        fontSize: layout.fontSize,
+        align: 'center',
+      });
+    }
+  }
+  else if (pageIndex === 4) {
+    const layout = HOUSEHOLD_NEEDS_LAYOUT;
+    const needs = data.householdNeeds || [];
+    const rows = Math.min(needs.length, layout.maxRows);
+    for (let i = 0; i < rows; i++) {
+      const need = needs[i];
+      const rowY = layout.startY + i * layout.rowSpacing;
+      overlays.push({
+        text: need.category,
+        x: layout.categoryX,
+        y: rowY,
+        fontSize: layout.fontSize,
+        align: 'center',
+      });
+      overlays.push({
+        text: (need.description || '').substring(0, 40),
+        x: layout.descriptionX,
+        y: rowY,
+        fontSize: layout.fontSize - 2,
+        align: 'center',
+      });
+      overlays.push({
+        text: `₪${need.monthlyAmount.toLocaleString('he-IL')}`,
+        x: layout.amountX,
+        y: rowY,
+        fontSize: layout.fontSize,
+        align: 'center',
+      });
+    }
+
+    if (needs.length > 0) {
+      const total = needs.reduce((sum, item) => sum + item.monthlyAmount, 0);
+      const totalY = layout.startY + rows * layout.rowSpacing + layout.totalOffset;
+      overlays.push({
+        text: 'סה"כ',
+        x: layout.categoryX,
+        y: totalY,
+        fontSize: layout.fontSize,
+        align: 'center',
+      });
+      overlays.push({
+        text: `₪${total.toLocaleString('he-IL')}`,
+        x: layout.amountX,
+        y: totalY,
+        fontSize: layout.fontSize,
+        align: 'center',
+      });
+    }
+  }
 
   return overlays;
 }

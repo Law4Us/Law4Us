@@ -135,6 +135,36 @@ export async function listFiles(folderId?: string) {
 }
 
 /**
+ * Search for folders by name pattern
+ */
+export async function searchFolders(namePattern: string, parentFolderId?: string): Promise<Array<{id: string, name: string}>> {
+  const drive = getDriveClient();
+
+  const parentId = parentFolderId || getSharedDriveId();
+
+  // Search for folders with name containing pattern
+  const query = parentId
+    ? `name contains '${namePattern}' and '${parentId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`
+    : `name contains '${namePattern}' and mimeType='application/vnd.google-apps.folder' and trashed=false`;
+
+  console.log(`🔍 Searching for folders with pattern: "${namePattern}" in parent: ${parentId}`);
+
+  const response = await drive.files.list({
+    q: query,
+    fields: 'files(id, name)',
+    orderBy: 'createdTime desc',
+    pageSize: 10,
+    supportsAllDrives: true,
+    includeItemsFromAllDrives: true,
+  });
+
+  const folders = (response.data.files || []).map(f => ({ id: f.id!, name: f.name! }));
+  console.log(`   Found ${folders.length} matching folders`);
+
+  return folders;
+}
+
+/**
  * Get file metadata
  */
 export async function getFileMetadata(fileId: string) {

@@ -514,7 +514,7 @@ export function mapFormDataToForm4Data(
     'never-married';
 
   // Filter children under 18 (קטינים)
-  const children = (property.children || [])
+  const children = (formData.children || [])
     .filter((child: any) => {
       if (!child.birthDate) return false;
       const birthDate = new Date(child.birthDate);
@@ -606,7 +606,7 @@ export function mapFormDataToForm4Data(
     requestedAmount: alimony.requestedAmount || 0,
 
     // Spouse-specific
-    marriageDate: property.marriageDate,
+    marriageDate: basicInfo.weddingDay,
     separationDate: property.separationDate,
     applicantCitizenship: basicInfo.citizenship,
     respondentCitizenship: basicInfo.citizenship2,

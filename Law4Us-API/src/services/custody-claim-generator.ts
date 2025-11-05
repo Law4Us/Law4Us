@@ -1,6 +1,6 @@
 /**
  * Custody Claim Document Generator (תביעת משמורת)
- * Generates structured custody claim documents without LLM
+ * Generates structured custody claim documents with AI-enhanced text transformation
  * WITH PROPER FORMATTING AND RTL SUPPORT
  */
 
@@ -11,37 +11,39 @@ import {
   TextRun,
   AlignmentType,
   UnderlineType,
-  HeadingLevel,
   PageBreak,
   PageNumber,
   NumberFormat,
-  Header,
   Footer,
-  ImageRun,
   convertInchesToTwip,
 } from 'docx';
 import { BasicInfo, FormData } from '../types';
 import { transformToLegalLanguage, TransformContext } from './groq-service';
-
-// Font sizes (in half-points)
-const FONT_SIZES = {
-  MAIN_TITLE: 40, // 20pt - for כתב תביעה
-  SECTION: 32, // 16pt - for ב. עיקר הטענות, סעדים, etc.
-  TITLE: 32, // 16pt - for court name
-  SUBSECTION: 28, // 14pt - for תיאור בעלי הדין, etc.
-  HEADING_2: 26, // 13pt - for numbered items
-  BODY: 24, // 12pt
-  SMALL: 22, // 11pt
-};
-
-// Spacing (in twips: 1/20 of a point)
-const SPACING = {
-  SECTION: 600, // Large gap between sections
-  SUBSECTION: 400, // Medium gap between subsections
-  PARAGRAPH: 240, // Standard paragraph spacing
-  LINE: 120, // Small gap between lines
-  MINIMAL: 60, // Minimal spacing
-};
+import {
+  FONT_SIZES,
+  SPACING,
+  formatCurrency,
+  formatDate,
+  formatChildNaturally,
+  getHebrewLabel,
+  isMinor,
+  createSectionHeader,
+  createSubsectionHeader,
+  createNumberedHeader,
+  createBodyParagraph,
+  createBulletPoint,
+  createNumberedItem,
+  createCenteredTitle,
+  createMainTitle,
+  createInfoLine,
+  createPageBreak,
+  createSignatureImage,
+  createCourtHeader,
+  createRelationshipSection,
+  generatePowerOfAttorney,
+  generateAffidavit,
+  generateAttachmentsSection,
+} from './shared-document-generators';
 
 interface CustodyClaimData {
   basicInfo: BasicInfo;
@@ -52,6 +54,7 @@ interface CustodyClaimData {
 
 /**
  * Get gendered term for plaintiff (person 1)
+ * CUSTODY-SPECIFIC: Uses "מבקש/ת" instead of "תובע/ת"
  */
 function getPlaintiffTerm(gender?: 'male' | 'female', name?: string): {
   title: string;
@@ -60,13 +63,14 @@ function getPlaintiffTerm(gender?: 'male' | 'female', name?: string): {
   name: string;
 } {
   if (gender === 'male') {
-    return { title: 'התובע', pronoun: 'הוא', possessive: 'שלו', name: name || 'התובע' };
+    return { title: 'המבקש', pronoun: 'הוא', possessive: 'שלו', name: name || 'המבקש' };
   }
-  return { title: 'התובעת', pronoun: 'היא', possessive: 'שלה', name: name || 'התובעת' };
+  return { title: 'המבקשת', pronoun: 'היא', possessive: 'שלה', name: name || 'המבקשת' };
 }
 
 /**
  * Get gendered term for defendant (person 2)
+ * CUSTODY-SPECIFIC: Uses "משיב/ה" instead of "נתבע/ת"
  */
 function getDefendantTerm(gender?: 'male' | 'female', name?: string): {
   title: string;
@@ -75,273 +79,29 @@ function getDefendantTerm(gender?: 'male' | 'female', name?: string): {
   name: string;
 } {
   if (gender === 'male') {
-    return { title: 'הנתבע', pronoun: 'הוא', possessive: 'שלו', name: name || 'הנתבע' };
+    return { title: 'המשיב', pronoun: 'הוא', possessive: 'שלו', name: name || 'המשיב' };
   }
-  return { title: 'הנתבעת', pronoun: 'היא', possessive: 'שלה', name: name || 'הנתבעת' };
+  return { title: 'המשיבה', pronoun: 'היא', possessive: 'שלה', name: name || 'המשיבה' };
 }
 
 /**
- * Create section header (16pt, bold, underlined) - EXACT copy from property-claim-generator.ts
+ * Local wrapper for court header with children list for custody claims
  */
-function createSectionHeader(text: string): Paragraph {
-  return new Paragraph({
-    children: [
-      new TextRun({
-        text,
-        bold: true,
-        size: FONT_SIZES.SECTION, // 16pt
-        underline: { type: UnderlineType.SINGLE },
-        font: 'David',
-        
-      }),
-    ],
-    alignment: AlignmentType.START, // START = right in RTL
-    spacing: { before: SPACING.SECTION, after: SPACING.SUBSECTION },
-    bidirectional: true,
-    
-  });
-}
+function localCreateCourtHeader(data: CustodyClaimData): Paragraph[] {
+  const custodyData = data.formData.custody || {};
+  const propertyData = data.formData.property || data.formData;
+  const children = data.formData.children || [];
+  const minorChildren = children.filter((child: any) => isMinor(child.birthDate || ''));
 
-/**
- * Create subsection header (14pt, bold, underlined) - EXACT copy from property-claim-generator.ts
- */
-function createSubsectionHeader(text: string): Paragraph {
-  return new Paragraph({
-    children: [
-      new TextRun({
-        text,
-        bold: true,
-        size: FONT_SIZES.SUBSECTION, // 14pt
-        underline: { type: UnderlineType.SINGLE },
-        font: 'David',
-        
-      }),
-    ],
-    alignment: AlignmentType.START,
-    spacing: { before: SPACING.SUBSECTION, after: SPACING.PARAGRAPH },
-    bidirectional: true,
-    
-  });
-}
-
-/**
- * Create numbered header (bold, larger, underlined) - EXACT copy from property-claim-generator.ts
- */
-function createNumberedHeader(text: string): Paragraph {
-  return new Paragraph({
-    children: [
-      new TextRun({
-        text,
-        bold: true,
-        size: FONT_SIZES.HEADING_2, // Larger font for section-like appearance
-        underline: { type: UnderlineType.SINGLE }, // Added underline
-        font: 'David',
-        
-      }),
-    ],
-    alignment: AlignmentType.START,
-    spacing: { before: SPACING.SUBSECTION, after: SPACING.PARAGRAPH },
-    bidirectional: true,
-    
-  });
-}
-
-/**
- * Create body paragraph (12pt)
- */
-function createBodyParagraph(
-  text: string,
-  spacing: { before?: number; after?: number } = {}
-): Paragraph {
-  return new Paragraph({
-    children: [
-      new TextRun({
-        text,
-        size: FONT_SIZES.BODY, // 12pt
-        font: 'David',
-        
-      }),
-    ],
-    alignment: AlignmentType.START,
-    spacing: {
-      before: spacing.before || 0,
-      after: spacing.after || SPACING.LINE,
-      line: 360, // 1.5 line spacing (same as property claim)
-    },
-    bidirectional: true,
-    
-  });
-}
-
-/**
- * Create numbered item (EXACT copy from property-claim-generator.ts)
- */
-function createNumberedItem(number: number, text: string): Paragraph {
-  return new Paragraph({
-    children: [
-      new TextRun({
-        text: `${number}. ${text}`,
-        size: FONT_SIZES.BODY,
-        font: 'David',
-        
-      }),
-    ],
-    alignment: AlignmentType.START,
-    spacing: { after: SPACING.MINIMAL },
-    indent: {
-      right: convertInchesToTwip(0.25), // RIGHT indent for RTL!
-    },
-    bidirectional: true,
-    
-  });
-}
-
-/**
- * Create bullet point (EXACT copy from property-claim-generator.ts)
- */
-function createBulletPoint(text: string): Paragraph {
-  return new Paragraph({
-    children: [
-      new TextRun({
-        text: `• ${text}`,
-        size: FONT_SIZES.BODY,
-        font: 'David',
-        
-      }),
-    ],
-    alignment: AlignmentType.START,
-    spacing: { after: SPACING.MINIMAL },
-    indent: {
-      right: convertInchesToTwip(0.25), // RIGHT indent for RTL!
-    },
-    bidirectional: true,
-    
-  });
-}
-
-/**
- * Create centered title
- */
-function createCenteredTitle(text: string, size: number): Paragraph {
-  return new Paragraph({
-    children: [
-      new TextRun({
-        text,
-        bold: true,
-        size,
-        font: 'David',
-        
-      }),
-    ],
-    alignment: AlignmentType.CENTER,
-    spacing: { after: SPACING.LINE },
-    bidirectional: true,
-    
-  });
-}
-
-/**
- * Create main title (כתב תביעה)
- */
-function createMainTitle(text: string): Paragraph {
-  return new Paragraph({
-    children: [
-      new TextRun({
-        text,
-        bold: true,
-        size: FONT_SIZES.MAIN_TITLE,
-        font: 'David',
-        
-      }),
-    ],
-    alignment: AlignmentType.CENTER,
-    spacing: { before: SPACING.SUBSECTION, after: SPACING.SUBSECTION },
-    bidirectional: true,
-    
-  });
-}
-
-/**
- * Create info line (label + value)
- * RLM (U+200F) after punctuation keeps it with Hebrew text
- */
-function createInfoLine(label: string, value: string): Paragraph {
-  return new Paragraph({
-    children: [
-      new TextRun({
-        text: `${label}:\u200F `, // RLM after colon
-        bold: true,
-        size: FONT_SIZES.BODY,
-        font: 'David',
-        
-      }),
-      new TextRun({
-        text: value,
-        size: FONT_SIZES.BODY,
-        font: 'David',
-        
-      }),
-    ],
-    alignment: AlignmentType.START,
-    spacing: { after: SPACING.MINIMAL },
-    bidirectional: true,
-    
-  });
-}
-
-/**
- * Create a page break paragraph
- */
-function createPageBreak(): Paragraph {
-  return new Paragraph({
-    children: [new PageBreak()],
-  });
-}
-
-/**
- * Create signature image paragraph from base64 data or Buffer
- */
-function createSignatureImage(imageData: string | Buffer, width: number = 200, height: number = 100): Paragraph {
-  let buffer: Buffer;
-
-  // Handle Buffer or base64 string
-  if (Buffer.isBuffer(imageData)) {
-    buffer = imageData;
-  } else {
-    // Handle both raw base64 and data URL formats
-    let base64Clean = imageData;
-
-    // Remove data:image prefix if present
-    if (imageData.startsWith('data:')) {
-      const matches = imageData.match(/^data:image\/\w+;base64,(.+)$/);
-      if (matches && matches[1]) {
-        base64Clean = matches[1];
-      }
-    }
-
-    // Create buffer from base64
-    buffer = Buffer.from(base64Clean, 'base64');
-  }
-
-  console.log(`📷 Creating signature image: ${buffer.length} bytes`);
-
-  // Convert to Uint8Array which docx library handles better
-  const uint8Array = new Uint8Array(buffer);
-
-  return new Paragraph({
-    children: [
-      new ImageRun({
-        data: uint8Array,
-        transformation: {
-          width,
-          height,
-        },
-      } as any), // Type assertion for docx 9.x compatibility
-    ],
-    alignment: AlignmentType.START,
-    spacing: { before: SPACING.PARAGRAPH, after: SPACING.MINIMAL },
-    bidirectional: true,
-    
+  return createCourtHeader({
+    city: 'בתל אביב',
+    judgeName: 'שמעון כהן',
+    basicInfo: data.basicInfo,
+    children: minorChildren.map((c: any) => ({
+      name: c.name || `${c.firstName || ''} ${c.lastName || ''}`.trim() || 'קטין',
+      idNumber: c.idNumber || '',
+    })),
+    showChildrenList: true, // Custody claims show children list
   });
 }
 
@@ -371,19 +131,8 @@ export async function generateCustodyClaim(data: CustodyClaimData): Promise<Buff
   // Extract custody data
   const custodyData = formData.custody || {};
   const propertyData = formData.property || formData;
-  // Children can be either in custody.children or property.children (backwards compatibility)
-  const children = custodyData.children || propertyData.children || [];
-
-  // Format children list for header - bullet points with ID
-  const formatChildForHeader = (child: any) => {
-    const name = child.name || `${child.firstName || ''} ${child.lastName || ''}`.trim() || 'קטין';
-    const id = child.idNumber || '';
-    return id ? `${name} ת״ז: ${id}` : name;
-  };
-
-  const childrenListForHeader = children.length > 0
-    ? children.map(formatChildForHeader)
-    : ['הקטינים'];
+  // Children are now in global formData.children (shared across all claims)
+  const children = formData.children || [];
 
   // Create document
   const doc = new Document({
@@ -412,7 +161,7 @@ export async function generateCustodyClaim(data: CustodyClaimData): Promise<Buff
                     text: 'עמוד ',
                     font: 'David',
                     size: FONT_SIZES.SMALL,
-                    
+                    rightToLeft: true,
                   }),
                   new TextRun({
                     children: [PageNumber.CURRENT],
@@ -422,53 +171,20 @@ export async function generateCustodyClaim(data: CustodyClaimData): Promise<Buff
                 ],
                 alignment: AlignmentType.CENTER,
                 bidirectional: true,
-                
               }),
             ],
           }),
         },
         children: [
-          // ===== HEADER (now in children, not header section) =====
-          createBodyParagraph('תאריך חתימת המסמך:\u200F'),
-
-          // ===== COURT INFO =====
-          createCenteredTitle('בבית המשפט לענייני משפחה', FONT_SIZES.TITLE),
-          createCenteredTitle('תל"מ', FONT_SIZES.BODY),
-          createCenteredTitle('בתל אביב', FONT_SIZES.BODY),
-
-          // ===== IN THE MATTER OF =====
-          createBodyParagraph('בעניין הקטינים:\u200F'),
-          ...(childrenListForHeader.map(childText => createBulletPoint(childText))),
-          new Paragraph({
-            children: [new TextRun({ text: '', size: FONT_SIZES.BODY })],
-            spacing: { after: SPACING.PARAGRAPH },
-          }),
-
-          // ===== PLAINTIFF =====
-          createNumberedHeader(`${plaintiff.title}:\u200F`),
-          createInfoLine('שם', basicInfo.fullName),
-          createInfoLine('מספר זהות', basicInfo.idNumber),
-          createInfoLine('כתובת', basicInfo.address),
-          createBodyParagraph('באמצעות ב"כ עוה"ד אריאל דרור (מ"ר 31892)'),
-          createBodyParagraph("מרח' אבא שאול 15, רמת גן"),
-          createBodyParagraph('טל: 03-6951408   פקס: 03-6951683'),
-
-          // ===== AGAINST =====
-          createCenteredTitle('נגד', FONT_SIZES.HEADING_2),
-
-          // ===== DEFENDANT =====
-          createNumberedHeader(`${defendant.title}:\u200F`),
-          createInfoLine('שם', basicInfo.fullName2),
-          createInfoLine('מספר זהות', basicInfo.idNumber2),
-          createInfoLine('טלפון', basicInfo.phone2),
-          createInfoLine('דואר אלקטרוני', basicInfo.email2),
+          // ===== HEADER (court header with party info and children list) =====
+          ...localCreateCourtHeader(data),
 
           // ===== TITLE =====
           createMainTitle('תביעת משמורת'),
 
           // ===== INTRODUCTION =====
           createBodyParagraph(
-            `${plaintiff.title} מתכבד${plaintiff.title === 'התובעת' ? 'ת' : ''} להגיש לכבוד בית המשפט את כתב התביעה בעניין משמורת הקטינים.`
+            `${plaintiff.title} מתכבד${plaintiff.title === 'המבקשת' ? 'ת' : ''} להגיש לכבוד בית המשפט את כתב התביעה בעניין משמורת הקטינים.`
           ),
 
           // ===== COURT FEE =====
@@ -480,19 +196,18 @@ export async function generateCustodyClaim(data: CustodyClaimData): Promise<Buff
                 underline: { type: UnderlineType.SINGLE },
                 size: FONT_SIZES.BODY,
                 font: 'David',
-                
+                rightToLeft: true,
               }),
               new TextRun({
                 text: '388₪ לפי סעיף 6ב לתוספת הראשונה לתקנות בית המשפט לענייני משפחה (אגרות), תשנ"ו-1995.',
                 size: FONT_SIZES.BODY,
                 font: 'David',
-                
+                rightToLeft: true,
               }),
             ],
             alignment: AlignmentType.START,
             spacing: { after: SPACING.PARAGRAPH, line: 360 },
             bidirectional: true,
-            
           }),
 
           // ===== ADDITIONAL PROCEEDINGS =====
@@ -504,19 +219,18 @@ export async function generateCustodyClaim(data: CustodyClaimData): Promise<Buff
                 underline: { type: UnderlineType.SINGLE },
                 size: FONT_SIZES.BODY,
                 font: 'David',
-                
+                rightToLeft: true,
               }),
             ],
             alignment: AlignmentType.START,
             spacing: { after: SPACING.PARAGRAPH, line: 360 },
             bidirectional: true,
-            
           }),
 
           // ===== SUMMONS (MAJOR SECTION) =====
           createSectionHeader('הזמנה לדין:\u200F'),
           createBodyParagraph(
-            `הואיל ו${plaintiff.title} הגיש${plaintiff.title === 'התובעת' ? 'ה' : ''} כתב תביעה זה נגדך, אתה מוזמן להגיש כתב הגנה בתוך שלושים ימים מיום שהומצאה לך הזמנה זו, לפי תקנה 13(א) לתקנות בית משפט לענייני משפחה (סדרי דין), התשפ"א-2020.`
+            `הואיל ו${plaintiff.title} הגיש${plaintiff.title === 'המבקשת' ? 'ה' : ''} כתב תביעה זה נגדך, אתה מוזמן להגיש כתב הגנה בתוך שלושים ימים מיום שהומצאה לך הזמנה זו, לפי תקנה 13(א) לתקנות בית משפט לענייני משפחה (סדרי דין), התשפ"א-2020.`
           ),
           createBodyParagraph(
             `לתשומת לבך, אם לא תגיש כתב הגנה אזי לפי תקנה 130 לתקנות סדר הדין האזרחי, התשע"ט-2018, תהיה ל${plaintiff.title} הזכות לקבל פסק דין שלא בפניך.`,
@@ -545,6 +259,11 @@ export async function generateCustodyClaim(data: CustodyClaimData): Promise<Buff
           createNumberedItem(2, 'לקבוע הסדרי ראיה, וחלוקת זמנים בפועל, לפי טובת הילדים.'),
           createNumberedItem(3, 'ליתן סעדים זמנים, ככל שבית המשפט יחשוב שזה עולה בקנה אחד עם טובת הילדים.'),
 
+          // ===== LAWYER SIGNATURE AT END OF MAIN CLAIM (LEFT-aligned) =====
+          ...(lawyerSignature
+            ? [createSignatureImage(lawyerSignature, 300, 150, AlignmentType.LEFT)]
+            : []),
+
           // ===== PAGE BREAK =====
           createPageBreak(),
 
@@ -555,22 +274,13 @@ export async function generateCustodyClaim(data: CustodyClaimData): Promise<Buff
           createPageBreak(),
 
           // ===== ייפוי כוח (POWER OF ATTORNEY) =====
-          ...generatePowerOfAttorney(basicInfo, formData, signature, lawyerSignature),
+          ...generatePowerOfAttorney(basicInfo, formData, signature, lawyerSignature, 'משמורת'),
 
           // ===== PAGE BREAK =====
           createPageBreak(),
 
           // ===== תצהיר (AFFIDAVIT) =====
           ...generateAffidavit(basicInfo, formData, lawyerSignature),
-
-          // ===== PAGE BREAK =====
-          createPageBreak(),
-
-          // ===== TABLE OF CONTENTS =====
-          createSectionHeader('תוכן עניינים'),
-          createBodyParagraph('1. הרצאת פרטים (טופס 3)'),
-          createBodyParagraph('2. ייפוי כוח'),
-          createBodyParagraph('3. תצהיר'),
         ],
       },
     ],
@@ -580,30 +290,11 @@ export async function generateCustodyClaim(data: CustodyClaimData): Promise<Buff
 }
 
 /**
- * Format child bullet for parties description (EXACT copy from property-claim-generator.ts)
+ * Format child bullet for parties description
  */
 function formatChildBullet(child: any): string {
   const address = child.address || child.street || 'לא צוין';
   return `שם:\u200F ${child.firstName} ${child.lastName} ת״ז:\u200F ${child.idNumber} ת״ל:\u200F ${child.birthDate} כתובת:\u200F ${address}`;
-}
-
-/**
- * Check if a child is a minor (under 18 years old)
- */
-function isMinor(birthDate: string): boolean {
-  if (!birthDate) return true; // If no birthdate, assume minor for custody cases
-
-  const birth = new Date(birthDate);
-  const today = new Date();
-  const age = today.getFullYear() - birth.getFullYear();
-  const monthDiff = today.getMonth() - birth.getMonth();
-
-  // Adjust age if birthday hasn't occurred this year
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-    return (age - 1) < 18;
-  }
-
-  return age < 18;
 }
 
 /**
@@ -620,14 +311,14 @@ function createPartiesDescription(
   // Get children data
   const custodyData = formData.custody || {};
   const propertyData = formData.property || formData;
-  const children = custodyData.children || propertyData.children || [];
+  const children = formData.children || [];
 
   // Filter only minors (קטינים)
   const minors = children.filter((child: any) => isMinor(child.birthDate));
 
   const wereMarried = basicInfo.relationshipType === 'married';
-  const marriageDate = formData?.property?.marriageDate
-    ? new Date(formData.property.marriageDate).toLocaleDateString('he-IL')
+  const marriageDate = basicInfo.weddingDay
+    ? new Date(basicInfo.weddingDay).toLocaleDateString('he-IL')
     : 'לא צוין';
 
   const marriageStatus = wereMarried ? `נישאו ביום ${marriageDate}` : 'לא נישאו';
@@ -666,72 +357,70 @@ async function createFactsSection(
 ): Promise<Paragraph[]> {
   const paragraphs: Paragraph[] = [];
 
-  // Marriage/relationship date
-  const wereMarried = basicInfo.relationshipType === 'married';
-  const marriageDate = formData?.property?.marriageDate
-    ? new Date(formData.property.marriageDate).toLocaleDateString('he-IL')
-    : 'לא צוין';
+  // Relationship description (מערכת היחסים) - standardized format
+  // Already includes all children information, so no separate children section needed
+  const minorChildren = children.filter((child: any) => isMinor(child.birthDate || ''));
+  paragraphs.push(createSubsectionHeader('מערכת היחסים'));
+  paragraphs.push(createRelationshipSection(basicInfo, formData, minorChildren));
 
-  paragraphs.push(
-    createSubsectionHeader('תאריך נישואין'),
-    createBodyParagraph(
-      wereMarried
-        ? `הצדדים נישאו ביום ${marriageDate}.`
-        : `הצדדים חיו בידועים.`
-    )
-  );
-
-  // Children section
-  paragraphs.push(createSubsectionHeader('ילדים'));
-
-  if (children.length > 0) {
-    // Use for...of instead of forEach to support async/await
-    for (let index = 0; index < children.length; index++) {
-      const child = children[index];
-      const birthDate = child.birthDate
-        ? new Date(child.birthDate).toLocaleDateString('he-IL')
-        : 'לא צוין';
-
-      const childName = child.name || `${child.firstName || ''} ${child.lastName || ''}`.trim() || 'לא צוין';
-      const childAddress = child.address || 'לא צוין';
-
-      // Bullet point with child details (matching template format)
-      paragraphs.push(
-        createBulletPoint(
-          `שם: ${childName} ת״ז: ${child.idNumber || 'לא צוין'} ת״ל: ${birthDate} כתובת: ${childAddress}`
-        )
-      );
-
-      // Name of other parent
-      const otherParentName = plaintiff.name === basicInfo.fullName ? basicInfo.fullName2 : basicInfo.fullName;
-      paragraphs.push(
-        createBodyParagraph(`שם ההורה השני: ${otherParentName}`, { before: SPACING.MINIMAL, after: SPACING.MINIMAL })
-      );
-
-      // Transform relationship description with Groq AI
-      const relationshipText = child.relationshipDescription || child.childRelationship;
-      if (relationshipText) {
-        console.log(`🤖 Transforming child relationship description with Groq AI...`);
-        try {
-          const transformedText = await transformToLegalLanguage(
-            relationshipText,
-            {
-              claimType: 'תביעת משמורת',
-              applicantName: plaintiff.name,
-              respondentName: defendant.name,
-              fieldLabel: `מערכת יחסים עם ${childName}`,
-            }
-          );
-          paragraphs.push(createBodyParagraph(transformedText, { after: SPACING.PARAGRAPH }));
-        } catch (error) {
-          console.error('❌ Error transforming child relationship:', error);
-          // Fallback to original text if AI fails
-          paragraphs.push(createBodyParagraph(relationshipText, { after: SPACING.PARAGRAPH }));
+  // Add general relationship description if provided (from alimony.relationshipDescription)
+  if (formData.alimony?.relationshipDescription) {
+    console.log(`🤖 Transforming relationship description with Groq AI...`);
+    try {
+      const transformedRelationship = await transformToLegalLanguage(
+        formData.alimony.relationshipDescription,
+        {
+          claimType: 'תביעת משמורת',
+          applicantName: plaintiff.name,
+          respondentName: defendant.name,
+          fieldLabel: 'תיאור מערכת היחסים',
         }
+      );
+      paragraphs.push(createBodyParagraph(transformedRelationship));
+    } catch (error) {
+      console.error('❌ Error transforming relationship description:', error);
+      // Fallback to original text if transformation fails
+      paragraphs.push(createBodyParagraph(formData.alimony.relationshipDescription));
+    }
+  }
+
+  // Add per-child relationship paragraphs with Groq AI transformation
+  console.log(`\n📝 Processing individual child relationships...`);
+  for (const child of minorChildren) {
+    if (child.childRelationship && child.childRelationship.trim().length > 0) {
+      const childName = `${child.firstName || ''} ${child.lastName || ''}`.trim() || 'הקטין/ה';
+      console.log(`  🤖 Transforming relationship with ${childName}...`);
+
+      try {
+        const transformedChildRelationship = await transformToLegalLanguage(
+          child.childRelationship,
+          {
+            claimType: 'תביעת משמורת',
+            applicantName: plaintiff.name,
+            respondentName: defendant.name,
+            fieldLabel: `מערכת היחסים עם ${childName}`,
+            additionalContext: `תיאור מערכת היחסים של ${plaintiff.title} עם הקטין/ה ${childName}`,
+          }
+        );
+
+        // Add child name as subsection header
+        paragraphs.push(
+          createSubsectionHeader(`מערכת היחסים עם ${childName}`)
+        );
+
+        // Add transformed relationship paragraph
+        paragraphs.push(createBodyParagraph(transformedChildRelationship));
+
+        console.log(`  ✅ Transformed relationship with ${childName}`);
+      } catch (error) {
+        console.error(`  ❌ Error transforming relationship with ${childName}:`, error);
+        // Fallback to original text if transformation fails
+        paragraphs.push(
+          createSubsectionHeader(`מערכת היחסים עם ${childName}`)
+        );
+        paragraphs.push(createBodyParagraph(child.childRelationship));
       }
     }
-  } else {
-    paragraphs.push(createBodyParagraph('לא צוינו ילדים.'));
   }
 
   // Current living arrangement (factual description)
@@ -823,7 +512,7 @@ async function createFactsSection(
   // Custody situation summary - Transform with Groq AI
   if (custodyData.whoShouldHaveCustody) {
     console.log(`🤖 Transforming custody summary with Groq AI...`);
-    paragraphs.push(createSubsectionHeader('סיכום מצב המשמורת'));
+    paragraphs.push(createSubsectionHeader('עולה מהאמור לעיל'));
 
     try {
       const transformedCustodySummary = await transformToLegalLanguage(
@@ -832,7 +521,7 @@ async function createFactsSection(
           claimType: 'תביעת משמורת',
           applicantName: plaintiff.name,
           respondentName: defendant.name,
-          fieldLabel: 'סיכום מצב המשמורת - למה המשמורת צריכה להיות אצל המבקש/ת',
+          fieldLabel: 'עולה מהאמור לעיל - למה המשמורת צריכה להיות אצל המבקש/ת',
         }
       );
       paragraphs.push(createBodyParagraph(transformedCustodySummary));
@@ -908,8 +597,8 @@ function generateStatementOfDetails(
   const defendant = getDefendantTerm(basicInfo.gender2, basicInfo.fullName2);
   const custodyData = formData.custody || {};
   const propertyData = formData.property || formData;
-  // Children can be either in custody.children or property.children
-  const children = custodyData.children || propertyData.children || [];
+  // Children are now in global formData.children (shared across all claims)
+  const children = formData.children || [];
 
   // Helper to format yes/no answers - handles both Hebrew and English values
   const yesNo = (value: any) => {
@@ -1077,214 +766,6 @@ function generateStatementOfDetails(
     bidirectional: true,
     
   }));
-
-  return paragraphs;
-}
-
-/**
- * Generate ייפוי כוח (Power of Attorney) paragraphs
- */
-function generatePowerOfAttorney(
-  basicInfo: BasicInfo,
-  formData: FormData,
-  clientSignature?: string | Buffer,
-  lawyerSignature?: string | Buffer
-): Paragraph[] {
-  const paragraphs: Paragraph[] = [];
-  const today = new Date().toLocaleDateString('he-IL');
-
-  // Title
-  paragraphs.push(createMainTitle('יפוי כח'));
-
-  // Opening
-  paragraphs.push(createBodyParagraph(
-    `אני החתום מטה תז ${basicInfo.idNumber}, ${basicInfo.fullName} ממנה בזאת את עוה"ד אריאל דרור להיות ב"כ בענין הכנת תביעת משמורת.`
-  ));
-
-  paragraphs.push(createBodyParagraph(
-    'מבלי לפגוע בכלליות המינוי הנ"ל יהיו באי כחי רשאים לעשות ולפעול בשמי ובמקומי בכל הפעולות הבאות, כולן או מקצתן הכל בקשר לעניין הנ"ל ולכל הנובע ממנו כדלקמן:'
-  ));
-
-  // Numbered powers
-  const powers = [
-    'לחתום על ולהגיש בשמי כל תביעה או תביעה שכנגד, ו/או כל בקשה, הגנה, התנגדות, בקשה למתן רשות לערער, ערעור, דיון נוסף, הודעה, טענה, השגה, ערר, תובענה או כל הליך אחר הנובע מההליך הנ"ל ללא יוצא מן הכלל. ומבלי לפגוע באמור לעיל גם להודות ו/או לכפור בשמי במשפטים פלילים.',
-    'לחתום על ו/או לשלוח התראות נוטריוניות או אחרות, לדרוש הכרזת פשיטת רגל, או פירוק גוף משפטי ולעשות את כל הפעולות הקשורות והנובעות מהעניין הנ"ל.',
-    'לבקש ולקבל כל חוות דעת רפואית ו/או כל מסמך רפואי אחר מכל רופא או מוסד שבדק אותי ו/או כל חוות דעת אחרת הנוגעת לענין הנ"ל.',
-    'לייצגני ולהופיע בשמי ובמקומי בקשר לכל אחת מהפעולות הנ"ל בפני כל בתי המשפט, בתי הדין למיניהם, רשויות ממשלתיות, עיריות, מועצות מקומיות ו/או כל רשות אחרת, עד לערכאתם העליונה, ככל שהדברים נוגעים או קשורים לעניין הנ"ל.',
-    'לנקוט בכל הפעולות הכרוכות בייצוג האמור והמותרות על-פי סדרי הדין הקיימים או שיהיו קיימים בעתיד ובכללם הזמנת עדים ומינוי מומחים, והכל על-פי הדין שיחול וכפי שבא כחי ימצא לנכון.',
-    'למסור כל עניין הנובע מהעניין האמור לעיל לבוררות ולחתום על שטר בוררות כפי שבא כחי ימצא לנכון.',
-    'להתפשר בכל עניין הנוגע או הנובע מהעניינים האמורים לעיל לפי שקול דעתו של בא כחי ולחתום על פשרה כזו בבית המשפט או מחוצה לו.',
-    'להוציא לפועל כל פס"ד או החלטה או צו, לדרוש צווי מכירה או פקודות מאסר ולנקוט בכל הפעולות המותרות על פי חוק ההוצאה לפועל ותקנותיו.',
-    'לנקוט בכל הפעולות ולחתום על כל מסמך או כתב בלי יוצא מן הכלל אשר בא כחי ימצא לנכון בכל עניין הנובע ו/או הנוגע לעניין הנ"ל.',
-    'לגבות את סכום התביעה או כל סכום אחר בכל עניין מהעניינים הנ"ל לרבות הוצאות בית המשפט ושכר טרחת עו"ד, לקבל בשמי כל מסמך וחפץ ולתת קבלות ושחרורים כפי שבא כוחי ימצא לנכון ולמתאים.',
-    'לבקש ולקבל מידע שהנני זכאי לקבלו על פי כל דין מכל מאגר מידע של רשות כלשהי הנוגע לעניין הנ"ל.',
-    'להופיע בשמי ולייצגני בעניין הנ"ל בפני רשם המקרקעין, בלשכות רישום המקרקעין, לחתום בשמי ובמקומי על כל בקשה, הצהרה ומסמכים אחרים למיניהם ולבצע בשמי כל עסקה המוכרת על פי דין וליתן הצהרות, קבלות ואישורים ולקבל בשמי ובמקומי כל מסמך שאני רשאי לקבלו על פי דין.',
-    'לייצגני ולהופיע בשמי בפני רשם החברות, רשם השותפויות ורשם האגודות השיתופיות, לחתום בשמי ובמקומי על כל בקשה או מסמך אחר בקשר לרשום גוף משפטי, לטפל ברישומו או מחיקתו של כל גוף משפטי ולטפל בכל דבר הנוגע לו ולבצע כל פעולה בקשר לאותו גוף משפטי.',
-    'לטפל בשמי בכל הקשור לרישום פטנטים, סימני מסחר וכל זכות אחרת המוכרת בדין.',
-    'להעביר יפוי כח זה על כל הסמכויות שבו או חלק מהן לעו"ד אחר עם זכות העברה לאחרים, לפטרם ולמנות אחרים במקומם ולנהל את עניני הנ"ל לפי ראות עיניי ובכלל לעשות את כל הצעדים שימצא לנכון ומועיל בקשר עם המשפט או עם עניני הנ"ל והריני מאשר את מעשיו או מעשי ממלאי המקום בתוקף יפוי כח זה מראש.',
-  ];
-
-  powers.forEach((power, index) => {
-    paragraphs.push(createNumberedItem(index + 1, power));
-  });
-
-  paragraphs.push(createBodyParagraph(
-    'הכתוב דלעיל ביחיד יכלול את הרבים ולהפך.'
-  ));
-
-  paragraphs.push(createBodyParagraph(
-    `ולראיה באתי על החתום, היום ${today}`
-  ));
-
-  // Client signature - use image if provided, otherwise placeholder
-  if (clientSignature) {
-    paragraphs.push(createSignatureImage(clientSignature, 250, 125));
-  } else {
-    paragraphs.push(new Paragraph({
-      children: [
-        new TextRun({
-          text: '__________________',
-          size: FONT_SIZES.BODY,
-          font: 'David',
-          
-        }),
-      ],
-      alignment: AlignmentType.START,
-      spacing: { before: SPACING.SECTION, after: SPACING.MINIMAL },
-      bidirectional: true,
-      
-    }));
-  }
-
-  paragraphs.push(new Paragraph({
-    children: [
-      new TextRun({
-        text: basicInfo.fullName,
-        size: FONT_SIZES.BODY,
-        font: 'David',
-        
-      }),
-    ],
-    alignment: AlignmentType.START,
-    spacing: { after: SPACING.SECTION },
-    bidirectional: true,
-    
-  }));
-
-  // Lawyer confirmation
-  paragraphs.push(createBodyParagraph('אני מאשר את חתימת מרשי'));
-
-  // Lawyer signature - use image if provided, otherwise text
-  if (lawyerSignature) {
-    paragraphs.push(createSignatureImage(lawyerSignature, 300, 150));
-  } else {
-    paragraphs.push(createBodyParagraph('אריאל דרור, עו"ד'));
-  }
-
-  return paragraphs;
-}
-
-/**
- * Generate תצהיר (Affidavit) paragraphs
- */
-function generateAffidavit(
-  basicInfo: BasicInfo,
-  formData: FormData,
-  lawyerSignature?: string | Buffer
-): Paragraph[] {
-  const paragraphs: Paragraph[] = [];
-
-  // Title
-  paragraphs.push(createMainTitle('תצהיר בהיוועדות חזותית בישראל'));
-
-  paragraphs.push(createBodyParagraph(
-    'אני הח"מ אריאל דרור ת.ז 024081028, לאחר שהוזהרתי כי עלי לומר את האמת וכי אהיה צפוי לעונשים הקבועים בחוק, אם לא אעשה כן, מצהיר בזאת כדלקמן:'
-  ));
-
-  paragraphs.push(createNumberedItem(1, 'אני נמצא בתחומי מדינת ישראל.'));
-  paragraphs.push(createNumberedItem(2, 'תצהיר זה ניתן בתמיכה לכתב התביעה.'));
-  paragraphs.push(createNumberedItem(3, 'הריני מצהיר כי כל האמור בבקשה – אמת.'));
-  paragraphs.push(createNumberedItem(4, 'זהו שמי, זו חתימתי ותוכן תצהירי אמת.'));
-
-  // Signature line
-  paragraphs.push(new Paragraph({
-    children: [
-      new TextRun({
-        text: '__________________',
-        size: FONT_SIZES.BODY,
-        font: 'David',
-        
-      }),
-    ],
-    alignment: AlignmentType.START,
-    spacing: { before: SPACING.SECTION, after: SPACING.SECTION },
-    bidirectional: true,
-    
-  }));
-
-  // Lawyer confirmation section
-  paragraphs.push(createBodyParagraph(
-    `הריני לאשר כי ${basicInfo.fullName}, הינו לקוח קבוע במשרדי ומוכר לי באופן אישי.`
-  ));
-
-  // Get current date and time
-  const now = new Date();
-  const dateStr = now.toLocaleDateString('he-IL', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
-  const timeStr = now.toLocaleTimeString('he-IL', {
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-  const gender = basicInfo.gender === 'male' ? 'מר' : 'גב\'';
-
-  paragraphs.push(createBodyParagraph(
-    `ביום ${dateStr} בשעה ${timeStr} הופיע בפני, ${gender} ${basicInfo.fullName} ולאחר שהזהרתיו כי עליו לומר את האמת וכי יהיה צפוי לעונשים הקבועים בחוק אם לא יעשה כן, אשר את האמור בתצהיר הנ"ל וחתם עליו.`
-  ));
-
-  paragraphs.push(createBodyParagraph(
-    'תצהירו וחתימתו כאמור הוצגו לי במהלך היוועדות חזותית והתצהיר נחתם מולי.'
-  ));
-
-  paragraphs.push(createBodyParagraph(
-    'ההופעה לפניי, בוצעה באמצעות היוועדות חזותית אשר מתועדת אצלי, כאשר המצהיר הופיע בפני על גבי הצג, עת הצהרתו מושא האימות לפניו, והוא מצהיר בפניי, כי הוא מצוי במדינת ישראל בזמן החתימה והאימות, והוא מסכים לתיעוד החזותי ועשיית השימוש בו.'
-  ));
-
-  // Lawyer signature - use image if provided, otherwise text
-  if (lawyerSignature) {
-    paragraphs.push(createSignatureImage(lawyerSignature, 300, 150));
-  } else {
-    paragraphs.push(new Paragraph({
-      children: [
-        new TextRun({
-          text: '__________________',
-          size: FONT_SIZES.BODY,
-          font: 'David',
-          
-        }),
-      ],
-      alignment: AlignmentType.START,
-      spacing: { before: SPACING.SECTION, after: SPACING.MINIMAL },
-      bidirectional: true,
-      
-    }));
-    paragraphs.push(new Paragraph({
-      children: [
-        new TextRun({
-          text: 'אריאל דרור, עו"ד',
-          size: FONT_SIZES.BODY,
-          font: 'David',
-          
-        }),
-      ],
-      alignment: AlignmentType.START,
-      spacing: { after: SPACING.MINIMAL },
-      bidirectional: true,
-      
-    }));
-  }
 
   return paragraphs;
 }

@@ -18,6 +18,7 @@ export interface BasicInfo {
   phone: string;
   email: string;
   birthDate: string;
+  gender: "male" | "female";
 
   // Respondent (נתבע/בעל/אישה)
   fullName2: string;
@@ -26,6 +27,7 @@ export interface BasicInfo {
   phone2: string;
   email2: string;
   birthDate2: string;
+  gender2: "male" | "female";
 
   // Relationship info
   relationshipType: "married" | "commonLaw" | "separated" | "notMarried";

@@ -15,6 +15,8 @@ export interface RepeaterField {
   accept?: string; // For file inputs
   helper?: string; // Helper text below field
   options?: Array<{ value: string; label: string }>; // For select inputs
+  rows?: number; // For textarea inputs
+  maxLength?: number; // For text inputs
 }
 
 export interface RepeaterRow {
@@ -120,6 +122,7 @@ export function Repeater({
                       handleFieldChange(row.__id, field.name, e.target.value)
                     }
                     placeholder={field.placeholder}
+                    maxLength={field.maxLength}
                     className={cn(
                       "w-full px-3 py-2 rounded bg-white",
                       "border border-neutral transition-smooth",
@@ -127,7 +130,7 @@ export function Repeater({
                       "text-body text-neutral-darkest",
                       "resize-none"
                     )}
-                    rows={3}
+                    rows={field.rows ?? 3}
                   />
                 ) : field.type === "file" ? (
                   <div>
@@ -192,6 +195,7 @@ export function Repeater({
                       handleFieldChange(row.__id, field.name, e.target.value)
                     }
                     placeholder={field.placeholder}
+                    maxLength={field.maxLength}
                     className={cn(
                       "w-full px-3 py-2 rounded bg-white",
                       "border border-neutral transition-smooth",

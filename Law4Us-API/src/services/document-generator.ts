@@ -18,6 +18,7 @@ import { insertAttachmentPages } from './document-attachment-inserter';
 import { generatePropertyClaimDocument } from './property-claim-generator';
 import { generateCustodyClaim } from './custody-claim-generator';
 import { generateAlimonyClaim } from './alimony-claim-generator';
+import { generateDivorceAgreement } from './divorce-agreement-generator';
 import {
   ClaimType,
   BasicInfo,
@@ -60,8 +61,8 @@ function getTemplatePath(claimType: ClaimType): string {
  * Check if template exists
  */
 export function templateExists(claimType: ClaimType): boolean {
-  // Property, custody, and alimony claims don't use templates - they're programmatically generated
-  if (claimType === 'property' || claimType === 'custody' || claimType === 'alimony') {
+  // Property, custody, alimony, and divorceAgreement claims don't use templates - they're programmatically generated
+  if (claimType === 'property' || claimType === 'custody' || claimType === 'alimony' || claimType === 'divorceAgreement') {
     return true;
   }
 
@@ -247,11 +248,24 @@ export async function generateDocument(
         basicInfo,
         formData,
         signature: options.signature,
+        lawyerSignature: options.lawyerSignature,
+        attachments: options.attachments,
       });
 
       // Convert docx Document object to buffer
       const { Packer } = await import('docx');
       documentBuffer = await Packer.toBuffer(document);
+    } else if (claimType === 'divorceAgreement') {
+      console.log('📝 Using compact programmatic generator for divorce agreement...');
+      documentBuffer = await generateDivorceAgreement({
+        basicInfo,
+        formData,
+        applicantSignature: options.signature,
+        respondentSignature: undefined, // Will be added in future if needed
+        lawyerSignature: options.lawyerSignature,
+        attachments: options.attachments,
+        selectedClaims: options.selectedClaims, // Pass to enable smart referencing
+      });
     } else {
       // Step 1: Prepare data with AI transformation
       const data = await prepareDocumentData(options);

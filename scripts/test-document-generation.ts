@@ -16,6 +16,7 @@ const testData = {
     phone: "050-1234567",
     email: "yossi@example.com",
     birthDate: "01/01/1980",
+    gender: "male" as const,
 
     fullName2: "שרה לוי",
     idNumber2: "987654321",
@@ -23,6 +24,7 @@ const testData = {
     phone2: "052-7654321",
     email2: "sara@example.com",
     birthDate2: "02/02/1982",
+    gender2: "female" as const,
 
     relationshipType: "married" as const,
     weddingDay: "15/06/2005",

@@ -10,9 +10,10 @@ import {
   VEHICLE_FIELDS,
   SAVINGS_FIELDS,
   BENEFITS_FIELDS,
-  PROPERTY_FIELDS,
-  DEBT_FIELDS,
+ PROPERTY_FIELDS,
+ DEBT_FIELDS,
 } from "./property-repeaters";
+import type { RepeaterField } from "@/components/wizard/repeater";
 
 export type QuestionType =
   | "text"
@@ -48,7 +49,7 @@ export interface Question {
   maxLength?: number;
   accept?: string; // for file inputs
   repeaterConfig?: {
-    fields: any[]; // RepeaterField[] from repeater component
+    fields: RepeaterField[];
     addButtonLabel?: string;
     minRows?: number;
     maxRows?: number;
@@ -310,6 +311,25 @@ export const GLOBAL_QUESTIONS: Question[] = [
       { value: "לא", label: "לא" },
     ],
   },
+
+  // Section 5: Children
+  {
+    id: "heading-children",
+    type: "heading",
+    label: "ילדים",
+  },
+  {
+    id: "children",
+    type: "repeater",
+    label: "פרטי ילדים",
+    helper: "הוסיפו את פרטי כל הילדים מהנישואין. עבור כל ילד/ה, תארו את מערכת היחסים שלכם איתם",
+    repeaterConfig: {
+      fields: CHILDREN_FIELDS,
+      addButtonLabel: "הוסף ילד/ה",
+      minRows: 0,
+      maxRows: 10,
+    },
+  },
 ];
 
 // ============================================================================
@@ -323,35 +343,138 @@ export const DIVORCE_AGREEMENT_QUESTIONS: Question[] = [
     type: "heading",
     label: "הסכם גירושין",
   },
+
+  // Property division
   {
-    id: "divorceAgreement.agreedOnDivorce",
+    id: "divorceAgreement.propertyAgreement",
     type: "radio",
-    label: "האם הגעתם להסכמה על הגירושין?",
+    label: "חלוקת רכוש:",
     required: true,
     options: [
-      { value: "כן", label: "כן" },
-      { value: "לא", label: "לא" },
+      { value: "referenceClaim", label: "כמפורט בתביעה הרכושית הנפרדת" },
+      { value: "eachKeepsOwn", label: "כל צד שומר על הרכוש שברשותו" },
+      { value: "equalSplit", label: "חלוקה שווה של כל הרכוש" },
+      { value: "custom", label: "הסדר מותאם אישית" },
     ],
   },
   {
-    id: "divorceAgreement.agreedOnTerms",
-    type: "radio",
-    label: "האם הגעתם להסכמה על כל התנאים?",
-    required: true,
-    options: [
-      { value: "כן", label: "כן" },
-      { value: "לא", label: "לא" },
-      { value: "חלקית", label: "חלקית" },
-    ],
-  },
-  {
-    id: "divorceAgreement.agreementDetails",
+    id: "divorceAgreement.propertyCustom",
     type: "textarea",
-    label: "פרטו את עיקרי ההסכם:",
-    placeholder: "תארו בקצרה את עיקרי ההסכמות בינכם...",
-    maxLength: 1000,
-    helper: "כתבו על חלוקת רכוש, משמורת, מזונות וכל נושא נוסף שהוסכם",
+    label: "פרטי חלוקת הרכוש:",
+    placeholder: "תארו בקצרה כיצד יחולק הרכוש...",
+    maxLength: 300,
+    helper: "כתבו בשפה פשוטה, נעביר לניסוח משפטי",
+    conditional: {
+      dependsOn: "divorceAgreement.propertyAgreement",
+      showWhen: "custom",
+    },
   },
+
+  // Custody
+  {
+    id: "divorceAgreement.custodyAgreement",
+    type: "radio",
+    label: "משמורת:",
+    required: true,
+    options: [
+      { value: "referenceClaim", label: "כמפורט בתביעת המשמורת הנפרדת" },
+      { value: "jointCustody", label: "משמורת משותפת" },
+      { value: "applicantCustody", label: "משמורת מלאה למבקש/ת" },
+      { value: "respondentCustody", label: "משמורת מלאה למשיב/ה" },
+      { value: "custom", label: "הסדר מותאם אישית" },
+      { value: "noChildren", label: "אין ילדים" },
+    ],
+  },
+  {
+    id: "divorceAgreement.custodyCustom",
+    type: "textarea",
+    label: "פרטי הסדר המשמורת:",
+    placeholder: "תארו בקצרה את הסדר המשמורת...",
+    maxLength: 300,
+    helper: "כתבו בשפה פשוטה, נעביר לניסוח משפטי",
+    conditional: {
+      dependsOn: "divorceAgreement.custodyAgreement",
+      showWhen: "custom",
+    },
+  },
+
+  // Visitation
+  {
+    id: "divorceAgreement.visitationAgreement",
+    type: "radio",
+    label: "הסדרי ראייה:",
+    required: false,
+    options: [
+      { value: "referenceClaim", label: "כמפורט בתביעת המשמורת הנפרדת" },
+      { value: "flexible", label: "הסדר גמיש בהסכמה" },
+      { value: "fixed", label: "הסדר קבוע" },
+      { value: "custom", label: "הסדר מותאם אישית" },
+    ],
+    conditional: {
+      dependsOn: "divorceAgreement.custodyAgreement",
+      showWhen: ["jointCustody", "applicantCustody", "respondentCustody", "custom"],
+    },
+  },
+  {
+    id: "divorceAgreement.visitationCustom",
+    type: "textarea",
+    label: "פרטי הסדרי הראייה:",
+    placeholder: "תארו את הסדרי הראייה המוסכמים...",
+    maxLength: 300,
+    helper: "למשל: סופי שבוע מתחלפים, ימים באמצע השבוע, חלוקת חגים",
+    conditional: {
+      dependsOn: "divorceAgreement.visitationAgreement",
+      showWhen: "custom",
+    },
+  },
+
+  // Alimony
+  {
+    id: "divorceAgreement.alimonyAgreement",
+    type: "radio",
+    label: "מזונות:",
+    required: true,
+    options: [
+      { value: "referenceClaim", label: "כמפורט בתביעת המזונות הנפרדת" },
+      { value: "specificAmount", label: "סכום מוסכם" },
+      { value: "none", label: "אין חיוב במזונות" },
+      { value: "custom", label: "הסדר מותאם אישית" },
+    ],
+  },
+  {
+    id: "divorceAgreement.alimonyAmount",
+    type: "number",
+    label: "סכום מזונות חודשי (₪):",
+    placeholder: "0",
+    conditional: {
+      dependsOn: "divorceAgreement.alimonyAgreement",
+      showWhen: "specificAmount",
+    },
+  },
+  {
+    id: "divorceAgreement.alimonyCustom",
+    type: "textarea",
+    label: "פרטי הסדר המזונות:",
+    placeholder: "תארו את ההסדר המוסכם...",
+    maxLength: 300,
+    helper: "כתבו בשפה פשוטה, נעביר לניסוח משפטי",
+    conditional: {
+      dependsOn: "divorceAgreement.alimonyAgreement",
+      showWhen: "custom",
+    },
+  },
+
+  // Additional terms
+  {
+    id: "divorceAgreement.additionalTerms",
+    type: "textarea",
+    label: "תנאים נוספים (אופציונלי):",
+    placeholder: "תארו כל הסכמה נוספת שחשוב לכלול...",
+    maxLength: 300,
+    helper: "למשל: ביטוחים, הוצאות נוספות, ירושה, שם משפחה",
+  },
+
+  // Upload existing agreement
   {
     id: "divorceAgreement.uploadedAgreement",
     type: "file",
@@ -411,25 +534,6 @@ export const PROPERTY_QUESTIONS: Question[] = [
     conditional: {
       dependsOn: "property.livingTogether",
       showWhen: "no",
-    },
-  },
-
-  // Children
-  {
-    id: "heading-children",
-    type: "heading",
-    label: "ילדים",
-  },
-  {
-    id: "property.children",
-    type: "repeater",
-    label: "פרטי ילדים",
-    helper: "הוסיפו את פרטי כל הילדים מהנישואין",
-    repeaterConfig: {
-      fields: CHILDREN_FIELDS,
-      addButtonLabel: "הוסף ילד/ה",
-      minRows: 0,
-      maxRows: 10,
     },
   },
 
@@ -528,6 +632,17 @@ export const PROPERTY_QUESTIONS: Question[] = [
       { value: "selfEmployed", label: "עצמאי/ת" },
       { value: "unemployed", label: "מובטל/ת" },
     ],
+  },
+  {
+    id: "property.applicantEmployer",
+    type: "text",
+    label: "שם המעסיק של [APPLICANT_NAME]:",
+    placeholder: "שם החברה/ארגון",
+    required: true,
+    conditional: {
+      dependsOn: "property.applicantEmploymentStatus",
+      showWhen: "employee",
+    },
   },
   {
     id: "property.applicantGrossSalary",
@@ -757,26 +872,8 @@ export const PROPERTY_QUESTIONS: Question[] = [
 ];
 
 // Custody (משמורת)
+// NOTE: Children repeater is now in GLOBAL_QUESTIONS (shared across all claims)
 export const CUSTODY_QUESTIONS: Question[] = [
-  // Children section
-  {
-    id: "heading-children-custody",
-    type: "heading",
-    label: "ילדים",
-  },
-  {
-    id: "custody.children",
-    type: "repeater",
-    label: "פרטי ילדים",
-    helper: "הוסיפו את פרטי כל הילדים מהנישואין. עבור כל ילד/ה, תארו את מערכת היחסים שלכם איתם",
-    repeaterConfig: {
-      fields: CHILDREN_FIELDS,
-      addButtonLabel: "הוסף ילד/ה",
-      minRows: 0,
-      maxRows: 10,
-    },
-  },
-
   // Custody details
   {
     id: "heading-custody-details",
@@ -850,18 +947,6 @@ export const CUSTODY_QUESTIONS: Question[] = [
     ],
   },
   {
-    id: "custody.visitationProposal",
-    type: "textarea",
-    label: "מה ההצעה שלך להסדרי ראיה?",
-    placeholder: "פרטו את הצעת הסדרי הראיה - ימים בשבוע, שעות, חגים, חופשות וכו'...",
-    maxLength: 1000,
-    helper: "לדוגמה: סופי שבוע מתחלפים, יום באמצע השבוע, חלוקת חגים",
-    conditional: {
-      dependsOn: "custody.requestedArrangement",
-      showWhen: "primary_with_visits",
-    },
-  },
-  {
     id: "custody.whyNotOtherParent",
     type: "textarea",
     label: "למה המשמורת לא צריכה להיות אצל ההורה השני?",
@@ -871,7 +956,10 @@ export const CUSTODY_QUESTIONS: Question[] = [
 ];
 
 // Alimony (מזונות)
-// NOTE: Alimony claims REUSE property.children, property.separationDate, and property employment questions
+// NOTE: Alimony claims reuse:
+//   - children repeater from GLOBAL_QUESTIONS
+//   - property.separationDate from property questions
+//   - property employment questions
 // This section only contains UNIQUE alimony questions
 export const ALIMONY_QUESTIONS: Question[] = [
   {
@@ -925,6 +1013,17 @@ export const ALIMONY_QUESTIONS: Question[] = [
       showWhen: "yes",
     },
   },
+  {
+    id: "alimony.previousAlimonyDetails",
+    type: "textarea",
+    label: "פרטים נוספים על מזונות שהיו בעבר:",
+    placeholder: "פרטו על הסכמים קודמים, פסקי דין, או כל מידע רלוונטי אחר...",
+    maxLength: 500,
+    conditional: {
+      dependsOn: "alimony.wasPreviousAlimony",
+      showWhen: "yes",
+    },
+  },
 
   // Children's needs (expense table)
   {
@@ -937,39 +1036,45 @@ export const ALIMONY_QUESTIONS: Question[] = [
     type: "repeater",
     label: "פירוט הוצאות חודשיות לילדים:",
     helper: "הוסיפו את כל ההוצאות החודשיות הקשורות לילדים",
-    addButtonLabel: "+ הוסף הוצאה",
-    fields: [
-      {
-        id: "category",
-        type: "select",
-        label: "קטגוריה:",
-        required: true,
-        options: [
-          { value: "food", label: "מזון" },
-          { value: "clothing", label: "לבוש והנעלה" },
-          { value: "education", label: "חינוך (שכר לימוד, ספרים)" },
-          { value: "medical", label: "רפואה (ביטוח, תרופות)" },
-          { value: "activities", label: "פעילויות חוץ (חוגים)" },
-          { value: "transportation", label: "הסעות ותחבורה" },
-          { value: "other", label: "אחר" },
-        ],
-      },
-      {
-        id: "description",
-        type: "text",
-        label: "פירוט:",
-        placeholder: "תיאור קצר של ההוצאה",
-        maxLength: 100,
-        required: true,
-      },
-      {
-        id: "monthlyAmount",
-        type: "number",
-        label: "סכום חודשי (₪):",
-        placeholder: "0",
-        required: true,
-      },
-    ],
+    repeaterConfig: {
+      addButtonLabel: "+ הוסף הוצאה",
+      minRows: 1,
+      fields: [
+        {
+          id: "category",
+          name: "category",
+          type: "select",
+          label: "קטגוריה:",
+          required: true,
+          options: [
+            { value: "food", label: "מזון" },
+            { value: "clothing", label: "לבוש והנעלה" },
+            { value: "education", label: "חינוך (שכר לימוד, ספרים)" },
+            { value: "medical", label: "רפואה (ביטוח, תרופות)" },
+            { value: "activities", label: "פעילויות חוץ (חוגים)" },
+            { value: "transportation", label: "הסעות ותחבורה" },
+            { value: "other", label: "אחר" },
+          ],
+        },
+        {
+          id: "description",
+          name: "description",
+          type: "text",
+          label: "פירוט:",
+          placeholder: "תיאור קצר של ההוצאה",
+          maxLength: 100,
+          required: true,
+        },
+        {
+          id: "monthlyAmount",
+          name: "monthlyAmount",
+          type: "number",
+          label: "סכום חודשי (₪):",
+          placeholder: "0",
+          required: true,
+        },
+      ],
+    },
   },
 
   // Household needs (expense table)
@@ -983,42 +1088,48 @@ export const ALIMONY_QUESTIONS: Question[] = [
     type: "repeater",
     label: "פירוט הוצאות חודשיות למדור:",
     helper: "הוסיפו את כל ההוצאות החודשיות של משק הבית",
-    addButtonLabel: "+ הוסף הוצאה",
-    fields: [
-      {
-        id: "category",
-        type: "select",
-        label: "קטגוריה:",
-        required: true,
-        options: [
-          { value: "rent", label: "שכר דירה / משכנתא" },
-          { value: "tax", label: "ארנונה" },
-          { value: "electricity", label: "חשמל" },
-          { value: "water", label: "מים" },
-          { value: "gas", label: "גז" },
-          { value: "building", label: "ועד בית" },
-          { value: "maintenance", label: "תיקונים ותחזוקה" },
-          { value: "internet", label: "אינטרנט וטלפון" },
-          { value: "insurance", label: "ביטוחים (דירה, תכולה)" },
-          { value: "other", label: "אחר" },
-        ],
-      },
-      {
-        id: "description",
-        type: "text",
-        label: "פירוט:",
-        placeholder: "תיאור קצר של ההוצאה",
-        maxLength: 100,
-        required: true,
-      },
-      {
-        id: "monthlyAmount",
-        type: "number",
-        label: "סכום חודשי (₪):",
-        placeholder: "0",
-        required: true,
-      },
-    ],
+    repeaterConfig: {
+      addButtonLabel: "+ הוסף הוצאה",
+      minRows: 1,
+      fields: [
+        {
+          id: "category",
+          name: "category",
+          type: "select",
+          label: "קטגוריה:",
+          required: true,
+          options: [
+            { value: "rent", label: "שכר דירה / משכנתא" },
+            { value: "tax", label: "ארנונה" },
+            { value: "electricity", label: "חשמל" },
+            { value: "water", label: "מים" },
+            { value: "gas", label: "גז" },
+            { value: "building", label: "ועד בית" },
+            { value: "maintenance", label: "תיקונים ותחזוקה" },
+            { value: "internet", label: "אינטרנט וטלפון" },
+            { value: "insurance", label: "ביטוחים (דירה, תכולה)" },
+            { value: "other", label: "אחר" },
+          ],
+        },
+        {
+          id: "description",
+          name: "description",
+          type: "text",
+          label: "פירוט:",
+          placeholder: "תיאור קצר של ההוצאה",
+          maxLength: 100,
+          required: true,
+        },
+        {
+          id: "monthlyAmount",
+          name: "monthlyAmount",
+          type: "number",
+          label: "סכום חודשי (₪):",
+          placeholder: "0",
+          required: true,
+        },
+      ],
+    },
   },
 
   // Bank accounts
@@ -1042,33 +1153,39 @@ export const ALIMONY_QUESTIONS: Question[] = [
     type: "repeater",
     label: "פרטי חשבונות הבנק:",
     helper: "הוסיפו את כל חשבונות הבנק שלכם",
-    addButtonLabel: "+ הוסף חשבון בנק",
     conditional: {
       dependsOn: "alimony.hasBankAccounts",
       showWhen: "yes",
     },
-    fields: [
-      {
-        id: "bankName",
-        type: "text",
-        label: "שם הבנק:",
-        placeholder: "לאומי, הפועלים, וכו'",
-        required: true,
-      },
-      {
-        id: "accountNumber",
-        type: "text",
-        label: "מספר חשבון:",
-        placeholder: "מספר החשבון",
-        required: true,
-      },
-      {
-        id: "balance",
-        type: "number",
-        label: "יתרה משוערת (אם ידוע):",
-        placeholder: "0",
-      },
-    ],
+    repeaterConfig: {
+      addButtonLabel: "+ הוסף חשבון בנק",
+      minRows: 1,
+      fields: [
+        {
+          id: "bankName",
+          name: "bankName",
+          type: "text",
+          label: "שם הבנק:",
+          placeholder: "לאומי, הפועלים, וכו'",
+          required: true,
+        },
+        {
+          id: "accountNumber",
+          name: "accountNumber",
+          type: "text",
+          label: "מספר חשבון:",
+          placeholder: "מספר החשבון",
+          required: true,
+        },
+        {
+          id: "balance",
+          name: "balance",
+          type: "number",
+          label: "יתרה משוערת (אם ידוע):",
+          placeholder: "0",
+        },
+      ],
+    },
   },
 
   // Vehicle details

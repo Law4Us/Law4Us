@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { generateDocument } from '../services/document-generator';
-import { uploadToDrive, createFolder } from '../services/google-drive';
+import { uploadToDrive, createFolder, searchFolders } from '../services/google-drive';
 import { loadLawyerSignature } from '../utils/load-signature';
 
 const router = Router();
@@ -37,11 +37,31 @@ router.post('/submit', async (req: Request, res: Response) => {
 
     console.log('📥 Received submission from:', submissionData.basicInfo.fullName);
 
-    // Create a folder for this submission in Google Drive
-    const folderName = `${submissionData.basicInfo.fullName}_${submissionData.basicInfo.idNumber}_${new Date().toISOString().split('T')[0]}`;
-    const submissionFolderId = await createFolder(folderName);
+    // HIERARCHICAL FOLDER STRUCTURE:
+    // Parent folder: [Name] תביעות [date]
+    // Subfolders: תביעה רכושית, תביעת מזונות, תביעת משמורת
 
-    console.log('📁 Created Google Drive folder:', folderName);
+    const currentDate = new Date().toISOString().split('T')[0];
+    const parentFolderPattern = `${submissionData.basicInfo.fullName} תביעות`;
+
+    // Search for existing parent folder
+    console.log(`🔍 Searching for existing parent folder: "${parentFolderPattern}"`);
+    const existingFolders = await searchFolders(parentFolderPattern);
+
+    let parentFolderId: string;
+    let parentFolderName: string;
+
+    if (existingFolders.length > 0) {
+      // Reuse existing parent folder
+      parentFolderId = existingFolders[0].id;
+      parentFolderName = existingFolders[0].name;
+      console.log(`♻️  Reusing existing parent folder: ${parentFolderName} (${parentFolderId})`);
+    } else {
+      // Create new parent folder
+      parentFolderName = `${submissionData.basicInfo.fullName} תביעות ${currentDate}`;
+      parentFolderId = await createFolder(parentFolderName);
+      console.log(`📁 Created new parent folder: ${parentFolderName} (${parentFolderId})`);
+    }
 
     // Load lawyer signature if not provided by client
     const lawyerSignature = submissionData.lawyerSignature || loadLawyerSignature();
@@ -49,18 +69,53 @@ router.post('/submit', async (req: Request, res: Response) => {
       console.log('📷 Using default lawyer signature (Ariel Dror)');
     }
 
-    // Save submission JSON
+    // Save submission JSON to parent folder
     const jsonBuffer = Buffer.from(JSON.stringify(submissionData, null, 2));
     await uploadToDrive({
-      fileName: 'submission-data.json',
+      fileName: `submission-data-${currentDate}.json`,
       mimeType: 'application/json',
       buffer: jsonBuffer,
-      folderId: submissionFolderId,
+      folderId: parentFolderId,
     });
+
+    // Hebrew folder names for each claim type
+    const claimFolderNames: Record<string, string> = {
+      divorce: 'תביעת גירושין',
+      custody: 'תביעת משמורת',
+      property: 'תביעה רכושית',
+      alimony: 'תביעת מזונות',
+      divorceAgreement: 'הסכם גירושין',
+    };
+
+    // Hebrew filenames for documents
+    const hebrewDocNames: Record<string, string> = {
+      divorce: 'תביעת-גירושין',
+      custody: 'תביעת-משמורת',
+      property: 'תביעת-רכושית',
+      alimony: 'תביעת-מזונות',
+      divorceAgreement: 'הסכם-גירושין',
+    };
 
     // Generate documents for each selected claim
     for (const claimType of submissionData.selectedClaims) {
       console.log(`📄 Generating ${claimType} document...`);
+
+      // Create or reuse subfolder for this claim type
+      const claimFolderName = claimFolderNames[claimType] || claimType;
+
+      // Search for existing subfolder
+      const existingSubfolders = await searchFolders(claimFolderName, parentFolderId);
+      let claimFolderId: string;
+
+      if (existingSubfolders.length > 0) {
+        // Reuse existing subfolder
+        claimFolderId = existingSubfolders[0].id;
+        console.log(`♻️  Reusing existing subfolder: ${claimFolderName} (${claimFolderId})`);
+      } else {
+        // Create new subfolder
+        claimFolderId = await createFolder(claimFolderName, parentFolderId);
+        console.log(`📂 Created claim subfolder: ${claimFolderName} (${claimFolderId})`);
+      }
 
       const claimDoc = await generateDocument({
         basicInfo: submissionData.basicInfo as any, // Type assertion for request data
@@ -72,28 +127,19 @@ router.post('/submit', async (req: Request, res: Response) => {
         attachments: submissionData.attachments,
       });
 
-      // Use Hebrew filename
-      const hebrewNames: Record<string, string> = {
-        divorce: 'תביעת-גירושין',
-        custody: 'תביעת-משמורת',
-        property: 'תביעת-רכושית',
-        alimony: 'תביעת-מזונות',
-        divorceAgreement: 'הסכם-גירושין',
-      };
-
-      const fileName = `${hebrewNames[claimType] || claimType}.docx`;
+      const fileName = `${hebrewDocNames[claimType] || claimType}.docx`;
 
       await uploadToDrive({
         fileName,
         mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         buffer: claimDoc,
-        folderId: submissionFolderId,
+        folderId: claimFolderId, // Upload to claim subfolder
       });
 
-      console.log(`✅ ${fileName} uploaded`);
+      console.log(`✅ ${fileName} uploaded to ${claimFolderName}`);
     }
 
-    // Handle attachments if any
+    // Handle attachments if any - upload to parent folder
     if (submissionData.formData.attachments && Array.isArray(submissionData.formData.attachments)) {
       console.log('📎 Processing attachments...');
 
@@ -106,12 +152,12 @@ router.post('/submit', async (req: Request, res: Response) => {
             fileName: attachment.name,
             mimeType: attachment.mimeType || 'application/octet-stream',
             buffer,
-            folderId: submissionFolderId,
+            folderId: parentFolderId, // Upload attachments to parent folder
           });
         }
       }
 
-      console.log('✅ Attachments uploaded');
+      console.log('✅ Attachments uploaded to parent folder');
     }
 
     console.log('🎉 Submission completed successfully!');
@@ -119,8 +165,8 @@ router.post('/submit', async (req: Request, res: Response) => {
     res.json({
       success: true,
       message: 'הטופס נשלח בהצלחה!',
-      folderId: submissionFolderId,
-      folderName,
+      folderId: parentFolderId,
+      folderName: parentFolderName,
     });
 
   } catch (error) {

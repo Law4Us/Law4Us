@@ -731,6 +731,161 @@ NEXT_PUBLIC_MAKE_WEBHOOK_URL=your_webhook_url
 3. Add to `CLAIMS` constant
 4. Update pricing logic if needed
 
+## Recent Updates & Improvements (November 2024)
+
+### Shared Document Generation Functions
+
+To eliminate code duplication across the three claim generators (property, alimony, custody), we extracted common functionality into a centralized file: [shared-document-generators.ts](Law4Us-API/src/services/shared-document-generators.ts).
+
+**What was extracted (~900 lines of shared code):**
+
+1. **Constants**:
+   - `FONT_SIZES`: Font size definitions for all document elements (12pt-20pt)
+   - `SPACING`: Spacing constants in twips for consistent document layout
+
+2. **Helper Functions**:
+   - `formatCurrency()`: Format numbers as Hebrew currency (₪)
+   - `formatDate()`: Format dates in Hebrew (DD/MM/YYYY)
+   - `formatChildNaturally()`: Format child information with ID and birthdate
+   - `getHebrewLabel()`: Generate Hebrew letter labels (א, ב, ג...) for attachments
+   - `isMinor()`: Check if a child is under 18 years old
+   - **`createRelationshipSection()`**: NEW - Standardized מערכת היחסים across all claims
+
+3. **Paragraph Creators**:
+   - `createSectionHeader()`: Major section headers (16pt, bold, underlined)
+   - `createSubsectionHeader()`: Subsection headers (14pt, bold, underlined)
+   - `createNumberedHeader()`: Numbered headers for תמצית התביעה sections
+   - `createBodyParagraph()`: Standard body text (12pt)
+   - `createBulletPoint()`: Bulleted list items
+   - `createNumberedItem()`: Numbered list items
+   - `createCenteredTitle()`: Centered titles (e.g., "נגד")
+   - `createMainTitle()`: Large main titles (20pt)
+   - `createInfoLine()`: Information lines with proper spacing
+   - `createPageBreak()`: Page break paragraphs
+   - `createSignatureImage()`: Signature image insertion with LEFT alignment
+
+4. **Major Document Sections**:
+   - **`createCourtHeader()`**: Unified court header WITH party information
+     - Includes gender-aware conjugation (התובעת/התובע, הנתבעת/הנתבע)
+     - Optional children list for alimony and custody claims
+     - Consistent across all three claim types
+   - **`generatePowerOfAttorney()`**: Complete Power of Attorney section
+     - Customizable opening text based on claim type
+     - 15 numbered powers (identical across all claim types)
+     - Both client and lawyer signatures (LEFT-aligned)
+   - **`generateAffidavit()`**: Complete Affidavit section with visual meeting confirmation
+     - Lawyer signature with stamp (LEFT-aligned)
+   - **`generateAttachmentsSection()`**: Complete attachments section
+     - Automatic table of contents with accurate page numbers
+     - Hebrew letter labels (א, ב, ג...) for each attachment
+     - Page range calculations
+
+**Benefits:**
+- Reduced total codebase by ~1,600 lines of duplicated code
+- Single source of truth for document formatting
+- Consistent styling and structure across all claim types
+- Easier maintenance and updates
+- Gender-aware conjugation in one place
+
+### Standardized מערכת היחסים (Relationship Section)
+
+All three claim types (property, custody, alimony) now use the **same standardized format** for the מערכת היחסים section:
+
+**Format:**
+```
+המדובר בזוג נשוי, להם נולדו 3 ילדים: נועם לוי (ת.ז 567890123, יליד 14/03/2012), תמר לוי (ת.ז 678901234, יליד 22/08/2015), איתי לוי (ת.ז 789012345, יליד 05/01/2018). כיום הצדדים גרים בנפרד מיום 01/02/2024, כאשר הילדים מתגוררים עם שרה לוי.
+```
+
+**Features:**
+- Marital status (married/unmarried)
+- Complete children list with IDs and birthdates
+- Separation date
+- Children's current living arrangement (with applicant/respondent/both/mixed)
+- Flows naturally as a single narrative paragraph
+
+**Implementation:**
+- Location: [shared-document-generators.ts:124-200](Law4Us-API/src/services/shared-document-generators.ts#L124-L200)
+- Used in all three generators:
+  - [property-claim-generator.ts:633](Law4Us-API/src/services/property-claim-generator.ts#L633)
+  - [custody-claim-generator.ts:372](Law4Us-API/src/services/custody-claim-generator.ts#L372) (minors only)
+  - [alimony-claim-generator.ts:263](Law4Us-API/src/services/alimony-claim-generator.ts#L263)
+
+### Gender-Aware Document Generation
+
+All documents now properly detect and use gender-specific terms:
+
+**Plaintiff (התובעת/התובע):**
+- Female: התובעת (plaintiff), האשה/האם (the woman/mother)
+- Male: התובע (plaintiff), האיש/האב (the man/father)
+
+**Defendant (הנתבעת/הנתבע):**
+- Female: הנתבעת (defendant), האשה/האם
+- Male: הנתבע (defendant), האיש/האב
+
+**Implementation:**
+- Gender stored in `basicInfo.gender` (plaintiff) and `basicInfo.gender2` (defendant)
+- Terms dynamically selected in `createCourtHeader()` function
+- Appears in all three claim types
+
+### Hierarchical Google Drive Folder Structure
+
+The submission system now creates a **hierarchical folder structure** for better organization:
+
+**Old Structure (flat):**
+```
+[Name]_[ID]_[date]/
+├── submission-data.json
+├── תביעת-רכושית.docx
+├── תביעת-מזונות.docx
+└── תביעת-משמורת.docx
+```
+
+**New Structure (hierarchical):**
+```
+[Name] תביעות [date]/
+├── submission-data-[date].json
+├── תביעה רכושית/
+│   └── תביעת-רכושית.docx
+├── תביעת מזונות/
+│   └── תביעת-מזונות.docx
+└── תביעת משמורת/
+    └── תביעת-משמורת.docx
+```
+
+**Features:**
+- **Parent folder reuse**: If a client submits multiple times, the system searches for and reuses existing parent folder
+- **Automatic subfolder creation**: Each claim type gets its own subfolder
+- **Smart folder naming**: Parent folder uses pattern `[Name] תביעות [date]`
+- **Proper Hebrew names**: All folder and file names use correct Hebrew terminology
+
+**Implementation:**
+- New function: `searchFolders()` in [google-drive.ts:140-165](Law4Us-API/src/services/google-drive.ts#L140-L165)
+- Updated submission route: [submission.ts:40-128](Law4Us-API/src/routes/submission.ts#L40-L128)
+
+**Hebrew Folder Names:**
+- Property: `תביעה רכושית`
+- Alimony: `תביעת מזונות`
+- Custody: `תביעת משמורת`
+- Divorce: `תביעת גירושין`
+- Divorce Agreement: `הסכם גירושין`
+
+### Document Structure Refinements
+
+**Custody Claims:**
+- Removed redundant "ילדים" (children) section - children details already included in מערכת היחסים
+- Removed standalone table of contents page (only attachments have TOC)
+
+**All Claims:**
+- Removed standalone table of contents pages
+- נספחים (attachments) section maintains its own table of contents with page numbers
+
+**Files Modified:**
+- [custody-claim-generator.ts:369-373](Law4Us-API/src/services/custody-claim-generator.ts#L369-L373) - Streamlined facts section
+- [alimony-claim-generator.ts](Law4Us-API/src/services/alimony-claim-generator.ts) - Removed unused TOC function
+- [shared-document-generators.ts](Law4Us-API/src/services/shared-document-generators.ts) - Added shared relationship section
+
+---
+
 ## Recent Updates & Improvements (October 2024)
 
 ### Property Claim Document Generation

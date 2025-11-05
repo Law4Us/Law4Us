@@ -249,6 +249,25 @@ const comprehensiveAlimonyData = {
   // Lawyer signature
   lawyerSignature: signatureBase64,
 
+  // Attachments (for testing automatic page range calculation)
+  attachments: [
+    {
+      label: "א",
+      description: "תלושי שכר",
+      images: [signatureBuffer, signatureBuffer], // 2 pages (using signature as dummy image)
+    },
+    {
+      label: "ב",
+      description: "אישורי הכנסה",
+      images: [signatureBuffer], // 1 page
+    },
+    {
+      label: "ג",
+      description: "חוזה שכירות",
+      images: [signatureBuffer, signatureBuffer, signatureBuffer], // 3 pages
+    },
+  ],
+
   paymentData: {
     paid: true,
     amount: 1500,
@@ -295,6 +314,12 @@ async function testComprehensiveAlimony() {
   console.log(`   Bank accounts: ${comprehensiveAlimonyData.formData.alimony.bankAccounts.length}`);
   console.log(`   Vehicle: ${comprehensiveAlimonyData.formData.alimony.hasVehicle === 'yes' ? 'Yes' : 'No'}`);
   console.log('');
+  console.log('📎 Attachments:');
+  comprehensiveAlimonyData.attachments.forEach((att, index) => {
+    const totalPages = att.images.length;
+    console.log(`   נספח ${att.label} - ${att.description}: ${totalPages} page${totalPages > 1 ? 's' : ''}`);
+  });
+  console.log('');
 
   try {
     // Use the submission endpoint which uploads to Google Drive!
@@ -320,9 +345,13 @@ async function testComprehensiveAlimony() {
       console.log('📄 The document should contain:');
       console.log('   1. כתב תביעה (Claim document)');
       console.log('   2. הרצאת פרטים - Form 4 (6 pages as images)');
-      console.log('   3. ייפוי כוח (Power of Attorney)');
-      console.log('   4. תצהיר (Declaration)');
+      console.log('   3. ייפוי כוח (Power of Attorney) - signatures on LEFT');
+      console.log('   4. תצהיר (Declaration) - signature on LEFT');
       console.log('   5. תוכן עניינים (Table of Contents)');
+      console.log('   6. נספחים (Attachments) with automatic page ranges:');
+      console.log('      - נספח א - תלושי שכר (2 pages)');
+      console.log('      - נספח ב - אישורי הכנסה (1 page)');
+      console.log('      - נספח ג - חוזה שכירות (3 pages)');
     }
   } catch (error) {
     console.error(`\n❌ Error: ${error.message}`);

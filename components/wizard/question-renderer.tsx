@@ -20,6 +20,19 @@ interface QuestionRendererProps {
   namePrefix?: string; // For nested fields like "divorceAgreement.field"
 }
 
+const getValueByPath = <T = unknown>(source: unknown, path: string): T | undefined => {
+  if (!path) return undefined;
+
+  return path
+    .split(".")
+    .reduce<unknown>((current, key) => {
+      if (current && typeof current === "object") {
+        return (current as Record<string, unknown>)[key];
+      }
+      return undefined;
+    }, source) as T | undefined;
+};
+
 export function QuestionRenderer({
   question,
   watchFields = {},
@@ -36,11 +49,11 @@ export function QuestionRenderer({
     const { dependsOn, showWhen } = question.conditional;
 
     // Get nested value using dot notation
-    const dependentValue = dependsOn.split('.').reduce((obj, key) => obj?.[key], watchFields);
+    const dependentValue = getValueByPath<string | undefined>(watchFields, dependsOn);
 
     // If conditional not met, don't render
     if (Array.isArray(showWhen)) {
-      if (!showWhen.includes(dependentValue)) return null;
+      if (!dependentValue || !showWhen.includes(dependentValue)) return null;
     } else {
       if (dependentValue !== showWhen) return null;
     }
@@ -50,17 +63,12 @@ export function QuestionRenderer({
   const fieldName = namePrefix ? `${namePrefix}.${question.id}` : question.id;
 
   // Get nested error if exists
-  const getNestedError = (errors: any, path: string): string | undefined => {
-    const keys = path.split(".");
-    let current = errors;
-    for (const key of keys) {
-      if (!current || !current[key]) return undefined;
-      current = current[key];
-    }
-    return current?.message;
+  const getNestedError = (path: string): string | undefined => {
+    const fieldError = getValueByPath<any>(errors, path);
+    return fieldError?.message;
   };
 
-  const errorMessage = getNestedError(errors, fieldName);
+  const errorMessage = getNestedError(fieldName);
 
   // Render heading
   if (question.type === "heading") {
@@ -208,6 +216,7 @@ export function QuestionRenderer({
 
   // Render repeater
   if (question.type === "repeater" && question.repeaterConfig) {
+    const config = question.repeaterConfig;
     return (
       <div className="col-span-2">
         <FormField
@@ -221,12 +230,12 @@ export function QuestionRenderer({
             control={control}
             render={({ field }) => (
               <Repeater
-                fields={question.repeaterConfig.fields}
+                fields={config.fields}
                 value={field.value || []}
                 onChange={field.onChange}
-                addButtonLabel={question.repeaterConfig.addButtonLabel}
-                minRows={question.repeaterConfig.minRows}
-                maxRows={question.repeaterConfig.maxRows}
+                addButtonLabel={config.addButtonLabel}
+                minRows={config.minRows}
+                maxRows={config.maxRows}
               />
             )}
           />
@@ -310,10 +319,10 @@ export function QuestionsSections({
       // Check if question should be shown based on conditionals
       if (q.conditional) {
         const { dependsOn, showWhen } = q.conditional;
-        const dependentValue = dependsOn.split('.').reduce((obj, key) => obj?.[key], watchFields);
+        const dependentValue = getValueByPath<string | undefined>(watchFields, dependsOn);
 
         if (Array.isArray(showWhen)) {
-          if (!showWhen.includes(dependentValue)) return false;
+          if (!dependentValue || !showWhen.includes(dependentValue)) return false;
         } else {
           if (dependentValue !== showWhen) return false;
         }
@@ -329,7 +338,7 @@ export function QuestionsSections({
     if (requiredQuestions.length === 0) {
       return visibleQuestions.some((q) => {
         const fieldName = namePrefix ? `${namePrefix}.${q.id}` : q.id;
-        const value = fieldName.split('.').reduce((obj, key) => obj?.[key], watchFields);
+        const value = getValueByPath<unknown>(watchFields, fieldName);
         return value !== undefined && value !== "" && value !== null;
       });
     }
@@ -337,8 +346,8 @@ export function QuestionsSections({
     // If there are required questions, all must be filled without errors
     return requiredQuestions.every((q) => {
       const fieldName = namePrefix ? `${namePrefix}.${q.id}` : q.id;
-      const value = fieldName.split('.').reduce((obj, key) => obj?.[key], watchFields);
-      const hasError = fieldName.split('.').reduce((obj, key) => obj?.[key], errors);
+      const value = getValueByPath<unknown>(watchFields, fieldName);
+      const hasError = getValueByPath<unknown>(errors, fieldName);
 
       // Field must have a value and no errors
       return value !== undefined && value !== "" && value !== null && !hasError;

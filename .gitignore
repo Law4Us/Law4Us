@@ -45,3 +45,7 @@ next-env.d.ts
 # Generated documents and temp files
 /tmp
 /temp
+
+# Tina CMS
+.tina/__generated__
+.tina/audit-*.log

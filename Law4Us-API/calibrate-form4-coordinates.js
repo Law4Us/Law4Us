@@ -25,32 +25,62 @@ if (fs.existsSync(fontPath)) {
 
 /**
  * Test coordinates for Page 1
- * Add your test coordinates here to calibrate
  */
 const PAGE_1_TEST_FIELDS = [
-  // Header boxes
-  { label: 'Plaintiff Name', text: 'שרה לוי', x: 640, y: 310, fontSize: 12, align: 'center' },
-  { label: 'Defendant Name', text: 'יוסי לוי', x: 180, y: 310, fontSize: 12, align: 'center' },
+  { label: 'Plaintiff Name', text: 'שרה לוי', x: 640, y: 310, fontSize: 18, align: 'center' },
+  { label: 'Defendant Name', text: 'יוסי לוי', x: 245, y: 310, fontSize: 18, align: 'center' },
+  { label: 'Row1 Name', text: 'שרה לוי', x: 730, y: 492, fontSize: 20, align: 'center' },
+  { label: 'Row1 ID', text: '345678901', x: 590, y: 492, fontSize: 20, align: 'center' },
+  { label: 'Row1 Address', text: 'רחוב 1', x: 390, y: 492, fontSize: 20, align: 'center' },
+  { label: 'Row1 Birthdate', text: '1985-05-10', x: 210, y: 492, fontSize: 20, align: 'center' },
+  { label: 'Row1 Relationship', text: 'בעל', x: 85, y: 492, fontSize: 20, align: 'center' },
+  { label: 'Field6 ✓', text: '✓', x: 745, y: 645, fontSize: 28, align: 'center' },
+  { label: 'Field7 Amount', text: '₪12,000', x: 500, y: 760, fontSize: 22, align: 'right' },
+  { label: 'Field8 Period', text: 'תקופה', x: 700, y: 965, fontSize: 20, align: 'center' },
+];
 
-  // Table row 1 - Personal info (5 columns)
-  { label: 'Col1: Name (Plaintiff)', text: 'שרה לוי', x: 720, y: 480, fontSize: 10, align: 'center' },
-  { label: 'Col2: ID (Plaintiff)', text: '345678901', x: 580, y: 480, fontSize: 10, align: 'center' },
-  { label: 'Col3: Address (Plaintiff)', text: 'רחוב ירושלים 24', x: 380, y: 480, fontSize: 9, align: 'center' },
-  { label: 'Col4: Birth Date (Plaintiff)', text: '1985-05-10', x: 200, y: 480, fontSize: 10, align: 'center' },
-  { label: 'Col5: Relationship', text: 'בעל ובעלה', x: 80, y: 480, fontSize: 9, align: 'center' },
+/**
+ * Test coordinates for Page 2
+ */
+const PAGE_2_TEST_FIELDS = [
+  { label: 'Field10 Applicant Property', text: 'נדל"ן', x: 620, y: 770, fontSize: 22, align: 'center' },
+  { label: 'Field10 Respondent Property', text: 'נדל"ן', x: 200, y: 770, fontSize: 22, align: 'center' },
+  { label: 'Field11 Applicant Income', text: '₪12,000', x: 620, y: 975, fontSize: 20, align: 'center' },
+  { label: 'Field11 Respondent Income', text: '₪22,000', x: 620, y: 1055, fontSize: 20, align: 'center' },
+  { label: 'Field12 Applicant Address', text: 'רחוב 1', x: 600, y: 1255, fontSize: 20, align: 'center' },
+  { label: 'Field12 Respondent Address', text: 'רחוב 2', x: 600, y: 1335, fontSize: 20, align: 'center' },
+];
 
-  // Field 6: Previous proceedings checkbox
-  { label: 'Field 6: Yes checkbox', text: '✓', x: 170, y: 615, fontSize: 14, align: 'center' },
-  { label: 'Field 6: Details line', text: 'פרטי הליך קודם...', x: 400, y: 650, fontSize: 10, align: 'right' },
+/**
+ * Test coordinates for Page 3
+ */
+const PAGE_3_TEST_FIELDS = [
+  { label: 'Field13 Bank Name', text: 'בנק', x: 510, y: 230, fontSize: 22, align: 'center' },
+  { label: 'Field13 Account Number', text: '123456', x: 230, y: 230, fontSize: 22, align: 'center' },
+  { label: 'Field14 ✓', text: '✓', x: 650, y: 475, fontSize: 28, align: 'center' },
+  { label: 'Field15 Amount', text: '₪10,000', x: 400, y: 515, fontSize: 26, align: 'right' },
+  { label: 'SectionB Marriage Date', text: '10/06/2010', x: 400, y: 750, fontSize: 24, align: 'right' },
+];
 
-  // Field 7: Last alimony
-  { label: 'Field 7: Amount', text: '₪5,000', x: 580, y: 720, fontSize: 10, align: 'right' },
-  { label: 'Field 7: Date', text: '2023-01-15', x: 220, y: 720, fontSize: 10, align: 'right' },
+/**
+ * Test coordinates for Pages 4-6 (expenses tables)
+ */
+const PAGE_4_TEST_FIELDS = [
+  { label: 'Children Needs Header', text: 'הוצאות ילדים', x: 400, y: 200, fontSize: 24, align: 'center' },
+  { label: 'Children Need Row 1', text: 'חינוך', x: 450, y: 250, fontSize: 22, align: 'center' },
+  { label: 'Children Need Amount', text: '₪2,000', x: 100, y: 250, fontSize: 22, align: 'center' },
+];
 
-  // Field 8: Employment table (first row)
-  { label: 'Field 8 Row 1: Period', text: 'התקופה', x: 680, y: 870, fontSize: 9, align: 'center' },
-  { label: 'Field 8 Row 1: Amount 1', text: 'ברוטו', x: 480, y: 870, fontSize: 9, align: 'center' },
-  { label: 'Field 8 Row 1: Amount 2', text: 'ברוטו', x: 280, y: 870, fontSize: 9, align: 'center' },
+const PAGE_5_TEST_FIELDS = [
+  { label: 'Household Header', text: 'מדור', x: 400, y: 200, fontSize: 24, align: 'center' },
+  { label: 'Household Row 1', text: 'שכר דירה', x: 450, y: 250, fontSize: 22, align: 'center' },
+  { label: 'Household Amount', text: '₪4,500', x: 100, y: 250, fontSize: 22, align: 'center' },
+];
+
+const PAGE_6_TEST_FIELDS = [
+  { label: 'Misc Header', text: 'הוצאות נוספות', x: 400, y: 200, fontSize: 24, align: 'center' },
+  { label: 'Misc Row 1', text: 'סיכום', x: 450, y: 250, fontSize: 22, align: 'center' },
+  { label: 'Misc Amount', text: '₪1,000', x: 100, y: 250, fontSize: 22, align: 'center' },
 ];
 
 /**
@@ -59,7 +89,6 @@ const PAGE_1_TEST_FIELDS = [
 async function calibrateCoordinates(pageNum, testFields) {
   console.log(`\n🎯 Calibrating Page ${pageNum}...\n`);
 
-  // Load template PNG
   const templatePath = path.join(__dirname, '..', 'lfc525 (2)', `lfc525 (2)-${pageNum}.png`);
   if (!fs.existsSync(templatePath)) {
     console.error(`❌ Template not found: ${templatePath}`);
@@ -69,18 +98,13 @@ async function calibrateCoordinates(pageNum, testFields) {
   const image = await loadImage(templatePath);
   console.log(`📐 Image dimensions: ${image.width}×${image.height} pixels`);
 
-  // Create canvas
   const canvas = createCanvas(image.width, image.height);
   const ctx = canvas.getContext('2d');
-
-  // Draw base image
   ctx.drawImage(image, 0, 0);
 
-  // Draw grid lines (optional, helpful for measuring)
   ctx.strokeStyle = 'rgba(255, 0, 0, 0.3)';
   ctx.lineWidth = 1;
 
-  // Vertical lines every 100px
   for (let x = 0; x < image.width; x += 100) {
     ctx.beginPath();
     ctx.moveTo(x, 0);
@@ -88,7 +112,6 @@ async function calibrateCoordinates(pageNum, testFields) {
     ctx.stroke();
   }
 
-  // Horizontal lines every 100px
   for (let y = 0; y < image.height; y += 100) {
     ctx.beginPath();
     ctx.moveTo(0, y);
@@ -96,72 +119,58 @@ async function calibrateCoordinates(pageNum, testFields) {
     ctx.stroke();
   }
 
-  // Draw test fields
   testFields.forEach((field, index) => {
-    // Draw crosshair at position
     ctx.strokeStyle = 'red';
     ctx.lineWidth = 2;
-    const crosshairSize = 20;
+    const size = 20;
 
-    // Horizontal line
     ctx.beginPath();
-    ctx.moveTo(field.x - crosshairSize, field.y);
-    ctx.lineTo(field.x + crosshairSize, field.y);
+    ctx.moveTo(field.x - size, field.y);
+    ctx.lineTo(field.x + size, field.y);
     ctx.stroke();
 
-    // Vertical line
     ctx.beginPath();
-    ctx.moveTo(field.x, field.y - crosshairSize);
-    ctx.lineTo(field.x, field.y + crosshairSize);
+    ctx.moveTo(field.x, field.y - size);
+    ctx.lineTo(field.x, field.y + size);
     ctx.stroke();
 
-    // Draw text
-    ctx.fillStyle = '#0000FF'; // Blue for test text
+    ctx.fillStyle = '#0000FF';
     ctx.textBaseline = 'top';
     ctx.direction = 'rtl';
     ctx.font = `${field.fontSize}px "Noto Sans Hebrew", Arial`;
     ctx.textAlign = field.align || 'right';
     ctx.fillText(field.text, field.x, field.y);
 
-    // Draw label above
-    ctx.fillStyle = '#FF0000'; // Red for labels
-    ctx.font = `8px Arial`;
+    ctx.fillStyle = '#FF0000';
+    ctx.font = '8px Arial';
     ctx.textAlign = 'left';
     ctx.fillText(`[${index + 1}] ${field.label}`, field.x + 25, field.y - 15);
 
     console.log(`   ✓ [${index + 1}] ${field.label}: (${field.x}, ${field.y})`);
   });
 
-  // Save output
   const outputDir = path.join(__dirname, 'calibration-output');
   if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir, { recursive: true });
   }
 
   const outputPath = path.join(outputDir, `page-${pageNum}-calibrated.png`);
-  const buffer = canvas.toBuffer('image/png');
-  fs.writeFileSync(outputPath, buffer);
-
-  console.log(`\n✅ Calibration image saved: ${outputPath}`);
-  console.log(`   Size: ${(buffer.length / 1024).toFixed(2)} KB\n`);
+  fs.writeFileSync(outputPath, canvas.toBuffer('image/png'));
+  console.log(`\n✅ Calibration image saved: ${outputPath}\n`);
 }
 
-// Run calibration
 (async () => {
   console.log('\n🎯 Form 4 Coordinate Calibration Tool');
   console.log('='.repeat(50));
 
   try {
-    // Calibrate Page 1
     await calibrateCoordinates(1, PAGE_1_TEST_FIELDS);
-
-    console.log('\n📋 Next Steps:');
-    console.log('1. Open calibration-output/page-1-calibrated.png');
-    console.log('2. Check if blue text aligns with form fields');
-    console.log('3. Check if red crosshairs mark the correct positions');
-    console.log('4. Adjust coordinates in this script and re-run');
-    console.log('5. Once calibrated, copy coordinates to form4-png-overlay.ts\n');
-
+    await calibrateCoordinates(2, PAGE_2_TEST_FIELDS);
+    await calibrateCoordinates(3, PAGE_3_TEST_FIELDS);
+    await calibrateCoordinates(4, PAGE_4_TEST_FIELDS);
+    await calibrateCoordinates(5, PAGE_5_TEST_FIELDS);
+    await calibrateCoordinates(6, PAGE_6_TEST_FIELDS);
+    console.log('\n📋 Calibration PNGs written for pages 1-6.');
   } catch (error) {
     console.error('\n❌ Error:', error);
     if (error.stack) {
