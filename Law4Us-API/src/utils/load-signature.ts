@@ -1,7 +1,9 @@
 /**
  * Load lawyer signature on-demand
- * Now reads from environment variable instead of file system for serverless compatibility
+ * Downloads from Google Drive for serverless compatibility (no size limits!)
  */
+
+import { downloadFile } from '../services/google-drive';
 
 let cachedSignature: string | null = null;
 
@@ -9,34 +11,36 @@ let cachedSignature: string | null = null;
  * Load lawyer signature (Ariel Dror with stamp)
  * Returns base64 data URL format
  *
- * For Vercel deployment, set LAWYER_SIGNATURE_BASE64 environment variable
+ * For Vercel deployment, set LAWYER_SIGNATURE_FILE_ID environment variable
+ * Run scripts/upload-signature-to-drive.ts to get the file ID
  */
-export function loadLawyerSignature(): string {
+export async function loadLawyerSignature(): Promise<string> {
   // Return cached version if available
   if (cachedSignature) {
+    console.log('♻️  Using cached lawyer signature');
     return cachedSignature;
   }
 
   try {
-    // Read from environment variable
-    const base64Signature = process.env.LAWYER_SIGNATURE_BASE64;
+    const fileId = process.env.LAWYER_SIGNATURE_FILE_ID;
 
-    if (!base64Signature) {
-      throw new Error('LAWYER_SIGNATURE_BASE64 environment variable not set');
+    if (!fileId) {
+      throw new Error('LAWYER_SIGNATURE_FILE_ID environment variable not set. Run: npx tsx scripts/upload-signature-to-drive.ts');
     }
 
-    // If it already includes data URL prefix, use as-is
-    if (base64Signature.startsWith('data:image/png;base64,')) {
-      cachedSignature = base64Signature;
-    } else {
-      // Add data URL prefix
-      cachedSignature = `data:image/png;base64,${base64Signature}`;
-    }
+    console.log(`📥 Downloading lawyer signature from Google Drive (ID: ${fileId})...`);
 
-    console.log(`✅ Loaded lawyer signature from environment variable (${base64Signature.length} characters)`);
+    // Download file from Google Drive
+    const buffer = await downloadFile(fileId);
+
+    // Convert to base64 data URL
+    const base64 = buffer.toString('base64');
+    cachedSignature = `data:image/png;base64,${base64}`;
+
+    console.log(`✅ Loaded lawyer signature from Google Drive (${(buffer.length / 1024).toFixed(2)} KB)`);
     return cachedSignature;
   } catch (error) {
     console.error('❌ Failed to load lawyer signature:', error);
-    throw new Error('Lawyer signature not available. Please set LAWYER_SIGNATURE_BASE64 environment variable.');
+    throw new Error(`Lawyer signature not available: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }

@@ -26,12 +26,13 @@ This guide explains how to deploy Law4Us to Vercel Pro, eliminating the need for
 - **Benefits**: No network latency, better error handling
 
 ### 2. Environment Variable Changes
-- **Added**: `LAWYER_SIGNATURE_BASE64` (no file system access needed)
+- **Added**: `LAWYER_SIGNATURE_FILE_ID` (Google Drive file ID - no 65KB size limit!)
 - **Removed dependency**: `NEXT_PUBLIC_BACKEND_URL` (Railway URL)
 - **Same**: Google Drive and Groq API credentials
 
 ### 3. File System Compatibility
-- **Updated**: `load-signature.ts` now reads from env var instead of file system
+- **Updated**: `load-signature.ts` now downloads from Google Drive instead of file system
+- **Benefit**: No Vercel env var size limits (was hitting 93KB limit with base64)
 - **Compatible**: All document generators work in Vercel serverless functions
 
 ---
@@ -81,25 +82,25 @@ This guide explains how to deploy Law4Us to Vercel Pro, eliminating the need for
 
 ### Step 2: Prepare Environment Variables
 
-1. **Copy the signature to base64** (if not done already):
+1. **Upload lawyer signature to Google Drive**:
    ```bash
    cd /Users/dortagger/Law4Us
-   chmod +x scripts/add-signature-to-env.sh
-   ./scripts/add-signature-to-env.sh
+   npx tsx scripts/upload-signature-to-drive.ts
    ```
+   This will output a file ID like: `LAWYER_SIGNATURE_FILE_ID=1vCDmhti8cMpdTm76bVN3bhrXMJMO6bf5`
 
 2. **Verify `.env.local` contains**:
    ```env
    # Google Drive
    GOOGLE_SERVICE_ACCOUNT_EMAIL=law4us-submissions@project-id.iam.gserviceaccount.com
    GOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nYour_Key_Here\n-----END PRIVATE KEY-----\n"
-   GOOGLE_DRIVE_FOLDER_ID=1ABC...XYZ
+   GOOGLE_DRIVE_FOLDER_ID=0AB9AJ4UMyJ-HUk9PVA
 
    # Groq AI
    GROQ_API_KEY=gsk_your_api_key_here
 
-   # Lawyer Signature (auto-added by script)
-   LAWYER_SIGNATURE_BASE64=iVBORw0KGgoAAAA...very_long_base64_string...
+   # Lawyer Signature (uploaded to Google Drive - no size limits!)
+   LAWYER_SIGNATURE_FILE_ID=1vCDmhti8cMpdTm76bVN3bhrXMJMO6bf5
    ```
 
 ---
@@ -128,7 +129,7 @@ This guide explains how to deploy Law4Us to Vercel Pro, eliminating the need for
      - `GOOGLE_PRIVATE_KEY` ⚠️ **Important**: Paste the entire key including `\n` characters
      - `GOOGLE_DRIVE_FOLDER_ID`
      - `GROQ_API_KEY`
-     - `LAWYER_SIGNATURE_BASE64` (paste the entire base64 string)
+     - `LAWYER_SIGNATURE_FILE_ID` (just ~44 characters - no size limit issues!)
 
 4. **Deploy**:
    - Click "Deploy"
@@ -159,7 +160,7 @@ This guide explains how to deploy Law4Us to Vercel Pro, eliminating the need for
    vercel env add GOOGLE_PRIVATE_KEY production
    vercel env add GOOGLE_DRIVE_FOLDER_ID production
    vercel env add GROQ_API_KEY production
-   vercel env add LAWYER_SIGNATURE_BASE64 production
+   vercel env add LAWYER_SIGNATURE_FILE_ID production
    ```
 
 ---
@@ -226,16 +227,16 @@ Once you've verified everything works on Vercel:
 
 ## 🔧 Troubleshooting
 
-### Issue: "LAWYER_SIGNATURE_BASE64 environment variable not set"
+### Issue: "LAWYER_SIGNATURE_FILE_ID environment variable not set"
 
 **Solution**:
 ```bash
-# Re-run the signature script
+# Upload signature to Google Drive and get the file ID
 cd /Users/dortagger/Law4Us
-./scripts/add-signature-to-env.sh
+npx tsx scripts/upload-signature-to-drive.ts
 
-# Copy the entire base64 value to Vercel environment variables
-cat .env.local | grep LAWYER_SIGNATURE_BASE64
+# This will output: LAWYER_SIGNATURE_FILE_ID=xxxxx
+# Add this to your Vercel environment variables (only ~44 characters!)
 ```
 
 ### Issue: "Google Drive authentication failed"
