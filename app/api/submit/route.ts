@@ -2,7 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 
 /**
  * API route for form submission
- * Validates data and forwards to Railway backend
+ * NOW HANDLES EVERYTHING LOCALLY - No Railway backend needed!
+ *
+ * This endpoint delegates to /api/submission which:
+ * - Generates documents
+ * - Uploads to Google Drive
+ * - Returns success/failure response
  */
 export async function POST(request: NextRequest) {
   try {
@@ -17,30 +22,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get backend URL from environment
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://law4us-production.up.railway.app';
+    // Call our local submission API route (no external backend!)
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ||
+                    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
 
-    if (!backendUrl) {
-      console.warn("Backend URL not configured");
-      // In development, simulate success
-      if (process.env.NODE_ENV === "development") {
-        console.log("=== SIMULATED SUBMISSION ===");
-        console.log("Data:", JSON.stringify(data, null, 2));
-        return NextResponse.json({
-          success: true,
-          message: "הטופס נשלח בהצלחה (סימולציה)",
-          submissionId: `SIM-${Date.now()}`,
-        });
-      }
-
-      return NextResponse.json(
-        { success: false, error: "שגיאת הגדרות שרת" },
-        { status: 500 }
-      );
-    }
-
-    // Forward to Railway backend
-    const response = await fetch(`${backendUrl}/api/submission/submit`, {
+    const response = await fetch(`${baseUrl}/api/submission`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -53,25 +39,28 @@ export async function POST(request: NextRequest) {
     });
 
     if (!response.ok) {
-      throw new Error(`Backend returned ${response.status}`);
+      const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+      throw new Error(errorData.message || `Submission failed with status ${response.status}`);
     }
 
     const result = await response.json();
 
     // Log success
-    console.log("Submission successful:", {
-      submissionId: result.id || Date.now(),
+    console.log("✅ Submission successful:", {
       applicant: data.basicInfo.fullName,
       claims: data.selectedClaims,
+      folderId: result.folderId,
+      folderName: result.folderName,
     });
 
     return NextResponse.json({
       success: true,
-      message: "הטופס נשלח בהצלחה",
-      submissionId: result.id || `SUB-${Date.now()}`,
+      message: result.message || "הטופס נשלח בהצלחה",
+      folderId: result.folderId,
+      folderName: result.folderName,
     });
   } catch (error) {
-    console.error("Submission error:", error);
+    console.error("❌ Submission error:", error);
 
     return NextResponse.json(
       {

@@ -9,7 +9,8 @@
     "lint": "next lint",
     "type-check": "tsc --noEmit",
     "test:document-gen": "tsx scripts/test-document-generation.ts",
-    "migrate:blog": "tsx scripts/migrate-wordpress.ts"
+    "migrate:blog": "tsx scripts/migrate-wordpress.ts",
+    "generate:redirects": "tsx scripts/generate-redirects.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
@@ -18,9 +19,12 @@
     "@next/mdx": "^16.0.1",
     "@tailwindcss/typography": "^0.5.19",
     "@tinacms/cli": "^1.12.0",
+    "canvas": "^3.2.0",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
-    "docxtemplater": "^3.67.1",
+    "docx": "^9.5.1",
+    "docxtemplater": "^3.67.3",
+    "googleapis": "^164.1.0",
     "gray-matter": "^4.0.3",
     "groq-sdk": "^0.34.0",
     "lucide-react": "^0.468.0",
@@ -30,7 +34,7 @@
     "open-docxtemplater-image-module": "^1.0.3",
     "pdf-lib": "^1.17.1",
     "pdf-parse": "^2.4.5",
-    "pdfjs-dist": "^5.4.296",
+    "pdfjs-dist": "^5.4.394",
     "pizzip": "^3.2.0",
     "puppeteer": "^23.10.4",
     "react": "^18.3.1",

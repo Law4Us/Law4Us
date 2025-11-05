@@ -1,16 +1,15 @@
 /**
  * Load lawyer signature on-demand
- * This avoids module-level file reads that can crash tsx watch
+ * Now reads from environment variable instead of file system for serverless compatibility
  */
-
-import { readFileSync } from 'fs';
-import { join } from 'path';
 
 let cachedSignature: string | null = null;
 
 /**
  * Load lawyer signature (Ariel Dror with stamp)
  * Returns base64 data URL format
+ *
+ * For Vercel deployment, set LAWYER_SIGNATURE_BASE64 environment variable
  */
 export function loadLawyerSignature(): string {
   // Return cached version if available
@@ -19,30 +18,25 @@ export function loadLawyerSignature(): string {
   }
 
   try {
-    // Try multiple possible paths
-    const possiblePaths = [
-      join(__dirname, '../../Signature.png'),
-      join(__dirname, '../../../Signature.png'),
-      '/Users/dortagger/Law4Us/Signature.png',
-      '/Users/dortagger/Law4Us/Law4Us-API/Signature.png',
-    ];
+    // Read from environment variable
+    const base64Signature = process.env.LAWYER_SIGNATURE_BASE64;
 
-    for (const path of possiblePaths) {
-      try {
-        const buffer = readFileSync(path);
-        cachedSignature = `data:image/png;base64,${buffer.toString('base64')}`;
-        console.log(`✅ Loaded lawyer signature from: ${path} (${buffer.length} bytes)`);
-        return cachedSignature;
-      } catch {
-        // Try next path
-        continue;
-      }
+    if (!base64Signature) {
+      throw new Error('LAWYER_SIGNATURE_BASE64 environment variable not set');
     }
 
-    throw new Error('Could not find Signature.png in any expected location');
+    // If it already includes data URL prefix, use as-is
+    if (base64Signature.startsWith('data:image/png;base64,')) {
+      cachedSignature = base64Signature;
+    } else {
+      // Add data URL prefix
+      cachedSignature = `data:image/png;base64,${base64Signature}`;
+    }
+
+    console.log(`✅ Loaded lawyer signature from environment variable (${base64Signature.length} characters)`);
+    return cachedSignature;
   } catch (error) {
     console.error('❌ Failed to load lawyer signature:', error);
-    // Return empty string as fallback
-    return '';
+    throw new Error('Lawyer signature not available. Please set LAWYER_SIGNATURE_BASE64 environment variable.');
   }
 }
