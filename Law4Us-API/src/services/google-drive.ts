@@ -1,6 +1,78 @@
 import { google } from 'googleapis';
 import { Readable } from 'stream';
 
+const PRIVATE_KEY_BEGIN = '-----BEGIN PRIVATE KEY-----';
+const PRIVATE_KEY_END = '-----END PRIVATE KEY-----';
+
+/**
+ * Normalize a service account private key into a PEM string that OpenSSL accepts.
+ * Handles common deployment issues (double quotes, literal \n, missing line breaks, base64 wrappers).
+ */
+function normalizePrivateKey(rawKey: string): string {
+  let key = rawKey.trim();
+
+  // Strip surrounding quotes added by some hosting dashboards
+  const firstChar = key[0];
+  const lastChar = key[key.length - 1];
+  if (firstChar && lastChar && ((firstChar === '"' && lastChar === '"') || (firstChar === "'" && lastChar === "'"))) {
+    key = key.slice(1, -1);
+  }
+
+  // If the key is a JSON string, pull out the private_key field
+  if (key.trim().startsWith('{')) {
+    try {
+      const parsed = JSON.parse(key);
+      if (typeof parsed?.private_key === 'string') {
+        key = parsed.private_key;
+      }
+    } catch (err) {
+      console.warn('⚠️  Failed to parse GOOGLE_PRIVATE_KEY as JSON, continuing with original value');
+    }
+  }
+
+  // Convert escaped newline / carriage-return sequences to real characters
+  key = key.replace(/\\r/g, '\r').replace(/\\n/g, '\n');
+
+  // Some dashboards double-escape the string and it becomes base64 encoded JSON; try to decode if needed
+  if (!key.includes(PRIVATE_KEY_BEGIN) && /^[A-Za-z0-9+/=\s]+$/.test(key)) {
+    try {
+      const decoded = Buffer.from(key.replace(/\s+/g, ''), 'base64').toString('utf8');
+      if (decoded.includes(PRIVATE_KEY_BEGIN)) {
+        key = decoded;
+      }
+    } catch (err) {
+      console.warn('⚠️  Failed to base64-decode GOOGLE_PRIVATE_KEY, continuing with original value');
+    }
+  }
+
+  const beginIndex = key.indexOf(PRIVATE_KEY_BEGIN);
+  const endIndex = key.indexOf(PRIVATE_KEY_END);
+
+  if (beginIndex === -1 || endIndex === -1) {
+    throw new Error('Invalid GOOGLE_PRIVATE_KEY format. Expected PEM block with BEGIN/END headers.');
+  }
+
+  // Extract and normalise the PEM body (remove stray whitespace, then chunk into 64-char lines)
+  let body = key
+    .slice(beginIndex + PRIVATE_KEY_BEGIN.length, endIndex)
+    .replace(/\r/g, '\n')
+    .replace(/[^A-Za-z0-9+/=]/g, '');
+
+  if (!body) {
+    throw new Error('Invalid GOOGLE_PRIVATE_KEY format. PEM body is empty after normalisation.');
+  }
+
+  const chunkedBody = body.match(/.{1,64}/g)?.join('\n');
+
+  if (!chunkedBody) {
+    throw new Error('Invalid GOOGLE_PRIVATE_KEY format. Unable to split PEM body into lines.');
+  }
+
+  const normalisedKey = `${PRIVATE_KEY_BEGIN}\n${chunkedBody}\n${PRIVATE_KEY_END}\n`;
+
+  return normalisedKey;
+}
+
 // Don't cache env var at module level - it might not be loaded yet!
 function getSharedDriveId() {
   return process.env.GOOGLE_DRIVE_FOLDER_ID;
@@ -30,21 +102,11 @@ function getDriveClient() {
     throw new Error('GOOGLE_PRIVATE_KEY environment variable is not set');
   }
 
-  // Process private key - handle both literal \n and actual newlines
-  let privateKey = process.env.GOOGLE_PRIVATE_KEY;
-
-  // If the key contains literal \n strings, replace them with actual newlines
-  if (privateKey.includes('\\n')) {
-    privateKey = privateKey.replace(/\\n/g, '\n');
-  }
-
-  // Validate key format
-  if (!privateKey.includes('-----BEGIN PRIVATE KEY-----') || !privateKey.includes('-----END PRIVATE KEY-----')) {
-    console.error('❌ Invalid private key format. Key should start with -----BEGIN PRIVATE KEY----- and end with -----END PRIVATE KEY-----');
-    throw new Error('Invalid GOOGLE_PRIVATE_KEY format. Please check your environment variable.');
-  }
+  // Process private key - tolerate most environment-variable quirks automatically
+  const privateKey = normalizePrivateKey(process.env.GOOGLE_PRIVATE_KEY);
 
   console.log('✅ Private key format validated');
+  console.log(`Key length: ${privateKey.length} characters, lines: ${privateKey.split('\n').length}`);
 
   const auth = new google.auth.GoogleAuth({
     credentials: {
