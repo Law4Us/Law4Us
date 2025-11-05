@@ -31,11 +31,7 @@ export default defineConfig({
         path: 'content/blog',
         format: 'mdx',
         ui: {
-          // This is the path to the template for the default form
-          defaultItem: {
-            author: 'אריאל דרור',
-            category: 'כללי',
-          },
+          // Default item configuration removed due to TinaCMS version compatibility
         },
         fields: [
           {

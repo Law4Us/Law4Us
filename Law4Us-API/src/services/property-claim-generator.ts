@@ -20,7 +20,7 @@ import {
   ImageRun,
   convertInchesToTwip,
 } from 'docx';
-import { BasicInfo, FormData } from '../types';
+import { BasicInfo, FormData, Child } from '../types';
 import {
   FONT_SIZES,
   SPACING,
@@ -872,7 +872,7 @@ function generateStatementOfDetails(
   // Section 6: Children
   paragraphs.push(createSectionHeader('6. ילדים:'));
   if (children.length > 0) {
-    children.forEach((child, index) => {
+    children.forEach((child: Child, index: number) => {
       paragraphs.push(createSubsectionHeader(`ילד/ה ${index + 1}:`));
       paragraphs.push(createInfoLine('שם מלא', `${child.firstName} ${child.lastName}`));
       paragraphs.push(createInfoLine('מספר זהות', child.idNumber));

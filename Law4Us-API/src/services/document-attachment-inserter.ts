@@ -7,11 +7,9 @@ import Docxtemplater from 'docxtemplater';
 import PizZip from 'pizzip';
 import { ProcessedAttachment } from '../types';
 
-// Type declarations for DOM types used in XML manipulation
-declare global {
-  type Document = any;
-  type Element = any;
-}
+// Use custom type names to avoid conflicts with DOM types
+type XMLDocument = any;
+type XMLElement = any;
 
 /**
  * Insert attachment pages at the end of a Word document
@@ -102,7 +100,7 @@ export async function insertAttachmentPages(
 /**
  * Add a page break to the Word document
  */
-function addPageBreak(xmlDoc: Document, body: Element): void {
+function addPageBreak(xmlDoc: XMLDocument, body: XMLElement): void {
   const pageBreakParagraph = xmlDoc.createElementNS(
     'http://schemas.openxmlformats.org/wordprocessingml/2006/main',
     'w:p'
@@ -127,7 +125,7 @@ function addPageBreak(xmlDoc: Document, body: Element): void {
 /**
  * Add attachment header (e.g., "נספח א")
  */
-function addAttachmentHeader(xmlDoc: Document, body: Element, label: string): void {
+function addAttachmentHeader(xmlDoc: XMLDocument, body: XMLElement, label: string): void {
   const headerParagraph = xmlDoc.createElementNS(
     'http://schemas.openxmlformats.org/wordprocessingml/2006/main',
     'w:p'
@@ -200,8 +198,8 @@ function addAttachmentHeader(xmlDoc: Document, body: Element, label: string): vo
  */
 async function addImageToDocument(
   zip: PizZip,
-  xmlDoc: Document,
-  body: Element,
+  xmlDoc: XMLDocument,
+  body: XMLElement,
   imageBuffer: Buffer,
   imageNumber: number,
   altText: string
@@ -240,14 +238,14 @@ async function addImageToDocument(
 
 // Polyfill for DOMParser and XMLSerializer in Node.js
 class DOMParser {
-  parseFromString(xmlString: string, mimeType: string): Document {
+  parseFromString(xmlString: string, mimeType: string): XMLDocument {
     // Simple XML parsing - in production, use xmldom package
     return { getElementsByTagName: () => [], } as any;
   }
 }
 
 class XMLSerializer {
-  serializeToString(doc: Document): string {
+  serializeToString(doc: XMLDocument): string {
     // Simple XML serialization - in production, use xmldom package
     return '';
   }

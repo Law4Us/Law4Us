@@ -64,7 +64,7 @@ router.post('/submit', async (req: Request, res: Response) => {
     }
 
     // Load lawyer signature if not provided by client
-    const lawyerSignature = submissionData.lawyerSignature || loadLawyerSignature();
+    const lawyerSignature = submissionData.lawyerSignature || await loadLawyerSignature();
     if (!submissionData.lawyerSignature) {
       console.log('📷 Using default lawyer signature (Ariel Dror)');
     }
