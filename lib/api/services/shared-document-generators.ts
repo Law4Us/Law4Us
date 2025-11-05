@@ -187,8 +187,8 @@ export function createRelationshipSection(
 
   if (sharedChildren.length > 0) {
     relationshipText = marriageDate
-      ? `המדובר בזוג נשוי, להם נולדו ${sharedChildren.length === 1 ? 'ילד' : `${sharedChildren.length} ילדים`}: ${sharedChildrenNames}. `
-      : `המדובר בזוג לא נשואי, להם נולדו ${sharedChildren.length === 1 ? 'ילד' : `${sharedChildren.length} ילדים`}: ${sharedChildrenNames}. `;
+      ? `המדובר בזוג נשוי, להם ${sharedChildren.length === 1 ? 'נולד ילד' : `נולדו ${sharedChildren.length} ילדים`}: ${sharedChildrenNames}. `
+      : `המדובר בזוג לא נשואי, להם ${sharedChildren.length === 1 ? 'נולד ילד' : `נולדו ${sharedChildren.length} ילדים`}: ${sharedChildrenNames}. `;
   } else {
     relationshipText = marriageDate
       ? `המדובר בזוג נשוי. `

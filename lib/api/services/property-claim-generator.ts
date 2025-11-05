@@ -444,6 +444,13 @@ export async function generatePropertyClaimDocument(
 ): Promise<Buffer> {
   const { basicInfo, formData, signature, lawyerSignature, attachments } = data;
 
+  // Log attachments for debugging
+  if (attachments && attachments.length > 0) {
+    console.log(`📎 Property claim received ${attachments.length} attachments`);
+  } else {
+    console.log(`ℹ️ Property claim received no attachments`);
+  }
+
   // Extract gender terms with names
   const plaintiff = getPlaintiffTerm(basicInfo.gender, basicInfo.fullName);
   const defendant = getDefendantTerm(basicInfo.gender2, basicInfo.fullName2);

@@ -495,14 +495,14 @@ export function mapFormDataToForm4Data(
 
   // Map employment status
   const applicantEmploymentStatus =
-    property.applicantEmploymentStatus === 'employed' ? 'שכיר/ה' :
-    property.applicantEmploymentStatus === 'self-employed' ? 'עצמאי/ת' :
+    property.applicantEmploymentStatus === 'employee' ? 'שכיר/ה' :
+    property.applicantEmploymentStatus === 'selfEmployed' ? 'עצמאי/ת' :
     property.applicantEmploymentStatus === 'unemployed' ? 'לא עובד/ת' :
     property.applicantEmploymentStatus || 'לא צוין';
 
   const respondentEmploymentStatus =
-    property.respondentEmploymentStatus === 'employed' ? 'שכיר/ה' :
-    property.respondentEmploymentStatus === 'self-employed' ? 'עצמאי/ת' :
+    property.respondentEmploymentStatus === 'employee' ? 'שכיר/ה' :
+    property.respondentEmploymentStatus === 'selfEmployed' ? 'עצמאי/ת' :
     property.respondentEmploymentStatus === 'unemployed' ? 'לא עובד/ת' :
     property.respondentEmploymentStatus || 'לא ידוע';
 
@@ -555,15 +555,15 @@ export function mapFormDataToForm4Data(
     applicantEmployment: {
       status: applicantEmploymentStatus,
       employer: property.applicantEmployer,
-      monthlyIncome: property.applicantGrossSalary,
-      annualIncome: property.applicantGrossSalary ? property.applicantGrossSalary * 12 : undefined,
+      monthlyIncome: property.applicantGrossSalary || property.applicantGrossIncome,
+      annualIncome: (property.applicantGrossSalary || property.applicantGrossIncome) ? (property.applicantGrossSalary || property.applicantGrossIncome) * 12 : undefined,
       additionalIncome: property.applicantAdditionalIncome,
     },
 
     respondentEmployment: {
       status: respondentEmploymentStatus,
       employer: property.respondentEmployer,
-      estimatedIncome: property.respondentEstimatedIncome,
+      estimatedIncome: property.respondentGrossSalary || property.respondentGrossIncome,
       additionalIncome: property.respondentAdditionalIncome,
     },
 

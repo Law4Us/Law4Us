@@ -229,8 +229,8 @@ const FORM4_FIELD_COORDINATES: Record<string, FieldCoordinate> = {
 async function loadForm4PngTemplates(): Promise<Buffer[]> {
   console.log(`🖼️  Loading pre-generated Form 4 PNG templates...`);
 
-  // Path to pre-generated PNG folder
-  const pngFolderPath = path.join(process.cwd(), '..', 'lfc525 (2)');
+  // Path to pre-generated PNG folder (in public directory for Vercel deployment)
+  const pngFolderPath = path.join(process.cwd(), 'public', 'form4-templates');
 
   if (!fs.existsSync(pngFolderPath)) {
     throw new Error(`Form 4 PNG template folder not found at: ${pngFolderPath}`);

@@ -172,11 +172,13 @@ export async function convertImageToPng(
  *
  * @param file - Uploaded file
  * @param label - Attachment label (e.g., "נספח א")
+ * @param description - Attachment description (optional)
  * @returns Processed attachment with PNG images
  */
 export async function processAttachment(
   file: UploadedFile,
-  label: string
+  label: string,
+  description: string = ''
 ): Promise<ProcessedAttachment> {
   console.log(`\n📎 Processing attachment: ${label} (${file.originalname})`);
   console.log(`   Type: ${file.mimetype}, Size: ${(file.size / 1024).toFixed(2)} KB`);
@@ -199,6 +201,7 @@ export async function processAttachment(
 
     return {
       label,
+      description,
       images,
       originalFile: file,
     };
@@ -211,19 +214,19 @@ export async function processAttachment(
 /**
  * Batch process multiple attachments
  *
- * @param attachments - Array of files with labels
+ * @param attachments - Array of files with labels and descriptions
  * @returns Array of processed attachments
  */
 export async function processAttachments(
-  attachments: Array<{ file: UploadedFile; label: string }>
+  attachments: Array<{ file: UploadedFile; label: string; description?: string }>
 ): Promise<ProcessedAttachment[]> {
   console.log(`\n🔄 Processing ${attachments.length} attachments...`);
 
   const results: ProcessedAttachment[] = [];
 
-  for (const { file, label } of attachments) {
+  for (const { file, label, description = '' } of attachments) {
     try {
-      const processed = await processAttachment(file, label);
+      const processed = await processAttachment(file, label, description);
       results.push(processed);
     } catch (error) {
       console.error(`Failed to process ${label}:`, error);

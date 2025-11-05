@@ -729,6 +729,16 @@ export const PROPERTY_QUESTIONS: Question[] = [
     ],
   },
   {
+    id: "property.respondentEmployer",
+    type: "text",
+    label: "שם המעסיק של [RESPONDENT_NAME] (אם ידוע):",
+    placeholder: "שם המעסיק",
+    conditional: {
+      dependsOn: "property.respondentEmploymentStatus",
+      showWhen: "employee",
+    },
+  },
+  {
     id: "property.respondentGrossSalary",
     type: "number",
     label: "כמה [RESPONDENT_NAME] מרוויח/ה ברוטו (במידה ולא ידוע - אומדן):",

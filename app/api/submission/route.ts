@@ -122,6 +122,39 @@ export async function POST(request: NextRequest) {
       divorceAgreement: 'הסכם-גירושין',
     };
 
+    // Process attachments if any - convert base64 to UploadedFile format
+    let processedAttachments: Array<{
+      label: string;
+      description: string;
+      images: Buffer[];
+    }> = [];
+
+    if (submissionData.attachments && submissionData.attachments.length > 0) {
+      console.log(`📎 Processing ${submissionData.attachments.length} attachments for document insertion...`);
+
+      const { processAttachments } = await import('@/lib/api/services/pdf-converter');
+
+      const uploadedFiles = submissionData.attachments.map((att: any) => {
+        // Convert base64 to Buffer
+        const base64Data = att.file.split(',')[1] || att.file; // Remove data URL prefix if present
+        const buffer = Buffer.from(base64Data, 'base64');
+
+        return {
+          file: {
+            buffer,
+            originalname: att.name,
+            mimetype: att.mimeType,
+            size: buffer.length,
+          } as any,
+          label: att.label,
+          description: att.description || '',
+        };
+      });
+
+      processedAttachments = await processAttachments(uploadedFiles);
+      console.log(`✅ Processed ${processedAttachments.length} attachments into ${processedAttachments.reduce((sum, att) => sum + att.images.length, 0)} pages`);
+    }
+
     // Generate documents for each selected claim
     for (const claimType of submissionData.selectedClaims) {
       console.log(`📄 Generating ${claimType} document...`);
@@ -150,7 +183,7 @@ export async function POST(request: NextRequest) {
         claimType: claimType as any,
         signature: submissionData.signature,
         lawyerSignature: lawyerSignature,
-        attachments: submissionData.attachments,
+        attachments: processedAttachments.length > 0 ? processedAttachments as any : undefined,
       });
 
       const fileName = `${hebrewDocNames[claimType] || claimType}.docx`;

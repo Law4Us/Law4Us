@@ -6,6 +6,7 @@
 import Docxtemplater from 'docxtemplater';
 import PizZip from 'pizzip';
 import { ProcessedAttachment } from '@/lib/api/types';
+import { DOMParser, XMLSerializer } from '@xmldom/xmldom';
 
 // Use custom type names to avoid conflicts with DOM types
 type XMLDocument = any;
@@ -235,35 +236,3 @@ async function addImageToDocument(
   // TODO: Add the image relationship to word/_rels/document.xml.rels
   // TODO: Add the drawing XML for the image in the paragraph
 }
-
-// Polyfill for DOMParser and XMLSerializer in Node.js
-class DOMParser {
-  parseFromString(xmlString: string, mimeType: string): XMLDocument {
-    // Simple XML parsing - in production, use xmldom package
-    return { getElementsByTagName: () => [], } as any;
-  }
-}
-
-class XMLSerializer {
-  serializeToString(doc: XMLDocument): string {
-    // Simple XML serialization - in production, use xmldom package
-    return '';
-  }
-}
-
-/**
- * PRODUCTION NOTE:
- * The above implementation is simplified for demonstration.
- * For full production use, integrate with:
- *
- * 1. open-docxtemplater-image-module - Handles image insertion properly
- * 2. xmldom - Proper XML parsing and serialization
- * 3. Manual relationship management for images
- *
- * The complete implementation would:
- * - Add images to word/media/ folder
- * - Update word/_rels/document.xml.rels with relationships
- * - Insert proper DrawingML XML in document.xml
- * - Handle image sizing and positioning
- * - Support both inline and floating images
- */

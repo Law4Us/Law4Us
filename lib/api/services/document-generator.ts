@@ -13,7 +13,6 @@ import {
   getClaimTypeInHebrew,
   TransformContext,
 } from './groq-service';
-import { processAttachments } from './pdf-converter';
 import { insertAttachmentPages } from './document-attachment-inserter';
 import { generatePropertyClaimDocument } from './property-claim-generator';
 import { generateCustodyClaim } from './custody-claim-generator';
@@ -274,15 +273,10 @@ export async function generateDocument(
       documentBuffer = await fillTemplate(claimType, data);
     }
 
-    // Step 3: Process and insert attachments (if any)
+    // Step 3: Insert attachment pages (if any - already processed by submission route)
     if (attachments && attachments.length > 0) {
-      console.log(`\n📎 Processing ${attachments.length} attachments...`);
-
-      const processedAttachments = await processAttachments(attachments as any); // Type assertion for attachment compatibility
-
-      if (processedAttachments.length > 0) {
-        documentBuffer = await insertAttachmentPages(documentBuffer, processedAttachments as any); // Type assertion for attachment compatibility
-      }
+      console.log(`\n📎 Inserting ${attachments.length} pre-processed attachments into document...`);
+      documentBuffer = await insertAttachmentPages(documentBuffer, attachments as any);
     }
 
     console.log('\n' + '='.repeat(80));

@@ -103,6 +103,7 @@ export interface AttachmentPage {
 
 export interface ProcessedAttachment {
   label: string;
+  description: string;
   images: Buffer[]; // Each page as PNG buffer
   originalFile: UploadedFile;
 }

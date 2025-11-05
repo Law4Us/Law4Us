@@ -266,7 +266,7 @@ function createEmploymentSections(data: AlimonyClaimData): Paragraph[] {
   // Husband's (respondent's) employment - SECTION level
   paragraphs.push(createSubsectionHeader('השתכרות הבעל'));
 
-  if (property.respondentEmploymentStatus === 'employed' && property.respondentEmployer) {
+  if (property.respondentEmploymentStatus === 'employee' && property.respondentEmployer) {
     paragraphs.push(
       createBodyParagraph(
         `הנתבע מועסק אצל ${property.respondentEmployer}.`,
@@ -275,10 +275,12 @@ function createEmploymentSections(data: AlimonyClaimData): Paragraph[] {
     );
   }
 
-  if (property.respondentEstimatedIncome) {
+  // Handle both employee salary and self-employed income
+  const respondentIncome = property.respondentGrossSalary || property.respondentGrossIncome;
+  if (respondentIncome) {
     paragraphs.push(
       createBodyParagraph(
-        `הכנסתו המשוערת: ${formatCurrency(property.respondentEstimatedIncome)} לחודש.`,
+        `הכנסתו המשוערת: ${formatCurrency(respondentIncome)} לחודש.`,
         { after: SPACING.LINE }
       )
     );
@@ -298,7 +300,7 @@ function createEmploymentSections(data: AlimonyClaimData): Paragraph[] {
   // Wife's (applicant's) employment - SECTION level
   paragraphs.push(createSubsectionHeader('השתכרות האישה'));
 
-  if (property.applicantEmploymentStatus === 'employed' && property.applicantEmployer) {
+  if (property.applicantEmploymentStatus === 'employee' && property.applicantEmployer) {
     paragraphs.push(
       createBodyParagraph(
         `התובעת מועסקת אצל ${property.applicantEmployer}.`,
@@ -307,10 +309,12 @@ function createEmploymentSections(data: AlimonyClaimData): Paragraph[] {
     );
   }
 
-  if (property.applicantGrossSalary) {
+  // Handle both employee salary and self-employed income
+  const applicantIncome = property.applicantGrossSalary || property.applicantGrossIncome;
+  if (applicantIncome) {
     paragraphs.push(
       createBodyParagraph(
-        `משכורת ברוטו: ${formatCurrency(property.applicantGrossSalary)} לחודש.`,
+        `משכורת ברוטו: ${formatCurrency(applicantIncome)} לחודש.`,
         { after: SPACING.LINE }
       )
     );

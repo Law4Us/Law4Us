@@ -15,6 +15,7 @@ import {
   type DocumentData,
 } from "@/lib/constants/document-templates";
 import { formatDate } from "@/lib/utils/format";
+import { convertFormDataFiles, extractAttachmentsFromFormData } from "@/lib/utils/file-converter";
 
 type SubmissionState = "idle" | "submitting" | "success" | "error";
 
@@ -78,10 +79,24 @@ export default function Step5FinalSubmission() {
     setErrorMessage("");
 
     try {
+      // Convert all File objects to base64 before submission
+      console.log('📄 Converting file uploads to base64...');
+      const convertedFormData = await convertFormDataFiles(formData);
+
+      // Extract attachments for document generation
+      const attachments = extractAttachmentsFromFormData({
+        ...convertedFormData,
+        basicInfo,
+      });
+
+      if (attachments.length > 0) {
+        console.log(`📎 Found ${attachments.length} attachments to include in documents`);
+      }
+
       // Prepare data for submission
       const submissionData = {
         basicInfo,
-        formData,
+        formData: convertedFormData,
         selectedClaims,
         selectedClaimsLabels: selectedClaims.map(
           (key) => CLAIMS.find((c) => c.key === key)?.label || key
@@ -89,6 +104,7 @@ export default function Step5FinalSubmission() {
         signature,
         paymentData,
         filledDocuments,
+        attachments: attachments.length > 0 ? attachments : undefined,
         submittedAt: new Date().toISOString(),
       };
 
