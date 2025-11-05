@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateDocument } from '@/Law4Us-API/src/services/document-generator';
-import { uploadToDrive, createFolder, searchFolders } from '@/Law4Us-API/src/services/google-drive';
+import { uploadToDrive, createFolder, searchFolders, downloadFile } from '@/Law4Us-API/src/services/google-drive';
 
 interface SubmissionData {
   basicInfo: {
@@ -24,16 +24,33 @@ interface SubmissionData {
   submittedAt: string;
 }
 
+// Cache lawyer signature in memory (per serverless function instance)
+let cachedLawyerSignature: string | null = null;
+
 /**
- * Load lawyer signature from environment variable
- * Fallback to process.env.LAWYER_SIGNATURE_BASE64
+ * Load lawyer signature from Google Drive (with in-memory caching)
+ * Downloads signature file once and caches for subsequent requests
  */
-function loadLawyerSignature(): string {
-  const signature = process.env.LAWYER_SIGNATURE_BASE64;
-  if (!signature) {
-    throw new Error('LAWYER_SIGNATURE_BASE64 environment variable not set');
+async function loadLawyerSignature(): Promise<string> {
+  // Return cached version if available
+  if (cachedLawyerSignature) {
+    console.log('♻️  Using cached lawyer signature (no download needed)');
+    return cachedLawyerSignature;
   }
-  return signature;
+
+  const fileId = process.env.LAWYER_SIGNATURE_FILE_ID;
+  if (!fileId) {
+    throw new Error('LAWYER_SIGNATURE_FILE_ID environment variable not set');
+  }
+
+  console.log(`📷 Downloading lawyer signature from Google Drive (ID: ${fileId})...`);
+  const buffer = await downloadFile(fileId);
+  const base64 = buffer.toString('base64');
+  console.log(`✅ Lawyer signature downloaded (${buffer.length} bytes, ${(buffer.length / 1024).toFixed(1)} KB)`);
+
+  // Cache for future requests in this function instance
+  cachedLawyerSignature = `data:image/png;base64,${base64}`;
+  return cachedLawyerSignature;
 }
 
 /**
@@ -73,9 +90,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Load lawyer signature if not provided by client
-    const lawyerSignature = submissionData.lawyerSignature || loadLawyerSignature();
+    const lawyerSignature = submissionData.lawyerSignature || await loadLawyerSignature();
     if (!submissionData.lawyerSignature) {
-      console.log('📷 Using default lawyer signature (Ariel Dror)');
+      console.log('📷 Using default lawyer signature from Google Drive (Ariel Dror)');
     }
 
     // Save submission JSON to parent folder
