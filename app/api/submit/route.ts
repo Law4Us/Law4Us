@@ -1,13 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { POST as handleSubmission } from "@/app/api/submission/route";
 
 /**
  * API route for form submission
- * NOW HANDLES EVERYTHING LOCALLY - No Railway backend needed!
- *
- * This endpoint delegates to /api/submission which:
- * - Generates documents
- * - Uploads to Google Drive
- * - Returns success/failure response
+ * Directly calls the submission handler (no HTTP fetch to avoid auth issues)
  */
 export async function POST(request: NextRequest) {
   try {
@@ -22,54 +18,50 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Call our local submission API route (no external backend!)
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ||
-                    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+    // Add metadata
+    const submissionData = {
+      ...data,
+      submittedAt: new Date().toISOString(),
+      source: "law4us-wizard",
+    };
 
-    const response = await fetch(`${baseUrl}/api/submission`, {
+    // Create a new Request object for the submission handler
+    const submissionRequest = new NextRequest(request.url, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        ...data,
-        submittedAt: new Date().toISOString(),
-        source: "law4us-wizard",
-      }),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(submissionData),
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ Submission API error response:', errorText);
+    // Call submission handler directly (no HTTP fetch)
+    const result = await handleSubmission(submissionRequest);
+    const resultData = await result.json();
 
-      let errorData;
-      try {
-        errorData = JSON.parse(errorText);
-      } catch {
-        errorData = { message: 'Unknown error', rawError: errorText };
-      }
-
-      throw new Error(errorData.error || errorData.message || `Submission failed with status ${response.status}`);
+    if (!result.ok) {
+      throw new Error(resultData.error || resultData.message || "Submission failed");
     }
-
-    const result = await response.json();
 
     // Log success
     console.log("✅ Submission successful:", {
       applicant: data.basicInfo.fullName,
       claims: data.selectedClaims,
-      folderId: result.folderId,
-      folderName: result.folderName,
+      folderId: resultData.folderId,
+      folderName: resultData.folderName,
     });
 
     return NextResponse.json({
       success: true,
-      message: result.message || "הטופס נשלח בהצלחה",
-      folderId: result.folderId,
-      folderName: result.folderName,
+      message: resultData.message || "הטופס נשלח בהצלחה",
+      folderId: resultData.folderId,
+      folderName: resultData.folderName,
     });
   } catch (error) {
     console.error("❌ Submission error:", error);
+
+    // Log full error details
+    if (error instanceof Error) {
+      console.error("Error message:", error.message);
+      console.error("Error stack:", error.stack);
+    }
 
     return NextResponse.json(
       {
