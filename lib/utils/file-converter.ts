@@ -2,6 +2,81 @@
  * File conversion utilities for handling file uploads
  */
 
+const MIME_EXTENSION_MAP: Record<string, string> = {
+  'application/pdf': 'pdf',
+  'image/jpeg': 'jpg',
+  'image/jpg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+  'image/heic': 'heic',
+  'image/heif': 'heif',
+};
+
+function ensureExtension(name: string, extension: string) {
+  const normalized = extension.replace(/^\./, '').toLowerCase();
+  if (!normalized) {
+    return name;
+  }
+  return name.toLowerCase().endsWith(`.${normalized}`) ? name : `${name}.${normalized}`;
+}
+
+function parseFileSource(
+  input: any,
+  fallbackName: string,
+  fallbackMime: string = 'application/octet-stream'
+): { dataUrl: string; mimeType: string; name: string } | null {
+  if (!input) return null;
+
+  let dataUrl: string | null = null;
+  let inferredMime: string | undefined;
+  let explicitName: string | undefined =
+    typeof input === 'object' && input !== null
+      ? input.fileName || input.name
+      : undefined;
+
+  if (typeof input === 'string') {
+    dataUrl = input;
+  } else if (typeof input === 'object') {
+    if (typeof input.content === 'string') {
+      dataUrl = input.content;
+    } else if (typeof input.data === 'string') {
+      dataUrl = input.data;
+    } else if (typeof input.file === 'string') {
+      dataUrl = input.file;
+    } else if (typeof input.base64 === 'string') {
+      dataUrl = input.base64;
+    }
+    inferredMime = input.mimeType || input.type;
+  }
+
+  if (!dataUrl) return null;
+
+  const dataUrlMatch = /^data:([^;,]+)(?:;[^,]*)?,/.exec(dataUrl);
+  if (dataUrlMatch) {
+    inferredMime = inferredMime || dataUrlMatch[1];
+  } else if (!dataUrl.startsWith('data:')) {
+    const mime = inferredMime || fallbackMime;
+    dataUrl = `data:${mime};base64,${dataUrl}`;
+    inferredMime = mime;
+  }
+
+  const mimeType = inferredMime || fallbackMime;
+  const extension =
+    MIME_EXTENSION_MAP[mimeType] || mimeType.split('/')[1] || 'bin';
+
+  const rawName =
+    explicitName && explicitName.trim().length > 0
+      ? explicitName.trim()
+      : fallbackName;
+  const baseName = rawName.replace(/\.[^./\\]+$/, '');
+
+  return {
+    dataUrl,
+    mimeType,
+    name: ensureExtension(baseName, extension),
+  };
+}
+
 /**
  * Convert a File object to base64 string
  */
@@ -105,15 +180,20 @@ export function extractAttachmentsFromFormData(formData: any): Array<{
     // Applicant pay slips
     if (property.applicantPaySlips && Array.isArray(property.applicantPaySlips)) {
       console.log(`📎 Found applicantPaySlips: ${property.applicantPaySlips.length} items`);
-      property.applicantPaySlips.forEach((fileData: string, index: number) => {
-        if (fileData) {
-          console.log(`  ✓ Adding applicant pay slip ${index + 1}`);
+      property.applicantPaySlips.forEach((fileData: any, index: number) => {
+        const meta = parseFileSource(
+          fileData,
+          `payslip-applicant-${index + 1}`,
+          'application/pdf'
+        );
+        if (meta) {
+          console.log(`  ✓ Adding applicant pay slip ${index + 1} (${meta.mimeType})`);
           attachments.push({
             label: `תלוש משכורת ${index + 1} - ${formData.basicInfo?.fullName || 'תובע/ת'}`,
             description: 'תלוש משכורת',
-            file: fileData,
-            name: `payslip-applicant-${index + 1}.pdf`,
-            mimeType: 'application/pdf',
+            file: meta.dataUrl,
+            name: meta.name,
+            mimeType: meta.mimeType,
           });
         }
       });
@@ -123,25 +203,33 @@ export function extractAttachmentsFromFormData(formData: any): Array<{
 
     // Applicant income proof
     if (property.applicantIncomeProof) {
-      attachments.push({
-        label: `אישור רו"ח - ${formData.basicInfo?.fullName || 'תובע/ת'}`,
-        description: 'אישור רואה חשבון על השתכרות',
-        file: property.applicantIncomeProof,
-        name: 'income-proof-applicant.pdf',
-        mimeType: 'application/pdf',
-      });
+      const meta = parseFileSource(property.applicantIncomeProof, 'income-proof-applicant', 'application/pdf');
+      if (meta) {
+        attachments.push({
+          label: `אישור רו"ח - ${formData.basicInfo?.fullName || 'תובע/ת'}`,
+          description: 'אישור רואה חשבון על השתכרות',
+          file: meta.dataUrl,
+          name: meta.name,
+          mimeType: meta.mimeType,
+        });
+      }
     }
 
     // Respondent pay slips
     if (property.respondentPaySlips && Array.isArray(property.respondentPaySlips)) {
-      property.respondentPaySlips.forEach((fileData: string, index: number) => {
-        if (fileData) {
+      property.respondentPaySlips.forEach((fileData: any, index: number) => {
+        const meta = parseFileSource(
+          fileData,
+          `payslip-respondent-${index + 1}`,
+          'application/pdf'
+        );
+        if (meta) {
           attachments.push({
             label: `תלוש משכורת ${index + 1} - ${formData.basicInfo?.fullName2 || 'נתבע/ת'}`,
             description: 'תלוש משכורת',
-            file: fileData,
-            name: `payslip-respondent-${index + 1}.pdf`,
-            mimeType: 'application/pdf',
+            file: meta.dataUrl,
+            name: meta.name,
+            mimeType: meta.mimeType,
           });
         }
       });
@@ -149,37 +237,50 @@ export function extractAttachmentsFromFormData(formData: any): Array<{
 
     // Respondent income proof
     if (property.respondentIncomeProof) {
-      attachments.push({
-        label: `אישור רו"ח - ${formData.basicInfo?.fullName2 || 'נתבע/ת'}`,
-        description: 'אישור רואה חשבון על השתכרות',
-        file: property.respondentIncomeProof,
-        name: 'income-proof-respondent.pdf',
-        mimeType: 'application/pdf',
-      });
+      const meta = parseFileSource(property.respondentIncomeProof, 'income-proof-respondent', 'application/pdf');
+      if (meta) {
+        attachments.push({
+          label: `אישור רו"ח - ${formData.basicInfo?.fullName2 || 'נתבע/ת'}`,
+          description: 'אישור רואה חשבון על השתכרות',
+          file: meta.dataUrl,
+          name: meta.name,
+          mimeType: meta.mimeType,
+        });
+      }
     }
 
     // Court document
     if (property.courtDocument) {
-      attachments.push({
-        label: 'מסמך מבית המשפט',
-        description: 'מסמך קיים מבית המשפט',
-        file: property.courtDocument,
-        name: 'court-document.pdf',
-        mimeType: 'application/pdf',
-      });
+      const meta = parseFileSource(property.courtDocument, 'court-document', 'application/pdf');
+      if (meta) {
+        attachments.push({
+          label: 'מסמך מבית המשפט',
+          description: 'מסמך קיים מבית המשפט',
+          file: meta.dataUrl,
+          name: meta.name,
+          mimeType: meta.mimeType,
+        });
+      }
     }
   }
 
   // Divorce agreement
   if (formData.divorceAgreement?.uploadedAgreement) {
-    console.log('  ✓ Adding divorce agreement');
-    attachments.push({
-      label: 'הסכם גירושין קיים',
-      description: 'הסכם גירושין שהועלה',
-      file: formData.divorceAgreement.uploadedAgreement,
-      name: 'divorce-agreement.pdf',
-      mimeType: 'application/pdf',
-    });
+    const meta = parseFileSource(
+      formData.divorceAgreement.uploadedAgreement,
+      'divorce-agreement',
+      'application/pdf'
+    );
+    if (meta) {
+      console.log('  ✓ Adding divorce agreement');
+      attachments.push({
+        label: 'הסכם גירושין קיים',
+        description: 'הסכם גירושין שהועלה',
+        file: meta.dataUrl,
+        name: meta.name,
+        mimeType: meta.mimeType,
+      });
+    }
   }
 
   console.log(`📋 Extraction complete: Found ${attachments.length} attachment(s)`);
