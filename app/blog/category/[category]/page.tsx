@@ -51,8 +51,53 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
 
   const posts = await getPostsByCategory(hebrewCategory)
 
+  // JSON-LD structured data for category page
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: `${hebrewCategory} | Law4Us בלוג`,
+    description: `מאמרים בנושא ${hebrewCategory} - מידע מקצועי ועדכונים משפטיים`,
+    url: `https://law4us.co.il/blog/category/${params.category}`,
+    breadcrumb: {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        {
+          '@type': 'ListItem',
+          position: 1,
+          name: 'דף הבית',
+          item: 'https://law4us.co.il',
+        },
+        {
+          '@type': 'ListItem',
+          position: 2,
+          name: 'בלוג',
+          item: 'https://law4us.co.il/blog',
+        },
+        {
+          '@type': 'ListItem',
+          position: 3,
+          name: hebrewCategory,
+          item: `https://law4us.co.il/blog/category/${params.category}`,
+        },
+      ],
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'Law4Us',
+      url: 'https://law4us.co.il',
+    },
+    inLanguage: 'he',
+  }
+
   return (
-    <div className="min-h-screen bg-neutral-lightest">
+    <>
+      {/* JSON-LD Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+
+      <div className="min-h-screen bg-neutral-lightest">
       {/* Breadcrumbs */}
       <div className="bg-white border-b border-neutral">
         <div className="container mx-auto px-4 max-w-6xl py-4">
@@ -165,5 +210,6 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         )}
       </div>
     </div>
+    </>
   )
 }

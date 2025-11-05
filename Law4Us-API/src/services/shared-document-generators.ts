@@ -468,7 +468,7 @@ export function createSignatureImage(
   imageData: string | Buffer,
   width: number = 200,
   height: number = 100,
-  alignment = AlignmentType.LEFT
+  alignment: AlignmentType = AlignmentType.LEFT
 ): Paragraph {
   let buffer: Buffer;
 

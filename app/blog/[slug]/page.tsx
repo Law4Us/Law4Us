@@ -58,8 +58,46 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   // Get related posts (same category, exclude current post)
   const relatedPosts = await getRelatedPosts(post.slug, post.category, 3)
 
+  // JSON-LD structured data for SEO
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: post.title,
+    description: post.excerpt,
+    image: post.featuredImage ? `https://law4us.co.il${post.featuredImage}` : undefined,
+    datePublished: post.date,
+    dateModified: post.date,
+    author: {
+      '@type': 'Person',
+      name: post.author,
+      url: 'https://law4us.co.il/about',
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'Law4Us',
+      url: 'https://law4us.co.il',
+      logo: {
+        '@type': 'ImageObject',
+        url: 'https://law4us.co.il/law4uslogo-blac.svg',
+      },
+    },
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': `https://law4us.co.il/blog/${post.slug}`,
+    },
+    articleSection: post.category,
+    inLanguage: 'he',
+  }
+
   return (
-    <div className="min-h-screen bg-neutral-lightest">
+    <>
+      {/* JSON-LD Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+
+      <div className="min-h-screen bg-neutral-lightest">
       {/* Breadcrumbs */}
       <div className="bg-white border-b border-neutral">
         <div className="container mx-auto px-4 max-w-4xl py-4">
@@ -215,5 +253,6 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
         </Link>
       </div>
     </div>
+    </>
   )
 }

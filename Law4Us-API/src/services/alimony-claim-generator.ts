@@ -72,7 +72,7 @@ function localCreateCourtHeader(data: AlimonyClaimData): Paragraph[] {
     city: 'בפתח תקווה',
     judgeName: 'מירב אליהו',
     basicInfo: data.basicInfo,
-    children: minorChildren.map(c => ({ name: c.name || '', idNumber: c.idNumber || '' })),
+    children: minorChildren.map(c => ({ name: `${c.firstName || ''} ${c.lastName || ''}`.trim(), idNumber: c.idNumber || '' })),
     showChildrenList: true,
   });
 }
@@ -231,30 +231,20 @@ function createPartC(data: AlimonyClaimData): Paragraph[] {
     relationshipText += `כיום הצדדים גרים בנפרד`;
   }
 
-  // Add children living arrangement in same paragraph
+  // Add children living arrangement in same paragraph (if specified)
   if (minorChildren.length > 0) {
-    const allWithApplicant = minorChildren.every((c) => c.residingWith === 'applicant');
-    const allWithRespondent = minorChildren.every((c) => c.residingWith === 'respondent');
-    const allWithBoth = minorChildren.every((c) => c.residingWith === 'both');
+    const livingArrangement = data.formData.custodyLivingArrangement;
 
-    if (allWithApplicant) {
+    if (livingArrangement === 'with_applicant') {
       relationshipText += `, כאשר הילדים מתגוררים עם ${data.basicInfo.fullName}.`;
-    } else if (allWithRespondent) {
+    } else if (livingArrangement === 'with_respondent') {
       relationshipText += `, כאשר הילדים מתגוררים עם ${data.basicInfo.fullName2}.`;
-    } else if (allWithBoth) {
+    } else if (livingArrangement === 'split') {
       relationshipText += `, כאשר המגורים חלוקים בצורה שוויונית בין ההורים.`;
+    } else if (livingArrangement === 'together') {
+      relationshipText += `, כאשר הילדים מתגוררים עם שני ההורים.`;
     } else {
-      // Mixed arrangement
-      const childArrangements = minorChildren.map((child) => {
-        const residingWith =
-          child.residingWith === 'applicant'
-            ? data.basicInfo.fullName
-            : child.residingWith === 'respondent'
-            ? data.basicInfo.fullName2
-            : 'שני ההורים';
-        return `${child.name} מתגורר/ת אצל ${residingWith}`;
-      }).join(', ');
-      relationshipText += `, כאשר ${childArrangements}.`;
+      relationshipText += '.';
     }
   } else {
     relationshipText += '.';
@@ -347,7 +337,7 @@ function createEmploymentSections(data: AlimonyClaimData): Paragraph[] {
  * Visual (RTL): קטגוריה (right) | Children (middle) | סה"כ (left)
  */
 function createChildrenNeedsTable(
-  children: Array<{ name: string; birthDate?: string }>,
+  children: Array<{ firstName: string; lastName: string; birthDate?: string }>,
   expenses: Array<{ category: string; description: string; monthlyAmount: number; childName?: string }>
 ): (Paragraph | Table)[] {
   if (!expenses || expenses.length === 0 || children.length === 0) {
@@ -414,7 +404,7 @@ function createChildrenNeedsTable(
           new Paragraph({
             children: [
               new TextRun({
-                text: child.name,
+                text: `${child.firstName} ${child.lastName}`,
                 bold: true,
                 size: FONT_SIZES.BODY,
                 font: 'David',

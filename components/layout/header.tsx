@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 const navigation = [
   { name: "איך זה עובד", href: "/#how" },
   { name: "מי אנחנו", href: "/about" },
+  { name: "בלוג", href: "/blog" },
   { name: "צריכים עזרה?", href: "/help" },
   { name: "מהו הליך הגירושין", href: "/divorce" },
   { name: "צור קשר", href: "/contact" },

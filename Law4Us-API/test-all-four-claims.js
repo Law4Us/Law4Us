@@ -200,7 +200,7 @@ console.log(`   Alimony: ${testData.formData.alimony.requestedAmount.toLocaleStr
 console.log('');
 
 axios
-  .post('http://localhost:3001/api/submission/submit', testData)
+  .post('http://localhost:3000/api/submit', testData)
   .then((response) => {
     console.log('✅ SUCCESS!');
     console.log(`📁 Folder: ${response.data.folderName}`);

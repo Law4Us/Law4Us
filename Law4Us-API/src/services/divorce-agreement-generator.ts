@@ -167,14 +167,14 @@ export async function generateDivorceAgreement(data: DivorceAgreementData): Prom
   // Party 1 (Applicant)
   paragraphs.push(createInfoLine('שם מלא', basicInfo.fullName || ''));
   paragraphs.push(createInfoLine('ת.ז', basicInfo.idNumber || ''));
-  paragraphs.push(createInfoLine('כתובת', basicInfo.address || '', { after: SPACING.PARAGRAPH }));
+  paragraphs.push(createInfoLine('כתובת', basicInfo.address || ''));
 
   paragraphs.push(createCenteredTitle('לבין:', FONT_SIZES.HEADING_2));
 
   // Party 2 (Respondent)
   paragraphs.push(createInfoLine('שם מלא', basicInfo.fullName2 || ''));
   paragraphs.push(createInfoLine('ת.ז', basicInfo.idNumber2 || ''));
-  paragraphs.push(createInfoLine('כתובת', basicInfo.address2 || '', { after: SPACING.SECTION }));
+  paragraphs.push(createInfoLine('כתובת', basicInfo.address2 || ''));
 
   // ========== 3. REGARDING MINORS (if applicable) ==========
   if (minors.length > 0) {
@@ -451,8 +451,7 @@ export async function generateDivorceAgreement(data: DivorceAgreementData): Prom
   paragraphs.push(
     createNumberedItem(
       4,
-      'הסכם זה כפוף לאישור בית המשפט לענייני משפחה ו/או בית הדין הרבני, לפי העניין.',
-      { after: SPACING.SECTION }
+      'הסכם זה כפוף לאישור בית המשפט לענייני משפחה ו/או בית הדין הרבני, לפי העניין.'
     )
   );
 
@@ -483,8 +482,7 @@ export async function generateDivorceAgreement(data: DivorceAgreementData): Prom
   paragraphs.push(
     createNumberedItem(
       4,
-      'בני הזוג מתחייבים לפעול בתום לב ליישום הסכם זה ולשתף פעולה זה עם זה לשם כך.',
-      { after: SPACING.SECTION }
+      'בני הזוג מתחייבים לפעול בתום לב ליישום הסכם זה ולשתף פעולה זה עם זה לשם כך.'
     )
   );
 
@@ -518,7 +516,7 @@ export async function generateDivorceAgreement(data: DivorceAgreementData): Prom
   );
 
   if (applicantSignature) {
-    paragraphs.push(createSignatureImage(applicantSignature, 250, 125, AlignmentType.START));
+    paragraphs.push(createSignatureImage(applicantSignature, 250, 125, AlignmentType.LEFT));
   } else {
     paragraphs.push(
       new Paragraph({
@@ -555,7 +553,7 @@ export async function generateDivorceAgreement(data: DivorceAgreementData): Prom
   );
 
   if (respondentSignature) {
-    paragraphs.push(createSignatureImage(respondentSignature, 250, 125, AlignmentType.END));
+    paragraphs.push(createSignatureImage(respondentSignature, 250, 125, AlignmentType.RIGHT));
   } else {
     paragraphs.push(
       new Paragraph({
@@ -743,7 +741,7 @@ function generateForm3(
   paragraphs.push(createBodyParagraph(`תאריך: ${today}`, { after: SPACING.SECTION }));
 
   if (signature) {
-    paragraphs.push(createSignatureImage(signature, 250, 125, AlignmentType.START));
+    paragraphs.push(createSignatureImage(signature, 250, 125, AlignmentType.LEFT));
   }
 
   paragraphs.push(
