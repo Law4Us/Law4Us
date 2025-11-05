@@ -22,10 +22,34 @@ function getDriveClient() {
   console.log(`   Service Account: ${process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL}`);
   console.log(`   Shared Drive ID: ${getSharedDriveId()}`);
 
+  // Validate environment variables
+  if (!process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL) {
+    throw new Error('GOOGLE_SERVICE_ACCOUNT_EMAIL environment variable is not set');
+  }
+  if (!process.env.GOOGLE_PRIVATE_KEY) {
+    throw new Error('GOOGLE_PRIVATE_KEY environment variable is not set');
+  }
+
+  // Process private key - handle both literal \n and actual newlines
+  let privateKey = process.env.GOOGLE_PRIVATE_KEY;
+
+  // If the key contains literal \n strings, replace them with actual newlines
+  if (privateKey.includes('\\n')) {
+    privateKey = privateKey.replace(/\\n/g, '\n');
+  }
+
+  // Validate key format
+  if (!privateKey.includes('-----BEGIN PRIVATE KEY-----') || !privateKey.includes('-----END PRIVATE KEY-----')) {
+    console.error('❌ Invalid private key format. Key should start with -----BEGIN PRIVATE KEY----- and end with -----END PRIVATE KEY-----');
+    throw new Error('Invalid GOOGLE_PRIVATE_KEY format. Please check your environment variable.');
+  }
+
+  console.log('✅ Private key format validated');
+
   const auth = new google.auth.GoogleAuth({
     credentials: {
       client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-      private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+      private_key: privateKey,
     },
     scopes: ['https://www.googleapis.com/auth/drive'], // Full drive access for Shared Drives
   });
