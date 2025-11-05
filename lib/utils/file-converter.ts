@@ -41,17 +41,22 @@ export async function convertFormDataFiles(formData: any): Promise<any> {
   }
 
   const converted: any = Array.isArray(formData) ? [] : {};
+  let fileCount = 0;
 
   for (const key in formData) {
     const value = formData[key];
 
     // Check if value is a File object
     if (value instanceof File) {
+      console.log(`📎 Converting File: ${key} -> ${value.name} (${value.size} bytes, ${value.type})`);
       converted[key] = await fileToBase64(value);
+      fileCount++;
     }
     // Check if value is an array of Files
     else if (Array.isArray(value) && value.length > 0 && value[0] instanceof File) {
+      console.log(`📎 Converting File array: ${key} -> ${value.length} files`);
       converted[key] = await Promise.all(value.map((file) => fileToBase64(file)));
+      fileCount += value.length;
     }
     // Recursively handle nested objects
     else if (value && typeof value === 'object' && !(value instanceof Date)) {
@@ -61,6 +66,10 @@ export async function convertFormDataFiles(formData: any): Promise<any> {
     else {
       converted[key] = value;
     }
+  }
+
+  if (fileCount > 0) {
+    console.log(`✅ Converted ${fileCount} file(s) to base64`);
   }
 
   return converted;
@@ -77,6 +86,9 @@ export function extractAttachmentsFromFormData(formData: any): Array<{
   name: string;
   mimeType: string;
 }> {
+  console.log('🔍 Extracting attachments from formData...');
+  console.log('📊 FormData keys:', Object.keys(formData));
+
   const attachments: Array<{
     label: string;
     description: string;
@@ -88,11 +100,14 @@ export function extractAttachmentsFromFormData(formData: any): Array<{
   // Property section attachments
   if (formData.property) {
     const property = formData.property;
+    console.log('📊 Property keys:', Object.keys(property));
 
     // Applicant pay slips
     if (property.applicantPaySlips && Array.isArray(property.applicantPaySlips)) {
+      console.log(`📎 Found applicantPaySlips: ${property.applicantPaySlips.length} items`);
       property.applicantPaySlips.forEach((fileData: string, index: number) => {
         if (fileData) {
+          console.log(`  ✓ Adding applicant pay slip ${index + 1}`);
           attachments.push({
             label: `תלוש משכורת ${index + 1} - ${formData.basicInfo?.fullName || 'תובע/ת'}`,
             description: 'תלוש משכורת',
@@ -102,6 +117,8 @@ export function extractAttachmentsFromFormData(formData: any): Array<{
           });
         }
       });
+    } else {
+      console.log('  ℹ️ No applicantPaySlips found');
     }
 
     // Applicant income proof
@@ -155,6 +172,7 @@ export function extractAttachmentsFromFormData(formData: any): Array<{
 
   // Divorce agreement
   if (formData.divorceAgreement?.uploadedAgreement) {
+    console.log('  ✓ Adding divorce agreement');
     attachments.push({
       label: 'הסכם גירושין קיים',
       description: 'הסכם גירושין שהועלה',
@@ -162,6 +180,11 @@ export function extractAttachmentsFromFormData(formData: any): Array<{
       name: 'divorce-agreement.pdf',
       mimeType: 'application/pdf',
     });
+  }
+
+  console.log(`📋 Extraction complete: Found ${attachments.length} attachment(s)`);
+  if (attachments.length > 0) {
+    console.log('📎 Attachments:', attachments.map(a => a.label).join(', '));
   }
 
   return attachments;

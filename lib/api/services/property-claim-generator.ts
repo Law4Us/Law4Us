@@ -663,16 +663,67 @@ export async function generatePropertyClaimDocument(
 
           // Employment
           createSubsectionHeader('השתכרות הצדדים'),
-          ...(formData.job1 || formData.job2
-            ? [
-                createBodyParagraph(
-                  `${basicInfo.fullName} (${formData.jobType || 'עצמאי'}): ${formatJobDetails(formData.job1, plaintiff.title) || 'לא צוין'}`
-                ),
-                createBodyParagraph(
-                  `${basicInfo.fullName2} (${formData.jobType2 || 'עצמאי'}): ${formatJobDetails(formData.job2, defendant.title) || 'לא צוין'}`
-                ),
-              ]
-            : [createBodyParagraph('פרטי תעסוקה לא צוינו')]),
+          ...(() => {
+            const property = propertyData;
+            const hasApplicantInfo = property.applicantEmploymentStatus || property.applicantEmployer || property.applicantGrossSalary || property.applicantGrossIncome;
+            const hasRespondentInfo = property.respondentEmploymentStatus || property.respondentEmployer || property.respondentGrossSalary || property.respondentGrossIncome;
+
+            if (!hasApplicantInfo && !hasRespondentInfo) {
+              return [createBodyParagraph('פרטי תעסוקה לא צוינו')];
+            }
+
+            const paragraphs: any[] = [];
+
+            // Applicant employment
+            if (hasApplicantInfo) {
+              let applicantText = `${basicInfo.fullName}: `;
+
+              if (property.applicantEmploymentStatus === 'employee') {
+                applicantText += 'שכיר/ה';
+                if (property.applicantEmployer) {
+                  applicantText += `, מועסק/ת אצל ${property.applicantEmployer}`;
+                }
+                if (property.applicantGrossSalary) {
+                  applicantText += `, שכר ברוטו: ${property.applicantGrossSalary.toLocaleString('he-IL')} ₪`;
+                }
+              } else if (property.applicantEmploymentStatus === 'selfEmployed') {
+                applicantText += 'עצמאי/ת';
+                if (property.applicantGrossIncome) {
+                  applicantText += `, הכנסה ברוטו: ${property.applicantGrossIncome.toLocaleString('he-IL')} ₪`;
+                }
+              } else if (property.applicantEmploymentStatus === 'unemployed') {
+                applicantText += 'לא עובד/ת כיום';
+              }
+
+              paragraphs.push(createBodyParagraph(applicantText));
+            }
+
+            // Respondent employment
+            if (hasRespondentInfo) {
+              let respondentText = `${basicInfo.fullName2}: `;
+
+              if (property.respondentEmploymentStatus === 'employee') {
+                respondentText += 'שכיר/ה';
+                if (property.respondentEmployer) {
+                  respondentText += `, מועסק/ת אצל ${property.respondentEmployer}`;
+                }
+                if (property.respondentGrossSalary) {
+                  respondentText += `, שכר ברוטו: ${property.respondentGrossSalary.toLocaleString('he-IL')} ₪`;
+                }
+              } else if (property.respondentEmploymentStatus === 'selfEmployed') {
+                respondentText += 'עצמאי/ת';
+                if (property.respondentGrossIncome) {
+                  respondentText += `, הכנסה ברוטו: ${property.respondentGrossIncome.toLocaleString('he-IL')} ₪`;
+                }
+              } else if (property.respondentEmploymentStatus === 'unemployed') {
+                respondentText += 'לא עובד/ת כיום';
+              }
+
+              paragraphs.push(createBodyParagraph(respondentText));
+            }
+
+            return paragraphs;
+          })(),
 
           // Determining Date
           createSubsectionHeader('היום הקובע'),
