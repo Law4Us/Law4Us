@@ -198,6 +198,12 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('❌ Submission error:', error);
 
+    // Log full error details for debugging
+    if (error instanceof Error) {
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+    }
+
     return NextResponse.json({
       success: false,
       message: 'אירעה שגיאה בשליחת הטופס',

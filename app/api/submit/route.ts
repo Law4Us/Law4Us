@@ -39,8 +39,17 @@ export async function POST(request: NextRequest) {
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
-      throw new Error(errorData.message || `Submission failed with status ${response.status}`);
+      const errorText = await response.text();
+      console.error('❌ Submission API error response:', errorText);
+
+      let errorData;
+      try {
+        errorData = JSON.parse(errorText);
+      } catch {
+        errorData = { message: 'Unknown error', rawError: errorText };
+      }
+
+      throw new Error(errorData.error || errorData.message || `Submission failed with status ${response.status}`);
     }
 
     const result = await response.json();
