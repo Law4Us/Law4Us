@@ -17,15 +17,58 @@
     @apply bg-neutral-200;
   }
 
+  /* Subtle paper grain texture overlay for premium feel */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0.045;
+    pointer-events: none;
+    z-index: -1;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  }
+
   /* RTL-specific adjustments */
   [dir="rtl"] input[type="tel"],
   [dir="rtl"] input[type="number"] {
     direction: rtl;
   }
 
-  /* Focus visible styles for accessibility */
+  /* Enhanced focus visible styles for accessibility with brand styling */
   *:focus-visible {
     @apply outline-2 outline-offset-2 outline-primary;
+    box-shadow: 0 0 0 4px rgba(1, 159, 183, 0.2);
+    transition: box-shadow 0.2s ease-in-out, outline-offset 0.2s ease-in-out;
+  }
+
+  /* Specific focus styles for interactive elements */
+  button:focus-visible,
+  a:focus-visible {
+    outline: 2px solid #019FB7;
+    outline-offset: 3px;
+    box-shadow: 0 0 0 6px rgba(1, 159, 183, 0.15);
+    border-radius: 4px;
+  }
+
+  /* Input focus with brand glow */
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    outline: 2px solid #019FB7;
+    outline-offset: 0;
+    box-shadow: 0 0 0 4px rgba(1, 159, 183, 0.2);
+    border-color: #019FB7;
+  }
+
+  /* Card/clickable container focus */
+  [role="button"]:focus-visible,
+  [tabindex]:not([tabindex="-1"]):focus-visible {
+    outline: 2px solid #019FB7;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 5px rgba(1, 159, 183, 0.15);
   }
 
   /* Remove default number input arrows for consistency */
@@ -68,6 +111,91 @@
   /* Section spacing */
   .section-padding {
     @apply py-16 sm:py-20 lg:py-24;
+  }
+
+  /* Logo carousel */
+  .carousel-wrapper {
+    display: flex;
+    width: 100%;
+    max-width: 900px;
+    height: 60px;
+    margin-inline: auto;
+    align-items: center;
+    overflow: hidden;
+    mask-image: linear-gradient(
+      to right,
+      rgba(0, 0, 0, 0) 0%,
+      rgba(0, 0, 0, 1) 12.5%,
+      rgba(0, 0, 0, 1) 87.5%,
+      rgba(0, 0, 0, 0) 100%
+    );
+    -webkit-mask-image: linear-gradient(
+      to right,
+      rgba(0, 0, 0, 0) 0%,
+      rgba(0, 0, 0, 1) 12.5%,
+      rgba(0, 0, 0, 1) 87.5%,
+      rgba(0, 0, 0, 0) 100%
+    );
+  }
+
+  .carousel-track {
+    display: flex;
+    gap: 64px;
+    align-items: center;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    width: max-content;
+    animation: carousel-scroll 30s linear infinite;
+    will-change: transform;
+  }
+
+  .carousel-wrapper:hover .carousel-track,
+  .carousel-wrapper:focus-within .carousel-track {
+    animation-play-state: paused;
+  }
+
+  .logo-item {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.4;
+    filter: grayscale(100%);
+    transition: opacity 0.3s ease, filter 0.3s ease, transform 0.3s ease;
+    perspective: 1000px;
+    transform-style: preserve-3d;
+  }
+
+  .logo-item:hover,
+  .logo-item:focus-within {
+    opacity: 0.6;
+    filter: grayscale(0%);
+    transform: perspective(1000px) rotateX(-5deg) rotateY(10deg) translateZ(10px);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .logo-item:hover,
+    .logo-item:focus-within {
+      transform: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .carousel-track {
+      animation: none;
+      transform: translateX(0);
+    }
+  }
+}
+
+@keyframes carousel-scroll {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(calc(-100% / 3));
   }
 }
 
@@ -119,5 +247,214 @@
 
   .will-change-opacity {
     will-change: opacity;
+  }
+
+  /* Animation performance optimizations */
+  .gpu-accelerated {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+  }
+
+  /* Hover lift animations - reusable utilities */
+  .hover-lift-sm {
+    @apply transition-all duration-300 ease-in-out hover:-translate-y-1;
+  }
+
+  .hover-lift-md {
+    @apply transition-all duration-300 ease-in-out hover:-translate-y-2;
+  }
+
+  .hover-lift-lg {
+    @apply transition-all duration-300 ease-in-out hover:-translate-y-4;
+  }
+
+  /* Hover scale animations */
+  .hover-scale-sm {
+    @apply transition-transform duration-300 ease-in-out hover:scale-[1.02];
+  }
+
+  .hover-scale-md {
+    @apply transition-transform duration-300 ease-in-out hover:scale-105;
+  }
+
+  .hover-scale-lg {
+    @apply transition-transform duration-300 ease-in-out hover:scale-110;
+  }
+
+  /* Hover glow effects */
+  .hover-glow-primary {
+    @apply transition-shadow duration-300 ease-in-out hover:shadow-[0_0_0_4px_rgba(1,159,183,0.2)];
+  }
+
+  .hover-glow-primary-lg {
+    @apply transition-shadow duration-300 ease-in-out hover:shadow-[0_0_0_6px_rgba(1,159,183,0.3)];
+  }
+
+  /* Smooth entrance animations */
+  .animate-fade-in-up {
+    animation: fadeInUp 0.6s ease-out forwards;
+  }
+
+  .animate-fade-in-down {
+    animation: fadeInDown 0.6s ease-out forwards;
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.4s ease-out forwards;
+  }
+
+  /* Animation delays for stagger effects */
+  .animation-delay-100 {
+    animation-delay: 100ms;
+  }
+
+  .animation-delay-200 {
+    animation-delay: 200ms;
+  }
+
+  .animation-delay-300 {
+    animation-delay: 300ms;
+  }
+
+  .animation-delay-400 {
+    animation-delay: 400ms;
+  }
+
+  .animation-delay-500 {
+    animation-delay: 500ms;
+  }
+
+  /* Interactive element states */
+  .interactive-scale {
+    @apply transition-transform duration-200 ease-in-out active:scale-[0.98];
+  }
+
+  /* Smooth focus ring animation */
+  .focus-ring-animated {
+    @apply transition-all duration-200 ease-in-out;
+    @apply focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2;
+    @apply focus-visible:scale-[1.01];
+  }
+
+  /* Badge border shimmer effect - creates animated gradient border */
+  .badge-shimmer {
+    position: relative;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: linear-gradient(#fff, #fff) padding-box,
+                linear-gradient(90deg,
+                  rgba(1, 159, 183, 0.2) 0%,
+                  rgba(1, 159, 183, 0.8) 50%,
+                  rgba(1, 159, 183, 0.2) 100%) border-box;
+    background-size: auto auto, 200% auto;
+    animation: borderShimmer 3s ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .badge-shimmer {
+      animation: none;
+      background: linear-gradient(#fff, #fff) padding-box,
+                  linear-gradient(90deg, rgba(1, 159, 183, 0.5), rgba(1, 159, 183, 0.5)) border-box;
+    }
+  }
+}
+
+/* Keyframe animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes borderShimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Accessibility: Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .hover-lift-sm,
+  .hover-lift-md,
+  .hover-lift-lg {
+    @apply hover:translate-y-0;
+  }
+
+  .hover-scale-sm,
+  .hover-scale-md,
+  .hover-scale-lg {
+    @apply hover:scale-100;
+  }
+
+  .animate-fade-in-up,
+  .animate-fade-in-down,
+  .animate-scale-in {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  /* Remove focus transitions for reduced motion users */
+  *:focus-visible,
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible,
+  [role="button"]:focus-visible,
+  [tabindex]:not([tabindex="-1"]):focus-visible {
+    transition: none !important;
   }
 }

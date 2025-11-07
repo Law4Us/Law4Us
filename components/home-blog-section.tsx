@@ -7,6 +7,10 @@ import { format } from 'date-fns'
 import { he } from 'date-fns/locale'
 import { BlogPostPreview } from '@/lib/types/blog'
 import { TYPOGRAPHY, CARD_STYLES } from '@/lib/constants/styles'
+import { animations } from '@/lib/utils/animations'
+import { BlogSectionSkeleton } from '@/components/skeletons/BlogPostSkeleton'
+import { ProgressiveImage } from '@/components/ui/progressive-image'
+import { generatePlaceholderDataURL } from '@/lib/utils/image-placeholders'
 
 // Convert English reading time to Hebrew
 function toHebrewReadingTime(readingTime: string): string {
@@ -41,15 +45,7 @@ export function HomeBlogSection() {
   }, [])
 
   if (loading) {
-    return (
-      <section className="bg-[#EEF2F3] py-20" id="blog">
-        <div className="max-w-[1200px] mx-auto px-6">
-          <div className="text-center">
-            <p className="text-gray-500">טוען מאמרים...</p>
-          </div>
-        </div>
-      </section>
-    )
+    return <BlogSectionSkeleton />
   }
 
   if (posts.length === 0) {
@@ -88,7 +84,7 @@ export function HomeBlogSection() {
             <Link
               key={post.slug}
               href={`/blog/${post.slug}`}
-              className="block overflow-hidden group"
+              className={`block overflow-hidden group ${animations.cardHover}`}
               style={{
                 ...CARD_STYLES.container,
                 padding: 0,
@@ -96,12 +92,17 @@ export function HomeBlogSection() {
             >
               {/* Featured Image */}
               {post.featuredImage ? (
-                <div className="relative aspect-video overflow-hidden w-full">
-                  <Image
+                <div className="relative w-full aspect-video overflow-hidden">
+                  <ProgressiveImage
                     src={post.featuredImage}
                     alt={post.title}
                     fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 400px"
+                    placeholderSrc={generatePlaceholderDataURL(20, 12, '#C7CFD1')}
+                    blurAmount={20}
+                    transitionDuration={400}
                     className="object-cover transition-transform duration-300 group-hover:scale-110"
+                    style={{ objectFit: 'cover', width: '100%', height: '100%' }}
                   />
                 </div>
               ) : (
@@ -116,7 +117,7 @@ export function HomeBlogSection() {
 
               <div className="pb-6 px-6 text-right">
                 {/* Category Badge */}
-                <div className="inline-block bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium mb-3">
+                <div className={`inline-block bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium mb-3 ${animations.badgeHover}`}>
                   {post.category}
                 </div>
 
@@ -149,7 +150,7 @@ export function HomeBlogSection() {
         <div className="text-center mt-8">
           <Link
             href="/blog"
-            className="inline-flex items-center justify-center transition-colors"
+            className={`inline-flex items-center justify-center ${animations.secondaryCTAHover}`}
             style={{
               backgroundColor: '#EEF2F3',
               border: '0.5px solid #018DA2',

@@ -1,5 +1,6 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
+import { animations } from "@/lib/utils/animations";
 
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -26,20 +27,31 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         className={cn(
           // Base styles
-          "inline-flex items-center justify-center rounded font-medium transition-smooth touch-target",
+          "inline-flex items-center justify-center rounded font-medium touch-target",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
           "disabled:pointer-events-none disabled:opacity-50",
-          "active:scale-[0.98]",
 
-          // Variants
+          // Variants with animations
           variant === "primary" &&
-            "bg-primary text-white border border-primary-dark hover:bg-primary-dark",
+            cn(
+              "bg-primary text-white border border-primary-dark hover:bg-primary-dark",
+              animations.buttonVariants.primary
+            ),
           variant === "secondary" &&
-            "bg-neutral-200 text-neutral-900 border border-neutral-300 hover:bg-neutral-300",
+            cn(
+              "bg-neutral-200 text-neutral-900 border border-neutral-300 hover:bg-neutral-300",
+              animations.buttonVariants.secondary
+            ),
           variant === "ghost" &&
-            "bg-transparent text-neutral-900 hover:bg-neutral-200",
+            cn(
+              "bg-transparent text-neutral-900",
+              animations.buttonVariants.ghost
+            ),
           variant === "outline" &&
-            "bg-transparent text-primary border border-primary hover:bg-primary/5",
+            cn(
+              "bg-transparent text-primary border border-primary",
+              animations.buttonVariants.outline
+            ),
 
           // Sizes
           size === "sm" && "text-body-small px-4 py-2",

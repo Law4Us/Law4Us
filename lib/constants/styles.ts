@@ -1,138 +1,199 @@
 /**
- * Reusable style constants for the Law4Us application
- * Use these to maintain consistency across components
+ * Component-level style compositions for the Law4Us application
+ * Built on top of design tokens for consistency
+ *
+ * This file provides pre-composed styles for common component patterns.
+ * All values reference the base design tokens for true single source of truth.
  */
 
 import { CSSProperties } from 'react';
+import { colors } from '@/lib/design-tokens/colors';
+import { typography } from '@/lib/design-tokens/typography';
+import { radius } from '@/lib/design-tokens/radius';
 
-// Typography Styles
+// ============================================================================
+// TYPOGRAPHY COMPOSITIONS
+// ============================================================================
+
 export const TYPOGRAPHY = {
+  // Hero Text
   heroH1: {
-    fontSize: '80px',
-    fontWeight: 'bold' as const,
-    lineHeight: '100%',
-    letterSpacing: '-0.04em',
-    color: '#0C1719',
+    fontSize: typography.fontSize['hero-h1'].size,
+    fontWeight: typography.fontSize['hero-h1'].fontWeight as CSSProperties['fontWeight'],
+    lineHeight: typography.fontSize['hero-h1'].lineHeight,
+    letterSpacing: typography.fontSize['hero-h1'].letterSpacing,
+    color: colors.semantic.text.primary,
   },
   heroSubtitle: {
-    fontSize: '24px',
-    fontWeight: 500,
-    lineHeight: '130%',
-    letterSpacing: '-0.04em',
-    color: '#0C1719',
+    fontSize: typography.fontSize['hero-subtitle'].size,
+    fontWeight: typography.fontSize['hero-subtitle'].fontWeight,
+    lineHeight: typography.fontSize['hero-subtitle'].lineHeight,
+    letterSpacing: typography.fontSize['hero-subtitle'].letterSpacing,
+    color: colors.semantic.text.primary,
   },
+
+  // Section Headers
   eyebrow: {
-    fontSize: '16px',
-    fontWeight: 600,
-    lineHeight: '100%',
-    letterSpacing: '-0.02em',
-  },
-  navLink: {
-    fontSize: '16px',
-    fontWeight: 'bold' as const,
-    lineHeight: '100%',
-    letterSpacing: '-0.02em',
-    color: '#0C1719',
-  },
-  bannerText: {
-    fontSize: '16px',
-    fontWeight: 600,
-    lineHeight: '100%',
-    letterSpacing: '-0.02em',
-    color: '#0C1719',
+    fontSize: typography.fontSize.eyebrow.size,
+    fontWeight: typography.fontSize.eyebrow.fontWeight,
+    lineHeight: typography.fontSize.eyebrow.lineHeight,
+    letterSpacing: typography.fontSize.eyebrow.letterSpacing,
+    color: colors.semantic.text.brand,
   },
   h2: {
-    fontSize: '48px',
-    fontWeight: 'bold' as const,
-    lineHeight: '100%',
-    letterSpacing: '-0.04em',
-    color: '#0C1719',
+    fontSize: typography.fontSize['section-title'].size,
+    fontWeight: typography.fontSize['section-title'].fontWeight as CSSProperties['fontWeight'],
+    lineHeight: typography.fontSize['section-title'].lineHeight,
+    letterSpacing: typography.fontSize['section-title'].letterSpacing,
+    color: colors.semantic.text.primary,
     maxWidth: '500px',
     margin: '0 auto 24px',
   },
   h3: {
-    fontSize: '24px',
-    fontWeight: 500,
-    letterSpacing: '-0.02em',
+    fontSize: typography.fontSize.h3.size,
+    fontWeight: typography.fontWeight.medium,
+    letterSpacing: typography.fontSize.h3.letterSpacing,
     lineHeight: '1.1em',
-    color: '#0C1719',
+    color: colors.semantic.text.primary,
     textAlign: 'right' as const,
     margin: 0,
     width: '100%',
   },
+  h3Large: {
+    fontSize: '32px',
+    fontWeight: typography.fontWeight.semibold,
+    letterSpacing: typography.letterSpacing.tight,
+    lineHeight: '1.3em',
+    color: colors.semantic.text.primary,
+  },
   subtitle: {
-    fontSize: '20px',
-    fontWeight: 500,
-    lineHeight: '130%',
-    letterSpacing: '-0.04em',
-    color: '#515F61',
+    fontSize: typography.fontSize['section-subtitle'].size,
+    fontWeight: typography.fontSize['section-subtitle'].fontWeight,
+    lineHeight: typography.fontSize['section-subtitle'].lineHeight,
+    letterSpacing: typography.fontSize['section-subtitle'].letterSpacing,
+    color: colors.semantic.text.secondary,
     maxWidth: '450px',
     margin: '0 auto',
   },
+  subtitleAlt: {
+    fontSize: '20px',
+    fontWeight: typography.fontWeight.medium,
+    lineHeight: '140%',
+    letterSpacing: typography.letterSpacing.tight,
+    color: colors.semantic.text.primary,
+  },
+
+  // Body Text
   bodyLarge: {
-    fontSize: '18px',
-    fontWeight: 500,
+    fontSize: typography.fontSize['body-lg'].size,
+    fontWeight: typography.fontSize['body-lg'].fontWeight,
     lineHeight: '1.5em',
-    color: '#515F61',
+    color: colors.semantic.text.secondary,
     textAlign: 'right' as const,
     margin: '0',
     width: '100%',
   },
+  bodyMedium: {
+    fontSize: typography.fontSize['body-lg'].size,
+    fontWeight: typography.fontSize['body-lg'].fontWeight,
+    lineHeight: '1.5',
+    color: colors.semantic.text.primary,
+  },
+  bodyMediumBold: {
+    fontSize: typography.fontSize['body-lg'].size,
+    fontWeight: typography.fontWeight.semibold,
+    lineHeight: '1.5',
+    color: colors.semantic.text.primary,
+  },
+
+  // Specialized Text
+  bannerText: {
+    fontSize: typography.fontSize.body.size,
+    fontWeight: typography.fontWeight.semibold,
+    lineHeight: typography.fontSize.body.lineHeight,
+    letterSpacing: typography.letterSpacing.tight,
+    color: colors.semantic.text.primary,
+  },
+  navLink: {
+    fontSize: typography.fontSize.body.size,
+    fontWeight: typography.fontWeight.bold as CSSProperties['fontWeight'],
+    lineHeight: typography.fontSize.body.lineHeight,
+    letterSpacing: typography.letterSpacing.tight,
+    color: colors.semantic.text.primary,
+  },
+  testimonialName: {
+    fontSize: typography.fontSize.body.size,
+    fontWeight: typography.fontWeight.semibold,
+    lineHeight: 1,
+    color: colors.semantic.text.primary,
+  },
+  testimonialTitle: {
+    fontSize: typography.fontSize['body-sm'].size,
+    fontWeight: typography.fontWeight.medium,
+    lineHeight: 1,
+    color: colors.semantic.text.secondary,
+  },
 } as const;
 
-// CTA Button Styles
+// ============================================================================
+// CTA BUTTON STYLES
+// ============================================================================
+
 export const CTA_STYLES = {
   main: {
-    backgroundColor: '#019FB7',
-    border: '0.5px solid #018DA2',
-    borderRadius: '6px',
-    color: '#EEF2F3',
+    backgroundColor: colors.brand.primary.DEFAULT,
+    border: `0.5px solid ${colors.brand.primary.dark}`,
+    borderRadius: radius.semantic.button,
+    color: colors.neutral.white,
     paddingLeft: '32px',
     paddingRight: '32px',
     paddingTop: '16px',
     paddingBottom: '16px',
-    fontSize: '18px',
-    fontWeight: 600,
-    lineHeight: '120%',
-    letterSpacing: '0',
+    fontSize: typography.fontSize.button.size,
+    fontWeight: typography.fontSize.button.fontWeight,
+    lineHeight: typography.fontSize.button.lineHeight,
+    letterSpacing: typography.fontSize.button.letterSpacing,
   },
   secondary: {
-    backgroundColor: '#EEF2F3',
-    border: '0.5px solid #018DA2',
-    borderRadius: '6px',
-    color: '#0C1719',
+    backgroundColor: colors.neutral[200],
+    border: `0.5px solid ${colors.brand.primary.dark}`,
+    borderRadius: radius.semantic.button,
+    color: colors.semantic.text.primary,
     paddingLeft: '32px',
     paddingRight: '32px',
     paddingTop: '16px',
     paddingBottom: '16px',
-    fontSize: '18px',
-    fontWeight: 600,
-    lineHeight: '120%',
-    letterSpacing: '0',
-    boxShadow: '0 0 0 4px rgba(1, 159, 183, 0.2)',
+    fontSize: typography.fontSize.button.size,
+    fontWeight: typography.fontSize.button.fontWeight,
+    lineHeight: typography.fontSize.button.lineHeight,
+    letterSpacing: typography.fontSize.button.letterSpacing,
+    boxShadow: `0 0 0 4px ${colors.opacity.overlay.brand[20]}`,
   },
   nav: {
-    backgroundColor: '#019FB7',
-    border: '0.5px solid #018DA2',
-    borderRadius: '4px',
-    color: 'white',
+    backgroundColor: colors.brand.primary.DEFAULT,
+    border: `0.5px solid ${colors.brand.primary.dark}`,
+    borderRadius: radius.sm,
+    color: colors.neutral.white,
     paddingLeft: '16px',
     paddingRight: '16px',
     paddingTop: '12px',
     paddingBottom: '12px',
-    fontSize: '16px',
-    fontWeight: 600,
-    lineHeight: '110%',
-    letterSpacing: '0',
+    fontSize: typography.fontSize['button-sm'].size,
+    fontWeight: typography.fontSize['button-sm'].fontWeight,
+    lineHeight: typography.fontSize['button-sm'].lineHeight,
+    letterSpacing: typography.fontSize['button-sm'].letterSpacing,
   },
 } as const satisfies Record<string, CSSProperties>;
 
-// Banner/Badge Styles
+// ============================================================================
+// BANNER/BADGE STYLES
+// ============================================================================
+
 export const BANNER_STYLES = {
   box: {
-    backgroundColor: '#FFFFFF',
-    border: '1px solid rgba(12, 23, 25, 0.1)',
-    borderRadius: '2px',
+    backgroundColor: colors.neutral.white,
+    border: `1px solid ${colors.opacity.overlay.black[10]}`,
+    borderRadius: radius.xs,
     paddingLeft: '12px',
     paddingRight: '12px',
     paddingTop: '8px',
@@ -140,28 +201,31 @@ export const BANNER_STYLES = {
   },
 } as const;
 
-// Step Box Styles
+// ============================================================================
+// STEP BOX STYLES
+// ============================================================================
+
 export const STEP_BOX_STYLES = {
   container: {
     paddingTop: '24px',
-    backgroundColor: '#F9FAFB',
-    borderRadius: '12px',
+    backgroundColor: colors.neutral[100],
+    borderRadius: radius.lg,
     gap: '24px',
-    boxShadow: 'inset 0 1px 5px -5px rgba(19, 22, 22, 0.7), 0 0 0 1px rgba(34, 50, 53, 0.078), 0 4px 8px rgba(34, 50, 53, 0.05)',
+    boxShadow: `inset 0 1px 5px -5px ${colors.opacity.shadow.dark}, 0 0 0 1px ${colors.opacity.shadow.medium}, 0 4px 8px ${colors.opacity.shadow.light}`,
     display: 'flex',
     flexDirection: 'column' as const,
   },
   numberBadge: {
-    backgroundColor: '#e5e7eb',
-    borderRadius: '100px',
+    backgroundColor: colors.neutral[300],
+    borderRadius: radius.full,
     width: '38px',
     height: '28px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     fontWeight: 'bold',
-    color: '#0C1719',
-    fontSize: '14px',
+    color: colors.semantic.text.primary,
+    fontSize: typography.fontSize['body-sm'].size,
   },
   contentArea: {
     display: 'flex',
@@ -176,7 +240,7 @@ export const STEP_BOX_STYLES = {
     flexDirection: 'column' as const,
   },
   imageAreaStep1: {
-    borderRadius: '0 0 12px 12px',
+    borderRadius: `0 0 ${radius.lg} ${radius.lg}`,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -187,7 +251,7 @@ export const STEP_BOX_STYLES = {
     paddingLeft: '0',
   },
   imageAreaStep2: {
-    borderRadius: '0 0 12px 12px',
+    borderRadius: `0 0 ${radius.lg} ${radius.lg}`,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -198,7 +262,7 @@ export const STEP_BOX_STYLES = {
     paddingLeft: '24px',
   },
   imageAreaStep3: {
-    borderRadius: '0 0 12px 12px',
+    borderRadius: `0 0 ${radius.lg} ${radius.lg}`,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -210,20 +274,23 @@ export const STEP_BOX_STYLES = {
   },
   textArea: {
     marginTop: '24px',
-    backgroundColor: '#EEF2F3',
-    borderRadius: '12px',
+    backgroundColor: colors.neutral[200],
+    borderRadius: radius.lg,
     padding: '16px',
     paddingLeft: '24px',
     paddingRight: '24px',
   },
 } as const;
 
-// Card Styles (reusable for any card-based section: benefits, testimonials, etc.)
+// ============================================================================
+// CARD STYLES
+// ============================================================================
+
 export const CARD_STYLES = {
   container: {
-    backgroundColor: '#F9FAFB',
-    borderRadius: '12px',
-    boxShadow: 'inset 0 1px 5px -5px rgba(19, 22, 22, 0.7), 0 0 0 1px rgba(34, 50, 53, 0.078), 0 4px 8px rgba(34, 50, 53, 0.05)',
+    backgroundColor: colors.neutral[100],
+    borderRadius: radius.semantic.card,
+    boxShadow: `inset 0 1px 5px -5px ${colors.opacity.shadow.dark}, 0 0 0 1px ${colors.opacity.shadow.medium}, 0 4px 8px ${colors.opacity.shadow.light}`,
     padding: '24px',
     display: 'flex',
     flexDirection: 'column' as const,
@@ -233,9 +300,9 @@ export const CARD_STYLES = {
   iconCircle: {
     width: '48px',
     height: '48px',
-    backgroundColor: '#F9FAFB',
-    borderRadius: '100px',
-    boxShadow: 'rgba(12, 23, 25, 0.2) 0px 1px 2px 1px, rgba(1, 159, 183, 0.1) 0px 0px 0px 8px',
+    backgroundColor: colors.neutral[100],
+    borderRadius: radius.full,
+    boxShadow: `${colors.opacity.overlay.black[20]} 0px 1px 2px 1px, ${colors.opacity.overlay.brand[10]} 0px 0px 0px 8px`,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -251,18 +318,21 @@ export const CARD_STYLES = {
 // Backward compatibility alias (deprecated - use CARD_STYLES instead)
 export const BENEFIT_CARD_STYLES = CARD_STYLES;
 
-// Color Palette
+// ============================================================================
+// COLOR PALETTE (Re-export for convenience)
+// ============================================================================
+
 export const COLORS = {
   primary: {
-    main: '#019FB7',
-    dark: '#018DA2',
-    light: '#B8D7DD',
+    main: colors.brand.primary.DEFAULT,
+    dark: colors.brand.primary.dark,
+    light: colors.brand.primary.light,
   },
   neutral: {
-    black: '#0C1719',
-    darkGray: '#515F61',
-    mediumGray: '#E3E6E8',
-    lightGray: '#EEF2F3',
-    lightestGray: '#F9FAFB',
+    black: colors.neutral.black,
+    darkGray: colors.neutral[700],
+    mediumGray: colors.neutral[300],
+    lightGray: colors.neutral[200],
+    lightestGray: colors.neutral[100],
   },
 } as const;

@@ -28,7 +28,7 @@ const FormField = React.forwardRef<HTMLDivElement, FormFieldProps>(
     ref
   ) => {
     return (
-      <div ref={ref} className={cn("flex flex-col gap-4", className)}>
+      <div ref={ref} className={cn("flex flex-col gap-2", className)}>
         {label && (
           <Label htmlFor={htmlFor} required={required} optional={optional}>
             {label}
@@ -36,7 +36,7 @@ const FormField = React.forwardRef<HTMLDivElement, FormFieldProps>(
         )}
         {children}
         {helper && !error && (
-          <p className="text-caption text-neutral-700">{helper}</p>
+          <p className="text-caption text-text-secondary">{helper}</p>
         )}
         {error && (
           <p className="text-caption text-red-500 font-medium animate-slide-up">

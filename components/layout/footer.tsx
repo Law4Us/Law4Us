@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Facebook, Instagram, Linkedin, Mail, Phone, MapPin } from "lucide-react";
+import { animations } from "@/lib/utils/animations";
 
 const companyLinks = [
   { name: "מי אנחנו", href: "/about" },
@@ -35,7 +36,7 @@ export function Footer() {
             </p>
             <Link
               href="/wizard"
-              className="inline-flex items-center justify-center rounded font-medium transition-smooth touch-target focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98] bg-primary text-white border border-primary-dark hover:bg-primary-dark text-body px-6 py-3"
+              className={`inline-flex items-center justify-center rounded font-medium touch-target focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-white border border-primary-dark hover:bg-primary-dark text-body px-6 py-3 ${animations.primaryCTAHover}`}
             >
               התחילו בהליך גירושין
             </Link>
@@ -49,7 +50,7 @@ export function Footer() {
                 <li key={link.name}>
                   <Link
                     href={link.href}
-                    className="text-body-small text-white/80 hover:text-white transition-smooth"
+                    className={`text-body-small text-white/80 ${animations.footerLinkHover}`}
                   >
                     {link.name}
                   </Link>
@@ -66,7 +67,7 @@ export function Footer() {
                 <li key={link.name}>
                   <Link
                     href={link.href}
-                    className="text-body-small text-white/80 hover:text-white transition-smooth"
+                    className={`text-body-small text-white/80 ${animations.footerLinkHover}`}
                   >
                     {link.name}
                   </Link>
@@ -82,23 +83,32 @@ export function Footer() {
               <li className="flex items-start gap-3">
                 <MapPin className="h-5 w-5 mt-0.5 flex-shrink-0" />
                 <span className="text-body-small text-white/80">
-                  יגאל אלון 26, תל אביב
+                  ברקוביץ 4, מגדל המוזיאון, קומה שישית, תל אביב
                 </span>
               </li>
               <li className="flex items-center gap-3">
                 <Phone className="h-5 w-5 flex-shrink-0" />
                 <a
-                  href="tel:035555555"
-                  className="text-body-small text-white/80 hover:text-white transition-smooth"
+                  href="tel:036951408"
+                  className={`text-body-small text-white/80 ${animations.footerLinkHover}`}
                 >
-                  03-5555555
+                  טלפון: 03-6951408
+                </a>
+              </li>
+              <li className="flex items-center gap-3">
+                <Phone className="h-5 w-5 flex-shrink-0" />
+                <a
+                  href="tel:0507529938"
+                  className={`text-body-small text-white/80 ${animations.footerLinkHover}`}
+                >
+                  נייד: 050-7529938
                 </a>
               </li>
               <li className="flex items-center gap-3">
                 <Mail className="h-5 w-5 flex-shrink-0" />
                 <a
                   href="mailto:info@law4us.co.il"
-                  className="text-body-small text-white/80 hover:text-white transition-smooth"
+                  className={`text-body-small text-white/80 ${animations.footerLinkHover}`}
                 >
                   info@law4us.co.il
                 </a>
@@ -113,7 +123,7 @@ export function Footer() {
                   <a
                     key={social.name}
                     href={social.href}
-                    className="touch-target p-2 rounded-full bg-white/10 hover:bg-white/20 transition-smooth"
+                    className={`touch-target p-2 rounded-full bg-white/10 ${animations.socialIconHover}`}
                     aria-label={social.name}
                   >
                     <Icon className="h-5 w-5" />

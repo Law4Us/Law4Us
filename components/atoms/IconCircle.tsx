@@ -1,5 +1,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils/cn';
+import { animations } from '@/lib/utils/animations';
 
 export interface IconCircleProps extends React.HTMLAttributes<HTMLDivElement> {
   size?: 'small' | 'medium' | 'large';
@@ -17,8 +18,10 @@ export interface IconCircleProps extends React.HTMLAttributes<HTMLDivElement> {
  */
 export const IconCircle = React.forwardRef<HTMLDivElement, IconCircleProps>(
   ({ size = 'medium', className, children, ...props }, ref) => {
-    const baseStyles =
-      'flex items-center justify-center bg-neutral-100 rounded-full shadow-icon-circle';
+    const baseStyles = cn(
+      'flex items-center justify-center bg-neutral-100 rounded-full shadow-icon-circle',
+      animations.iconCircleHover
+    );
 
     const sizeStyles = {
       small: 'w-8 h-8',

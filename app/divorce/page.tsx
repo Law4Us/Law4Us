@@ -1,250 +1,460 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { Clock, Calendar } from "lucide-react";
-import { Button } from "@/components/ui";
+import {
+  Calendar,
+  DollarSign,
+  Users,
+  Heart,
+  Shield,
+  Scale,
+  Handshake,
+  Home,
+  FileText,
+  Gavel,
+  CheckCircle,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { SlideInView } from "@/components/animations/slide-in-view";
+import { LazySectionFade } from "@/components/ui/lazy-section";
+import { MagneticButton } from "@/components/atoms/MagneticButton";
+import { CTASection } from "@/components/home";
+import { HomeBlogSection } from "@/components/home-blog-section";
+import { ProgressiveImage } from "@/components/ui/progressive-image";
+import { generatePlaceholderDataURL } from "@/lib/utils/image-placeholders";
+import {
+  TYPOGRAPHY,
+  CARD_STYLES,
+  CTA_STYLES,
+  STEP_BOX_STYLES,
+} from "@/lib/constants/styles";
+import { animations } from "@/lib/utils/animations";
 
 export const metadata: Metadata = {
   title: "מדריך גירושין - Law4Us",
-  description: "מדריך מקיף להליך הגירושין: מזונות, משמורת, חלוקת רכוש ותהליך הגירושין המלא.",
+  description:
+    "מדריך מקיף להליך הגירושין: מזונות, משמורת, חלוקת רכוש והדרך כולה עד לקבלת פסק הדין.",
 };
 
-// Mock blog data
-const blogPosts = [
+const heroHighlights = [
+  "מסבירים כל שלב בתהליך הגירושין בשפה פשוטה וברורה",
+  "מראים כיצד לשמור על זכויותיכם בכל סוג תביעה",
+  "מציעים גישה הוליסטית שמשלבת ייצוג משפטי, גישור ותמיכה רגשית",
+] as const;
+
+type KnowledgeHighlight = {
+  icon: LucideIcon;
+  title: string;
+  description: string;
+};
+
+type KnowledgeSection = {
+  eyebrow: string;
+  title: string;
+  subtitle: string;
+  highlights: KnowledgeHighlight[];
+  bullets?: KnowledgeHighlight[];
+};
+
+const knowledgeSections: KnowledgeSection[] = [
   {
-    id: 1,
-    title: "כיצד לחלק רכוש בצורה הוגנת?",
-    excerpt: "מדריך מקיף להבנת חוקי חלוקת הרכוש בישראל ואיך להגיע להסדר שמתאים לשני הצדדים...",
-    date: "15 באוקטובר 2024",
-    readTime: "5 דקות קריאה",
-    image: "/placeholder-blog.jpg",
+    eyebrow: "מושגי יסוד",
+    title: "מזונות / דמי מזונות",
+    subtitle:
+      "הבנת הזכויות והחובות הכלכליות בין בני הזוג וביחס לילדים לאורך התהליך.",
+    highlights: [
+      {
+        icon: DollarSign,
+        title: "מהם מזונות?",
+        description:
+          "תשלום חודשי שנועד להבטיח את צורכי המחיה הבסיסיים. קיימים שני סוגים עיקריים – מזונות ילדים ומזונות בן/בת זוג.",
+      },
+      {
+        icon: Users,
+        title: "מזונות ילדים",
+        description:
+          "נקבעים בהתאם לצרכים היומיומיים, רמת החיים אליה התרגלו הילדים ויכולתם הכלכלית של ההורים. כוללים הוצאות חינוך, בריאות, פנאי ועוד.",
+      },
+      {
+        icon: Heart,
+        title: "מזונות בן/בת זוג",
+        description:
+          "יכולים להיפסק כאשר אחד מבני הזוג תלוי כלכלית בשני. נבחנים יכולת ההשתכרות, רמת החיים המשותפת והתרומה הכלכלית של שני הצדדים.",
+      },
+    ],
   },
   {
-    id: 2,
-    title: "זכויות הורים במשמורת משותפת",
-    excerpt: "הבנת המשמעות של משמורת משותפת, מה הזכויות והחובות של כל הורה...",
-    date: "10 באוקטובר 2024",
-    readTime: "4 דקות קריאה",
-    image: "/placeholder-blog.jpg",
+    eyebrow: "זכויות הילדים",
+    title: "משמורת וסידורי ראייה",
+    subtitle:
+      "התוויית מציאות יומיומית יציבה לילדים תוך שמירה על קשר בריא עם שני ההורים.",
+    highlights: [
+      {
+        icon: Shield,
+        title: "משמורת בלעדית",
+        description:
+          "הילד גר עם הורה אחד רוב הזמן. ההורה השני נהנה מסידורי ראייה מובנים ומעורבות בהחלטות חשובות.",
+      },
+      {
+        icon: Handshake,
+        title: "משמורת משותפת",
+        description:
+          "שני ההורים חולקים את האחריות על קבלת ההחלטות ולכן גם נדרשים לתיאום מתמשך ושיתוף פעולה.",
+      },
+      {
+        icon: Scale,
+        title: "משמורת שווה",
+        description:
+          "חלוקת זמנים שוויונית – לדוגמה שבוע-שבוע – עם תכנון לוגיסטי מוקפד שנועד לשמור על רצף לימודי ונפשי לילדים.",
+      },
+    ],
+    bullets: [
+      {
+        icon: Calendar,
+        title: "סידורי ראייה",
+        description:
+          "כוללים לוחות זמנים ברורים: חגים, חופשות, סופי שבוע וערבים באמצע השבוע. במידת הצורך ניתן לשלב ניטור או ליווי מקצועי.",
+      },
+      {
+        icon: Heart,
+        title: "טובת הילד לפני הכל",
+        description:
+          "בית המשפט בוחן את טובת הילד: יציבות, קשר עם כל הורה, יכולת ההורים לספק מסגרת בטוחה, והעדפת הילד בגילאים המתאימים.",
+      },
+    ],
   },
   {
-    id: 3,
-    title: "חישוב מזונות - מה חשוב לדעת",
-    excerpt: "כל מה שצריך לדעת על חישוב מזונות ילדים ובן/בת זוג, הקריטריונים והשיקולים...",
-    date: "5 באוקטובר 2024",
-    readTime: "6 דקות קריאה",
-    image: "/placeholder-blog.jpg",
+    eyebrow: "ענייני רכוש",
+    title: "חלוקת רכוש",
+    subtitle:
+      "עקרונות החוק והפסיקה שמבטיחים חלוקה הוגנת של נכסים, חובות וזכויות עתידיות.",
+    highlights: [
+      {
+        icon: Home,
+        title: "רכוש משותף",
+        description:
+          "נכסים שנצברו במהלך הנישואין: דירה, חיסכון, פנסיה, רכב ועוד. ברירת המחדל – חלוקה שווה בין הצדדים.",
+      },
+      {
+        icon: FileText,
+        title: "רכוש פרטי",
+        description:
+          "נכסים שהיו בבעלות אחד הצדדים לפני הנישואין או התקבלו כמתנה/ירושה – בדרך כלל נשארים בבעלותו הבלעדית.",
+      },
+      {
+        icon: DollarSign,
+        title: "הערכת שווי",
+        description:
+          "נקבעת סמוך לפסק הדין. אם אחד הצדדים פעל להבריח נכסים, ניתן לדרוש השבה ולהחזיר את השווי המלא לקופה המשותפת.",
+      },
+      {
+        icon: Gavel,
+        title: "הסכמי ממון",
+        description:
+          "מסמכים שמקדימים את החוק ומאפשרים חלוקה מותאמת לזוג. חשוב לוודא שההסכם אושר כדין ונערך בשקיפות מלאה.",
+      },
+    ],
   },
-];
+] as const;
+
+const processSteps = [
+  {
+    number: "01",
+    title: "הגשת תביעה",
+    description:
+      "מנסחים ומגישים כתב תביעה מפורט לבית המשפט לענייני משפחה. התביעה כוללת את סוגיות המשמורת, מזונות, רכוש ודרישות נוספות.",
+  },
+  {
+    number: "02",
+    title: "תגובה של הצד השני",
+    description:
+      "הצד השני משיב בתוך כ-30 יום. במקרים רבים מוגשת תביעה שכנגד וההליך מתרחב לנושאים נוספים שדורשים הכרעה.",
+  },
+  {
+    number: "03",
+    title: "גישור ויישוב סכסוך",
+    description:
+      "בית המשפט מפנה את הצדדים לפגישות מידע וגישור. כאן מתאפשר להגיע להסכמות מהירות יותר שמצמצמות עלויות ומתח נפשי.",
+  },
+  {
+    number: "04",
+    title: "דיונים והבאת ראיות",
+    description:
+      "במידה והגישור לא מצליח, ממשיכים לדיונים רשמיים. כל צד מציג ראיות, עדויות ומסמכים מקצועיים תומכים.",
+  },
+  {
+    number: "05",
+    title: "פסק דין",
+    description:
+      "השופט קובע הכרעות בכל הסוגיות השנויות במחלוקת ומנמק את ההחלטות. הפסק כולל הוראות יישומיות ומועדי ביצוע.",
+  },
+  {
+    number: "06",
+    title: "צו גירושין",
+    description:
+      "לאחר 45 יום מפסק הדין ניתן לפנות לרשם ולהשלים את הגירושין באופן רשמי. מרגע זה בני הזוג נחשבים גרושים מבחינה משפטית.",
+  },
+] as const;
+
+const preparationTips = [
+  "איסוף מסמכים כלכליים מראש: דוחות בנק, חשבונות, הסכמים פיננסיים ונכסים משותפים.",
+  "תיעוד תקשורת בין בני הזוג באופן מסודר ומכבד כדי להוכיח שיתוף פעולה או חוסר שיתוף פעולה.",
+  "הגדרת גבולות תקשורת ברורים ושיתוף הילדים רק במידע המתאים לגילם.",
+  "הצבת יעדים ארוכי טווח – היכן גרים, כיצד מתחלקים המשאבים ואיך נראית שגרת ההורות המשותפת.",
+] as const;
 
 export default function DivorcePage() {
   return (
-    <div className="bg-white">
-      {/* Hero */}
-      <section className="bg-gradient-to-b from-primary/5 to-white">
-        <div className="container-custom section-padding">
-          <div className="max-w-3xl mx-auto text-center">
-            <h1 className="text-display font-bold mb-6">
-              מדריך:
-              <br />
-              <span className="text-primary">מהו הליך הגירושין</span>
-            </h1>
-            <p className="text-body-large text-neutral-dark">
-              מידע מקיף ומעודכן על כל שלבי הליך הגירושין - ממילוי הטפסים ועד לקבלת צו הגירושין
-            </p>
-          </div>
-        </div>
-      </section>
+    <div>
+      <section className="relative py-12 overflow-hidden">
+        <div className="mx-auto max-w-[1200px] px-4 sm:px-6 lg:px-8">
+          <div className="grid gap-12 lg:grid-cols-[1.1fr,0.9fr] lg:items-center">
+            <SlideInView direction="up">
+              <div className="space-y-6 text-right">
+                <p style={TYPOGRAPHY.eyebrow} className="text-primary">
+                  מדריך מקיף
+                </p>
+                <h1
+                  className="text-[36px] sm:text-[52px] lg:text-[76px]"
+                  style={{
+                    ...TYPOGRAPHY.heroH1,
+                    fontSize: undefined,
+                    margin: 0,
+                  }}
+                >
+                  מדריך להליך הגירושין
+                  <br />
+                  <span style={{ color: "#019FB7" }}>כל מה שצריך לדעת</span>
+                </h1>
+                <p
+                  className="max-w-3xl text-[18px] sm:text-[20px] lg:text-[24px]"
+                  style={{
+                    ...TYPOGRAPHY.heroSubtitle,
+                    fontSize: undefined,
+                  }}
+                >
+                  Law4Us ריכזה עבורכם את כל הנקודות החשובות – מזכויות כלכליות ועד
+                  ניהול המשמורת. כך תוכלו לקבל החלטות מתוך ידע, בהירות וביטחון.
+                </p>
+                <ul className="space-y-3">
+                  {heroHighlights.map((item) => (
+                    <li
+                      key={item}
+                      className={`flex items-start justify-start gap-3 text-lg text-neutral-800 ${animations.bulletHover}`}
+                    >
+                      <CheckCircle className="mt-1 h-5 w-5 flex-shrink-0 text-primary" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
 
-      {/* Main Content */}
-      <div className="container-custom section-padding">
-        <div className="max-w-4xl mx-auto space-y-16">
-          {/* Section 1: Alimony */}
-          <section>
-            <h2 className="text-h1 font-bold mb-6">מזונות / דמי מזונות</h2>
-            <div className="prose prose-lg max-w-none space-y-4 text-body text-neutral-dark">
-              <p>
-                <strong className="text-neutral-darkest">מהם מזונות?</strong> מזונות הם תשלום כספי שמטרתו להבטיח את צורכי המחיה
-                הבסיסיים. ישנם שני סוגים עיקריים: מזונות ילדים ומזונות בן/בת זוג.
-              </p>
-              <p>
-                <strong className="text-neutral-darkest">מזונות ילדים</strong> נקבעים בהתאם לצורכי הילד, יכולת התשלום של ההורים
-                ורמת החיים שהילד היה רגיל אליה. התשלום כולל מזון, ביגוד, חינוך, בריאות ובידור.
-              </p>
-              <p>
-                <strong className="text-neutral-darkest">מזונות בן/בת זוג</strong> נקבעים לתקופה מוגבלת (בדרך כלל שנה לכל שנת
-                נישואין) ומטרתם לאפשר לבן/בת הזוג החלש/ה כלכלית להסתדר עד שיוכל/תוכל לפרנס את עצמו/ה.
-              </p>
-              <p>
-                <strong className="text-neutral-darkest">שינוי סכומי מזונות:</strong> ניתן לבקש שינוי בסכומי המזונות במידה וחל
-                שינוי מהותי בנסיבות, כגון שינוי בהכנסה, מצב בריאותי או צרכי הילדים.
-              </p>
-            </div>
-          </section>
-
-          {/* Section 2: Custody */}
-          <section>
-            <h2 className="text-h1 font-bold mb-6">משמורת וסידורי ראיה</h2>
-            <div className="prose prose-lg max-w-none space-y-4 text-body text-neutral-dark">
-              <p>
-                <strong className="text-neutral-darkest">משמורת</strong> היא הזכות והאחריות לדאוג לצרכי הילד ביום-יום: מקום מגורים,
-                חינוך, בריאות וכדומה. ישנם שלושה סוגים עיקריים של משמורת:
-              </p>
-              <ul className="list-disc list-inside space-y-2 mr-4">
-                <li>
-                  <strong>משמורת בלעדית</strong> - הילד גר עם הורה אחד רוב הזמן, וההורה השני מקבל זכויות ראיה
-                </li>
-                <li>
-                  <strong>משמורת משותפת</strong> - שני ההורים מקבלים החלטות ביחד, אך הילד גר עם הורה אחד
-                </li>
-                <li>
-                  <strong>משמורת שווה</strong> - הילד מבלה זמן שווה אצל שני ההורים (למשל שבוע-שבוע)
-                </li>
-              </ul>
-              <p>
-                <strong className="text-neutral-darkest">סידורי ראיה</strong> מתייחסים לזמן שהילד מבלה עם ההורה שאין לו משמורת.
-                בדרך כלל כוללים סופי שבוע לסירוגין, חגים וחופשות בחלוקה שווה, וערבי אמצע שבוע.
-              </p>
-              <p>
-                <strong className="text-neutral-darkest">טובת הילד</strong> היא השיקול המרכזי והעליון בכל החלטה של בית המשפט
-                בנוגע למשמורת. השופט בוחן גורמים כמו גיל הילד, העדפתו, איכות הקשר עם כל הורה, יכולות
-                ההורים ועוד.
-              </p>
-            </div>
-          </section>
-
-          {/* Section 3: Property */}
-          <section>
-            <h2 className="text-h1 font-bold mb-6">חלוקת רכוש</h2>
-            <div className="prose prose-lg max-w-none space-y-4 text-body text-neutral-dark">
-              <p>
-                <strong className="text-neutral-darkest">רכוש משותף</strong> - כל מה שנצבר במהלך הנישואין נחשב לרכוש משותף ומתחלק
-                שווה בשווה בין בני הזוג, אלא אם הוסכם אחרת בהסכם ממון.
-              </p>
-              <p>
-                <strong className="text-neutral-darkest">רכוש פרטי</strong> - נכסים שהיו לבן/בת הזוג לפני הנישואין, או שהתקבלו
-                במתנה או בירושה במהלכם, נשארים קניינו הפרטי ואינם חלק מהחלוקה.
-              </p>
-              <p>
-                <strong className="text-neutral-darkest">שווי הנכסים:</strong> נקבע לפי שווי השוק ביום פסק הדין. במידה והנכס
-                הועבר לצד שלישי או הוחבא, בית המשפט רשאי להעריך את שוויו ולחייב בהשבה.
-              </p>
-              <p>
-                <strong className="text-neutral-darkest">חובות משותפים</strong> - גם החובות שנצברו במהלך הנישואין מתחלקים, לא רק
-                הנכסים. חישוב סופי של חלוקת הרכוש לוקח בחשבון את כל הנכסים בניכוי כל החובות.
-              </p>
-              <p>
-                <strong className="text-neutral-darkest">הסכם ממון</strong> יכול לשנות את חוקי חלוקת הרכוש. אם יש הסכם ממון תקף,
-                החלוקה תיעשה לפיו ולא לפי החוק.
-              </p>
-            </div>
-          </section>
-
-          {/* Section 4: Process */}
-          <section>
-            <h2 className="text-h1 font-bold mb-6">הליך הגירושין</h2>
-            <div className="prose prose-lg max-w-none space-y-4 text-body text-neutral-dark">
-              <p>
-                <strong className="text-neutral-darkest">שלב 1: הגשת תביעה</strong> - התהליך מתחיל בהגשת תביעת גירושין לבית המשפט
-                לענייני משפחה (או לבית הדין הרבני עבור זוגות נשואים כדת משה וישראל). התביעה כוללת פירוט
-                הסיבות לגירושין והבקשות לגבי משמורת, מזונות וחלוקת רכוש.
-              </p>
-              <p>
-                <strong className="text-neutral-darkest">שלב 2: המתנה לתשובה</strong> - הצד השני מקבל את התביעה ויש לו 30 יום
-                להגיש כתב הגנה או כתב הגנה ותביעה שכנגד.
-              </p>
-              <p>
-                <strong className="text-neutral-darkest">שלב 3: גישור</strong> - בית המשפט מחייב את הצדדים לנסות גישור לפני
-                שמתחילים בהליכים משפטיים. הגישור מתמקד בניסיון להגיע להסכמות בנוגע לכל הנושאים השנויים
-                במחלוקת.
-              </p>
-              <p>
-                <strong className="text-neutral-darkest">שלב 4: דיונים</strong> - אם הגישור לא הצליח, מתקיימים דיונים בבית המשפט.
-                כל צד מביא ראיות, עדויות ומסמכים לתמיכה בטענותיו.
-              </p>
-              <p>
-                <strong className="text-neutral-darkest">שלב 5: פסק דין</strong> - השופט מכריע בכל הנושאים השנויים במחלוקת ונותן
-                פסק דין. הפסק דין כולל החלטות לגבי הגירושין, משמורת, מזונות וחלוקת רכוש.
-              </p>
-              <p>
-                <strong className="text-neutral-darkest">שלב 6: צו גירושין</strong> - לאחר 45 יום מפסק הדין (תקופת המתנה חובה),
-                ניתן לבקש צו גירושין סופי. מסמך זה הוא שמסיים רשמית את הנישואין.
-              </p>
-              <p>
-                <strong className="text-neutral-darkest">משך זמן:</strong> הליך גירושין מוסכם יכול להסתיים תוך מספר חודשים.
-                הליך שלא בהסכמה יכול לארוך שנה-שנתיים או יותר, תלוי במורכבות התיק ובעומס על בית המשפט.
-              </p>
-            </div>
-          </section>
-        </div>
-      </div>
-
-      {/* Blog Section */}
-      <section id="blog" className="bg-neutral-lightest">
-        <div className="container-custom section-padding">
-          <div className="text-center mb-12">
-            <h2 className="text-display font-bold mb-4">מהבלוג</h2>
-            <p className="text-body-large text-neutral-dark">
-              מאמרים וטיפים מועילים בנושאי גירושין ומשפחה
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {blogPosts.map((post) => (
-              <article
-                key={post.id}
-                className="bg-white rounded-lg overflow-hidden shadow-card hover:shadow-lg transition-smooth"
-              >
-                <div className="h-48 bg-neutral-light flex items-center justify-center text-neutral-dark">
-                  {/* Placeholder for image */}
-                  <span className="text-body-small">תמונה להמחשה</span>
-                </div>
-                <div className="p-6">
-                  <div className="flex items-center gap-4 text-caption text-neutral-dark mb-3">
-                    <span className="flex items-center gap-1">
-                      <Calendar className="w-4 h-4" />
-                      {post.date}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-4 h-4" />
-                      {post.readTime}
-                    </span>
-                  </div>
-                  <h3 className="text-h3 font-semibold mb-3 line-clamp-2">
-                    {post.title}
-                  </h3>
-                  <p className="text-body text-neutral-dark mb-4 line-clamp-3">
-                    {post.excerpt}
-                  </p>
-                  <Link
-                    href={`/divorce/${post.id}`}
-                    className="inline-flex items-center justify-center rounded font-medium transition-smooth bg-transparent text-primary border border-primary hover:bg-primary/5 text-body-small px-4 py-2"
+                <div className="flex flex-col gap-3 sm:flex-row sm:justify-start">
+                  <MagneticButton
+                    href="/wizard"
+                    style={CTA_STYLES.main}
+                    className={`inline-flex items-center justify-center sm:w-auto ${animations.primaryCTAHover}`}
+                    magneticStrength={0.2}
+                    magneticDistance={110}
+                    rippleColor="rgba(255, 255, 255, 0.3)"
                   >
-                    קרא עוד
-                  </Link>
+                    התחילו בהליך אונליין
+                  </MagneticButton>
+                  <MagneticButton
+                    href="/about"
+                    style={{ ...CTA_STYLES.secondary, boxShadow: "none" }}
+                    className={`inline-flex items-center justify-center sm:w-auto ${animations.secondaryCTAHover}`}
+                    magneticStrength={0.15}
+                    magneticDistance={90}
+                    rippleColor="rgba(1, 159, 183, 0.2)"
+                  >
+                    מי אנחנו?
+                  </MagneticButton>
                 </div>
-              </article>
-            ))}
+              </div>
+            </SlideInView>
+
+            <SlideInView direction="left" delay={140}>
+              <div className="relative">
+                <div className="rounded-[32px] border border-neutral-200 bg-white/85 p-2 shadow-xl backdrop-blur">
+                  <ProgressiveImage
+                    src="/divorce-hero.jpg"
+                    alt="ספר חוק תקנות רכוש בנישואין עם מסמכים משפטיים"
+                    width={720}
+                    height={960}
+                    placeholderSrc={generatePlaceholderDataURL(16, 16, "#E8E4DC")}
+                    className="h-full w-full rounded-[28px] object-cover"
+                    priority
+                  />
+                </div>
+              </div>
+            </SlideInView>
           </div>
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="bg-white">
-        <div className="container-custom section-padding">
-          <div className="max-w-3xl mx-auto text-center">
-            <h2 className="text-h1 font-bold mb-6">מוכנים להתחיל?</h2>
-            <p className="text-body-large text-neutral-dark mb-8">
-              קבלו ליווי מקצועי ומלא לאורך כל התהליך
-            </p>
-            <Link
-              href="/wizard"
-              className="inline-flex items-center justify-center rounded font-medium transition-smooth bg-primary text-white border border-primary-dark hover:bg-primary-dark text-body-large px-10 py-5"
-            >
-              התחילו בהליך גירושין
-            </Link>
+      {knowledgeSections.map((section, index) => {
+        return (
+          <LazySectionFade key={section.title}>
+            <section className="py-12">
+              <div className="mx-auto max-w-[1200px] px-4 sm:px-6 lg:px-8">
+                <div className="text-center">
+                  <p style={TYPOGRAPHY.eyebrow} className="mb-6 text-primary">
+                    {section.eyebrow}
+                  </p>
+                  <h2 style={TYPOGRAPHY.h2}>{section.title}</h2>
+                  <p style={TYPOGRAPHY.subtitle}>{section.subtitle}</p>
+                </div>
+
+                <div className={`mt-16 grid gap-6 md:grid-cols-2 ${section.highlights.length === 4 ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}>
+                  {section.highlights.map((item, idx) => (
+                    <SlideInView
+                      key={item.title}
+                      direction="up"
+                      delay={idx * 120}
+                    >
+                      <div
+                        style={{
+                          ...CARD_STYLES.container,
+                          backgroundColor: "rgba(255,255,255,0.95)",
+                          padding: "24px",
+                        }}
+                        className={`h-full ${animations.cardHover}`}
+                      >
+                        <div
+                          style={CARD_STYLES.iconCircle}
+                          className={animations.iconCircleHover}
+                        >
+                          <item.icon className="h-6 w-6 text-primary" />
+                        </div>
+                        <div style={CARD_STYLES.textContent}>
+                          <h3 style={TYPOGRAPHY.h3}>{item.title}</h3>
+                          <p style={TYPOGRAPHY.bodyLarge}>{item.description}</p>
+                        </div>
+                      </div>
+                    </SlideInView>
+                  ))}
+                </div>
+
+                {section.bullets && (
+                  <div className="mt-6 grid gap-6 lg:grid-cols-2">
+                    {section.bullets.map((bullet, bulletIdx) => (
+                      <SlideInView
+                        key={bullet.title}
+                        direction="up"
+                        delay={bulletIdx * 120}
+                      >
+                        <div
+                          style={{
+                            ...CARD_STYLES.container,
+                            backgroundColor: "rgba(255,255,255,0.95)",
+                            padding: "24px",
+                          }}
+                          className={`flex flex-row items-start gap-6 ${animations.cardHover}`}
+                        >
+                          <div
+                            style={CARD_STYLES.iconCircle}
+                            className={`${animations.iconCircleHover} flex-shrink-0`}
+                          >
+                            <bullet.icon className="h-6 w-6 text-primary" />
+                          </div>
+                          <div className="space-y-2 text-right">
+                            <h3 style={TYPOGRAPHY.h3}>{bullet.title}</h3>
+                            <p style={TYPOGRAPHY.bodyLarge}>{bullet.description}</p>
+                          </div>
+                        </div>
+                      </SlideInView>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </section>
+          </LazySectionFade>
+        );
+      })}
+
+      <LazySectionFade>
+        <section className="py-12">
+          <div className="mx-auto max-w-[1200px] px-4 sm:px-6 lg:px-8">
+            <div className="text-center">
+              <p style={TYPOGRAPHY.eyebrow} className="mb-6 text-primary">
+                שלב אחר שלב
+              </p>
+              <h2 style={TYPOGRAPHY.h2}>הליך הגירושין – 6 שלבים מנוהלים</h2>
+              <p style={TYPOGRAPHY.subtitle}>
+                משרטטים עבורכם מסלול ברור – משלב הכנת התביעה ועד השלמת הצו
+                הסופי.
+              </p>
+            </div>
+
+            <div className="mt-16 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {processSteps.map((step, index) => (
+                <SlideInView key={step.title} direction="up" delay={index * 120}>
+                  <div
+                    style={{
+                      ...CARD_STYLES.container,
+                      backgroundColor: "rgba(255,255,255,0.95)",
+                      padding: "24px",
+                    }}
+                    className={`h-full ${animations.cardHover}`}
+                  >
+                    <div style={STEP_BOX_STYLES.numberBadge}>{step.number}</div>
+                    <div className="mt-4 space-y-2">
+                      <h3 style={TYPOGRAPHY.h3}>{step.title}</h3>
+                      <p style={TYPOGRAPHY.bodyLarge}>{step.description}</p>
+                    </div>
+                  </div>
+                </SlideInView>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </LazySectionFade>
+
+      <LazySectionFade>
+        <section className="py-12">
+          <div className="mx-auto max-w-[1200px] px-4 sm:px-6 lg:px-8">
+            <div className="text-center">
+              <p style={TYPOGRAPHY.eyebrow} className="mb-6 text-primary">
+                הכנה ותכנון
+              </p>
+              <h2 style={TYPOGRAPHY.h2}>צעדים פרקטיים לקראת ההליך</h2>
+              <p style={TYPOGRAPHY.subtitle}>
+                כמה פעולות מוקדמות שמפחיתות אי-ודאות ומעניקות שליטה מלאה כבר
+                מהיום הראשון.
+              </p>
+            </div>
+
+            <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+              {preparationTips.map((tip, index) => (
+                <SlideInView key={tip} direction="up" delay={index * 120}>
+                  <div
+                    style={{
+                      ...CARD_STYLES.container,
+                      backgroundColor: "rgba(255,255,255,0.95)",
+                      padding: "24px",
+                    }}
+                    className={`flex flex-row items-start gap-6 ${animations.cardHover}`}
+                  >
+                    <div
+                      style={CARD_STYLES.iconCircle}
+                      className={`${animations.iconCircleHover} flex-shrink-0`}
+                    >
+                      <CheckCircle className="h-6 w-6 text-primary" />
+                    </div>
+                    <p style={TYPOGRAPHY.bodyLarge}>{tip}</p>
+                  </div>
+                </SlideInView>
+              ))}
+            </div>
+          </div>
+        </section>
+      </LazySectionFade>
+
+      <LazySectionFade>
+        <HomeBlogSection />
+      </LazySectionFade>
+
+      <LazySectionFade>
+        <CTASection />
+      </LazySectionFade>
     </div>
   );
 }

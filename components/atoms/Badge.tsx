@@ -1,5 +1,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils/cn';
+import { animations } from '@/lib/utils/animations';
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLDivElement> {
   variant?: 'eyebrow' | 'pill' | 'dot';
@@ -19,8 +20,14 @@ export const Badge = React.forwardRef<HTMLDivElement, BadgeProps>(
 
     const variantStyles = {
       eyebrow: 'text-primary text-eyebrow',
-      pill: 'bg-white/90 text-neutral-900 text-caption px-3 py-1.5 rounded-badge border border-neutral-300',
-      dot: 'bg-primary text-white text-caption px-2 py-1 rounded-full',
+      pill: cn(
+        'bg-white/90 text-neutral-900 text-caption px-3 py-1.5 rounded-badge border border-neutral-300',
+        animations.badgeHover
+      ),
+      dot: cn(
+        'bg-primary text-white text-caption px-2 py-1 rounded-full',
+        animations.badgeHover
+      ),
     };
 
     return (

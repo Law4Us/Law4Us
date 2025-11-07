@@ -1,5 +1,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils/cn';
+import { animations } from '@/lib/utils/animations';
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'ghost';
@@ -31,15 +32,21 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const baseStyles =
-      'inline-flex items-center justify-center font-semibold transition-all duration-300 ease-in-out active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed touch-target';
+      'inline-flex items-center justify-center font-semibold disabled:opacity-50 disabled:cursor-not-allowed touch-target';
 
     const variantStyles = {
-      primary:
+      primary: cn(
         'bg-primary text-white border border-primary-dark hover:bg-primary-dark shadow-none',
-      secondary:
+        animations.buttonVariants.primary
+      ),
+      secondary: cn(
         'bg-neutral-200 text-neutral-900 border border-primary-dark hover:bg-neutral-300 shadow-btn-secondary',
-      ghost:
-        'bg-transparent text-primary hover:bg-primary/10 border border-transparent',
+        animations.buttonVariants.secondary
+      ),
+      ghost: cn(
+        'bg-transparent text-primary border border-transparent',
+        animations.buttonVariants.ghost
+      ),
     };
 
     const sizeStyles = {

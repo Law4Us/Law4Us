@@ -670,7 +670,7 @@ export function createCourtHeader(options: {
     new Paragraph({
       children: [
         new TextRun({
-          text: "מרח' אבא הלל 15, רמת גן",
+          text: "מרח' ברקוביץ 4, מגדל המוזיאון, קומה שישית, תל אביב",
           size: FONT_SIZES.BODY,
           font: 'David',
           rightToLeft: true,

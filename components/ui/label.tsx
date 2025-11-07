@@ -22,7 +22,7 @@ const Label = React.forwardRef<HTMLLabelElement, LabelProps>(
         {children}
         {required && <span className="text-red-500">*</span>}
         {optional && (
-          <span className="text-caption text-neutral-700 font-normal">
+          <span className="text-caption text-text-secondary font-normal">
             (אופציונלי)
           </span>
         )}

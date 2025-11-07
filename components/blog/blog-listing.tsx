@@ -2,11 +2,24 @@
 
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { format } from 'date-fns'
 import { he } from 'date-fns/locale'
 import { Search } from 'lucide-react'
 import { BlogPostPreview, getCategorySlug } from '@/lib/types/blog'
+import { CARD_STYLES, TYPOGRAPHY } from '@/lib/constants/styles'
+import { animations } from '@/lib/utils/animations'
+import { ProgressiveImage } from '@/components/ui/progressive-image'
+import { generatePlaceholderDataURL } from '@/lib/utils/image-placeholders'
+
+// Convert English reading time to Hebrew
+function toHebrewReadingTime(readingTime: string): string {
+  // Extract number from "X min read" format
+  const match = readingTime.match(/(\d+)/)
+  if (!match) return readingTime
+
+  const minutes = parseInt(match[1])
+  return `${minutes} דקות קריאה`
+}
 
 interface BlogListingProps {
   posts: BlogPostPreview[]
@@ -36,8 +49,8 @@ export function BlogListing({ posts, categories }: BlogListingProps) {
       {/* Sidebar */}
       <aside className="lg:col-span-1">
         {/* Search */}
-        <div className="bg-white rounded-lg p-6 mb-6 shadow-sm">
-          <h2 className="text-h3 font-semibold mb-4">חיפוש</h2>
+        <div style={{ ...CARD_STYLES.container, marginBottom: '24px' }}>
+          <h2 style={{ ...TYPOGRAPHY.h3, fontSize: '20px' }}>חיפוש</h2>
           <div className="relative">
             <input
               type="text"
@@ -50,15 +63,15 @@ export function BlogListing({ posts, categories }: BlogListingProps) {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-dark w-5 h-5" />
           </div>
           {searchQuery && (
-            <p className="text-body-small text-neutral-dark mt-2">
+            <p style={{ ...TYPOGRAPHY.bodyLarge, fontSize: '14px', marginTop: '8px' }}>
               נמצאו {filteredPosts.length} תוצאות
             </p>
           )}
         </div>
 
         {/* Categories */}
-        <div className="bg-white rounded-lg p-6 shadow-sm">
-          <h2 className="text-h3 font-semibold mb-4">קטגוריות</h2>
+        <div style={CARD_STYLES.container}>
+          <h2 style={{ ...TYPOGRAPHY.h3, fontSize: '20px' }}>קטגוריות</h2>
           <ul className="space-y-2">
             <li>
               <Link
@@ -91,8 +104,8 @@ export function BlogListing({ posts, categories }: BlogListingProps) {
       {/* Main Content */}
       <main className="lg:col-span-3">
         {filteredPosts.length === 0 ? (
-          <div className="bg-white rounded-lg p-12 text-center">
-            <p className="text-body-large text-neutral-dark">
+          <div style={{ ...CARD_STYLES.container, padding: '48px', textAlign: 'center' as const }}>
+            <p style={{ ...TYPOGRAPHY.bodyLarge, fontSize: '18px' }}>
               {searchQuery
                 ? 'לא נמצאו מאמרים התואמים את החיפוש'
                 : 'טרם פורסמו מאמרים. חזרו בקרוב!'}
@@ -109,60 +122,68 @@ export function BlogListing({ posts, categories }: BlogListingProps) {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {filteredPosts.map((post) => (
-              <article
+              <Link
                 key={post.slug}
-                className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+                href={`/blog/${post.slug}`}
+                className={`block overflow-hidden group ${animations.cardHover}`}
+                style={{
+                  ...CARD_STYLES.container,
+                  padding: 0,
+                }}
               >
-                {post.featuredImage && (
-                  <Link href={`/blog/${post.slug}`}>
-                    <div className="relative h-48 w-full">
-                      <Image
-                        src={post.featuredImage}
-                        alt={post.title}
-                        fill
-                        className="object-cover"
-                      />
-                    </div>
-                  </Link>
-                )}
-                <div className="p-6">
-                  {/* Category Badge */}
-                  <Link
-                    href={`/blog/category/${getCategorySlug(post.category)}`}
-                    className="inline-block bg-primary/10 text-primary px-3 py-1 rounded-full text-body-small font-medium mb-3 hover:bg-primary/20 transition-colors"
-                  >
-                    {post.category}
-                  </Link>
-
-                  {/* Title */}
-                  <h2 className="text-h3 font-bold mb-2">
-                    <Link
-                      href={`/blog/${post.slug}`}
-                      className="hover:text-primary transition-colors"
-                    >
-                      {post.title}
-                    </Link>
-                  </h2>
-
-                  {/* Excerpt */}
-                  <p className="text-body text-neutral-dark mb-4 line-clamp-3">
-                    {post.excerpt}
-                  </p>
-
-                  {/* Meta */}
-                  <div className="flex items-center justify-between text-body-small text-neutral-dark">
-                    <div className="flex items-center gap-4">
-                      <time dateTime={post.date}>
-                        {format(new Date(post.date), 'd MMMM yyyy', {
-                          locale: he,
-                        })}
-                      </time>
-                      <span>•</span>
-                      <span>{post.readingTime}</span>
+                {/* Featured Image */}
+                {post.featuredImage ? (
+                  <div className="relative w-full aspect-video overflow-hidden">
+                    <ProgressiveImage
+                      src={post.featuredImage}
+                      alt={post.title}
+                      fill
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 400px"
+                      placeholderSrc={generatePlaceholderDataURL(20, 12, '#C7CFD1')}
+                      blurAmount={20}
+                      transitionDuration={400}
+                      className="object-cover transition-transform duration-300 group-hover:scale-110"
+                      style={{ objectFit: 'cover', width: '100%', height: '100%' }}
+                    />
+                  </div>
+                ) : (
+                  <div className="relative aspect-video bg-gradient-to-br from-gray-400 to-gray-500 overflow-hidden w-full">
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="text-white text-center">
+                        <div className="text-sm mb-2">עו"ד אריאל דרור</div>
+                      </div>
                     </div>
                   </div>
+                )}
+
+                <div className="pb-6 px-6 text-right">
+                  {/* Category Badge */}
+                  <div className={`inline-block bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium mb-3 ${animations.badgeHover}`}>
+                    {post.category}
+                  </div>
+
+                  {/* Meta */}
+                  <div className="flex items-center gap-3 text-sm text-gray-500 mb-3">
+                    <span>{toHebrewReadingTime(post.readingTime)}</span>
+                    <span>•</span>
+                    <span>
+                      {format(new Date(post.date), 'd בMMMM yyyy', {
+                        locale: he,
+                      })}
+                    </span>
+                  </div>
+
+                  {/* Title */}
+                  <h3 className="font-bold text-xl mb-3 line-clamp-2">
+                    {post.title}
+                  </h3>
+
+                  {/* Excerpt */}
+                  <p className="text-gray-600 text-sm line-clamp-2">
+                    {post.excerpt}
+                  </p>
                 </div>
-              </article>
+              </Link>
             ))}
           </div>
         )}

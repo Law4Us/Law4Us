@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { animations } from "@/lib/utils/animations";
 
 const navigation = [
   { name: "איך זה עובד", href: "/#how" },
@@ -59,7 +60,7 @@ export function Header() {
               <Link
                 key={item.name}
                 href={item.href}
-                className="transition-smooth hover:text-primary"
+                className={animations.navLinkHover}
                 style={{
                   fontSize: '16px',
                   fontWeight: 'bold',
@@ -77,7 +78,10 @@ export function Header() {
           <div className="hidden lg:block">
             <Link
               href="/wizard"
-              className="inline-flex items-center justify-center font-medium transition-smooth focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 active:scale-[0.98]"
+              className={cn(
+                "inline-flex items-center justify-center font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+                animations.primaryCTAHover
+              )}
               style={{
                 backgroundColor: '#019FB7',
                 border: '0.5px solid #018DA2',
@@ -122,7 +126,7 @@ export function Header() {
                 <Link
                   key={item.name}
                   href={item.href}
-                  className="hover:text-primary transition-smooth py-2"
+                  className={cn(animations.navLinkHover, "py-2")}
                   style={{
                     fontSize: '16px',
                     fontWeight: 'bold',
@@ -137,7 +141,10 @@ export function Header() {
               ))}
               <Link
                 href="/wizard"
-                className="mt-4 inline-flex items-center justify-center font-medium transition-smooth focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 active:scale-[0.98]"
+                className={cn(
+                  "mt-4 inline-flex items-center justify-center font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+                  animations.primaryCTAHover
+                )}
                 style={{
                   backgroundColor: '#019FB7',
                   border: '0.5px solid #018DA2',
