@@ -26,10 +26,22 @@ export const childFullSchema = z.object({
 // Divorce Agreement schema
 export const divorceAgreementSchema = z.object({
   children: z.array(childSimpleSchema).optional(),
-  relationshipAgreement: z
-    .string()
-    .min(10, "אנא פרט על מה הסכמתם (לפחות 10 תווים)")
-    .max(500, "הטקסט ארוך מדי"),
+  // Property division
+  propertyAgreement: z.string().min(1, "יש לבחור אופציה"),
+  propertyCustom: z.string().optional(),
+  // Custody
+  custodyAgreement: z.string().min(1, "יש לבחור אופציה"),
+  custodyCustom: z.string().optional(),
+  // Visitation
+  visitationAgreement: z.string().optional(),
+  visitationCustom: z.string().optional(),
+  // Alimony
+  alimonyAgreement: z.string().min(1, "יש לבחור אופציה"),
+  alimonyAmount: z.coerce.number().optional(),
+  alimonyCustom: z.string().optional(),
+  // Additional terms
+  additionalTerms: z.string().optional(),
+  uploadedAgreement: z.any().optional(), // File upload
 });
 
 // Divorce Claim schema

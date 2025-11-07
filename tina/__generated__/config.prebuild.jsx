@@ -17,12 +17,14 @@ var BLOG_CATEGORIES = [
 
 // tina/config.ts
 var branch = process.env.NEXT_PUBLIC_TINA_BRANCH || "main";
+var isLocal = process.env.TINA_PUBLIC_IS_LOCAL === "true";
 var config_default = defineConfig({
   branch,
-  // Get this from tina.io (free account)
-  clientId: process.env.NEXT_PUBLIC_TINA_CLIENT_ID,
-  // Get this from tina.io (free account)
-  token: process.env.TINA_TOKEN,
+  // Only use cloud config if not in local mode
+  ...isLocal ? {} : {
+    clientId: process.env.NEXT_PUBLIC_TINA_CLIENT_ID,
+    token: process.env.TINA_TOKEN
+  },
   build: {
     outputFolder: "admin",
     publicFolder: "public"
@@ -42,11 +44,7 @@ var config_default = defineConfig({
         path: "content/blog",
         format: "mdx",
         ui: {
-          // This is the path to the template for the default form
-          defaultItem: {
-            author: "\u05D0\u05E8\u05D9\u05D0\u05DC \u05D3\u05E8\u05D5\u05E8",
-            category: "\u05DB\u05DC\u05DC\u05D9"
-          }
+          // Default item configuration removed due to TinaCMS version compatibility
         },
         fields: [
           {

@@ -4,13 +4,17 @@ import { BLOG_CATEGORIES } from '../lib/types/blog'
 // Your hosting provider likely exposes this as an environment variable
 const branch = process.env.NEXT_PUBLIC_TINA_BRANCH || 'main'
 
+// Check if we're running in local mode
+const isLocal = process.env.TINA_PUBLIC_IS_LOCAL === 'true'
+
 export default defineConfig({
   branch,
 
-  // Get this from tina.io (free account)
-  clientId: process.env.NEXT_PUBLIC_TINA_CLIENT_ID,
-  // Get this from tina.io (free account)
-  token: process.env.TINA_TOKEN,
+  // Only use cloud config if not in local mode
+  ...(isLocal ? {} : {
+    clientId: process.env.NEXT_PUBLIC_TINA_CLIENT_ID,
+    token: process.env.TINA_TOKEN,
+  }),
 
   build: {
     outputFolder: 'admin',

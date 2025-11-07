@@ -897,25 +897,39 @@ function generateStatementOfDetails(
   paragraphs.push(createBodyParagraph(`מעמדו של ממלא הטופס:\u200F ${plaintiff.title}`, { after: SPACING.SECTION }));
 
   // Section 1: Personal Details
-  paragraphs.push(createSectionHeader('פרטים אישיים:'));
-  paragraphs.push(createSubsectionHeader(`1. ${plaintiff.title}:`));
-  paragraphs.push(createInfoLine('שם פרטי ושם משפחה', basicInfo.fullName));
-  paragraphs.push(createInfoLine('מספר זהות', basicInfo.idNumber));
+  paragraphs.push(createSectionHeader('1. פרטים אישיים:'));
+  paragraphs.push(createSubsectionHeader(`${plaintiff.title}:`));
+  paragraphs.push(createInfoLine('שם משפחה', basicInfo.fullName.split(' ').slice(-1)[0] || basicInfo.fullName));
+  paragraphs.push(createInfoLine('שם פרטי', basicInfo.fullName.split(' ').slice(0, -1).join(' ') || basicInfo.fullName));
+  paragraphs.push(createInfoLine('מס\' זהות', basicInfo.idNumber));
   paragraphs.push(createInfoLine('תאריך לידה', basicInfo.birthDate || 'לא צוין'));
-  paragraphs.push(createInfoLine('כתובת', basicInfo.address));
-  paragraphs.push(createInfoLine('טלפון בבית', basicInfo.phone));
-  paragraphs.push(createInfoLine('נייד', basicInfo.phone));
+  paragraphs.push(createInfoLine('כתובת מגורים', basicInfo.address));
+  paragraphs.push(createInfoLine('טל\' בבית', basicInfo.phone));
+  paragraphs.push(createInfoLine('טל\' נייד', basicInfo.phone));
+  paragraphs.push(createInfoLine('מקום עבודה', 'לא צוין'));
+  paragraphs.push(createInfoLine('טל\' עבודה', 'לא צוין'));
+  paragraphs.push(createInfoLine('כתובת עבודה', 'לא צוין'));
+  paragraphs.push(createInfoLine('שם עורך הדין', 'עו"ד אריאל דרור'));
+  paragraphs.push(createInfoLine('טל\' עורך דין', '03-6389500'));
+  paragraphs.push(createInfoLine('מען עורך הדין', 'רחוב ז\'בוטינסקי 7, רמת גן'));
 
-  paragraphs.push(createSubsectionHeader('2. בן/בת הזוג:'));
-  paragraphs.push(createInfoLine('שם פרטי ושם משפחה', basicInfo.fullName2));
-  paragraphs.push(createInfoLine('מספר זהות', basicInfo.idNumber2));
+  paragraphs.push(createSubsectionHeader('בן/בת הזוג:'));
+  paragraphs.push(createInfoLine('שם משפחה', basicInfo.fullName2.split(' ').slice(-1)[0] || basicInfo.fullName2));
+  paragraphs.push(createInfoLine('שם פרטי', basicInfo.fullName2.split(' ').slice(0, -1).join(' ') || basicInfo.fullName2));
+  paragraphs.push(createInfoLine('מס\' זהות', basicInfo.idNumber2));
   paragraphs.push(createInfoLine('תאריך לידה', basicInfo.birthDate2 || 'לא צוין'));
-  paragraphs.push(createInfoLine('כתובת', basicInfo.address2));
-  paragraphs.push(createInfoLine('טלפון בבית', basicInfo.phone2));
-  paragraphs.push(createInfoLine('נייד', basicInfo.phone2));
+  paragraphs.push(createInfoLine('כתובת מגורים', basicInfo.address2));
+  paragraphs.push(createInfoLine('טל\' בבית', basicInfo.phone2));
+  paragraphs.push(createInfoLine('טל\' נייד', basicInfo.phone2));
+  paragraphs.push(createInfoLine('מקום עבודה', 'לא צוין'));
+  paragraphs.push(createInfoLine('טל\' עבודה', 'לא צוין'));
+  paragraphs.push(createInfoLine('כתובת עבודה', 'לא צוין'));
+  paragraphs.push(createInfoLine('שם עורך הדין', 'לא צוין'));
+  paragraphs.push(createInfoLine('טל\' עורך דין', 'לא צוין'));
+  paragraphs.push(createInfoLine('מען עורך הדין', 'לא צוין'));
 
-  // Section 4: Marital Status
-  paragraphs.push(createSectionHeader('4. פרטים לגבי המצב האישי:'));
+  // Section 2: Marital Status
+  paragraphs.push(createSectionHeader('2. פרטים לגבי המצב האישי:'));
   paragraphs.push(createSubsectionHeader(`${plaintiff.name}:`));
   paragraphs.push(createInfoLine('תאריך הנישואים הנוכחיים', basicInfo.weddingDay || 'לא צוין'));
   paragraphs.push(createInfoLine('נישואין קודמים', yesNo(formData.marriedBefore)));
@@ -927,27 +941,27 @@ function generateStatementOfDetails(
   paragraphs.push(createInfoLine(`האם ל${defendant.name} יש ילדים מנישואים קודמים`, yesNo(formData.hadChildrenFromPrevious2)));
   paragraphs.push(createBodyParagraph('(בסעיף זה – נישואין לרבות ברית זוגיות.)', { after: SPACING.PARAGRAPH }));
 
-  // Section 6: Children
-  paragraphs.push(createSectionHeader('6. ילדים:'));
+  // Section 3: Children
+  paragraphs.push(createSectionHeader('3. ילדים:'));
   if (children.length > 0) {
     children.forEach((child: Child, index: number) => {
       paragraphs.push(createSubsectionHeader(`ילד/ה ${index + 1}:`));
-      paragraphs.push(createInfoLine('שם מלא', `${child.firstName} ${child.lastName}`));
-      paragraphs.push(createInfoLine('מספר זהות', child.idNumber));
+      paragraphs.push(createInfoLine('שם', `${child.firstName} ${child.lastName}`));
       paragraphs.push(createInfoLine('תאריך לידה', child.birthDate));
-      paragraphs.push(createInfoLine('כתובת', child.address || 'לא צוין'));
+      paragraphs.push(createInfoLine('שם ההורה (שאינו המבקש)', 'לא צוין'));
+      paragraphs.push(createInfoLine('מקום מגורי הילד', child.address || 'לא צוין'));
     });
   } else {
     paragraphs.push(createBodyParagraph('אין ילדים'));
   }
 
-  // Section 7: Housing
-  paragraphs.push(createSectionHeader('7. פרטים לגבי דירת המגורים:'));
+  // Section 4: Housing
+  paragraphs.push(createSectionHeader('4. פרטים לגבי דירת המגורים:'));
   paragraphs.push(createInfoLine(`הדירה שבה גר/ה ${plaintiff.title} היא`, formData.applicantHomeType ? translateHousingType(formData.applicantHomeType) : 'לא צוין'));
   paragraphs.push(createInfoLine('הדירה שבה גר/ה בן/בת הזוג היא', formData.partnerHomeType ? translateHousingType(formData.partnerHomeType) : 'לא צוין'));
 
-  // Section 8: Domestic Violence
-  paragraphs.push(createSectionHeader('8. נתונים על אלימות במשפחה:'));
+  // Section 5: Domestic Violence
+  paragraphs.push(createSectionHeader('5. נתונים על אלימות במשפחה:'));
   paragraphs.push(createBodyParagraph('הוגשה בעבר בקשה לבית המשפט או לבית דין דתי למתן צו הגנה לפי החוק למניעת אלימות במשפחה, התשנ"א-1991:'));
   paragraphs.push(createInfoLine('', yesNo(formData.protectionOrderRequested)));
   if (formData.protectionOrderRequested === 'yes') {
@@ -967,47 +981,40 @@ function generateStatementOfDetails(
     paragraphs.push(createInfoLine('אם כן – פרט/י', formData.pastViolenceReportedDetails || 'לא צוין'));
   }
 
-  // Section 9: Other Family Cases
-  paragraphs.push(createSectionHeader('9. נתונים על תיקים אחרים בענייני המשפחה בין בני הזוג:'));
-  paragraphs.push(createBodyParagraph('(פרט לגבי כל תיק בנפרד)'));
+  // Section 6: Other Family Cases
+  paragraphs.push(createSectionHeader('6. נתונים על תיקים אחרים בענייני המשפחה בין בני הזוג שנידונו או נידונים בבית משפט:'));
+  paragraphs.push(createBodyParagraph('(פרט לגבי כל תיק נפרד)'));
   if (formData.otherFamilyCases && Array.isArray(formData.otherFamilyCases) && formData.otherFamilyCases.length > 0) {
     formData.otherFamilyCases.forEach((caseItem: any, index: number) => {
       paragraphs.push(createSubsectionHeader(`תיק ${index + 1}:`));
-      paragraphs.push(createInfoLine('מספר תיק', caseItem.caseNumber || 'לא צוין'));
-      paragraphs.push(createInfoLine('סוג התיק', caseItem.caseType || 'לא צוין'));
-      paragraphs.push(createInfoLine('בית המשפט', caseItem.court || 'לא צוין'));
-      paragraphs.push(createInfoLine('סטטוס', caseItem.status || 'לא צוין'));
+      paragraphs.push(createInfoLine('מס\' תיק', caseItem.caseNumber || 'לא צוין'));
+      paragraphs.push(createInfoLine('בפני מי נדון התיק', caseItem.court || 'לא צוין'));
+      paragraphs.push(createInfoLine('מתי הסתיים הדיון', caseItem.status || 'לא צוין'));
+      paragraphs.push(createInfoLine('מהות התיק', caseItem.caseType || 'לא צוין'));
     });
   } else {
     paragraphs.push(createBodyParagraph('אין תיקים אחרים'));
   }
 
-  // Section 10: Therapeutic Contact
-  paragraphs.push(createSectionHeader('10. קשר עם גורמים טיפוליים:'));
-  paragraphs.push(createInfoLine('האם היית/ם בקשר עם מחלקת הרווחה?', yesNo(formData.contactedWelfare)));
-  paragraphs.push(createInfoLine('האם היית/ם בקשר עם ייעוץ נישואין או ייעוץ זוגי?', yesNo(formData.contactedMarriageCounseling)));
-  paragraphs.push(createInfoLine('האם את/ה מוכנ/ה לקחת חלק בייעוץ משפחתי?', yesNo(formData.willingToJoinFamilyCounseling)));
-  paragraphs.push(createInfoLine('האם את/ה מוכנ/ה לקחת חלק בגישור?', yesNo(formData.willingToJoinMediation)));
+  // Section 7: Therapeutic Contact
+  paragraphs.push(createSectionHeader('7. קשר עם גורמים טיפוליים:'));
+  paragraphs.push(createBodyParagraph('האם היית/ם בקשר עם:'));
+  paragraphs.push(createInfoLine('מחלקת הרווחה', yesNo(formData.contactedWelfare)));
+  paragraphs.push(createInfoLine('ייעוץ נישואין', yesNo(formData.contactedMarriageCounseling)));
+  paragraphs.push(createInfoLine('ייעוץ משפחתי', yesNo(formData.contactedFamilyCounseling)));
+  paragraphs.push(createInfoLine('גישור', yesNo(formData.contactedMediation)));
+  paragraphs.push(createBodyParagraph('האם את/ה מוכנ/ה לקחת חלק ב:'));
+  paragraphs.push(createInfoLine('ייעוץ משפחתי', yesNo(formData.willingToJoinFamilyCounseling)));
+  paragraphs.push(createInfoLine('גישור', yesNo(formData.willingToJoinMediation)));
 
-  // Declaration
-  paragraphs.push(createSectionHeader('הצהרה'));
-  paragraphs.push(createBodyParagraph('אני מצהיר כי לפי מיטב ידיעתי הפרטים שמילאתי בטופס נכונים.'));
+  // Section 8: Declaration
+  paragraphs.push(createSectionHeader('8. הצהרה'));
+  paragraphs.push(createBodyParagraph(`אני ${basicInfo.fullName} מצהיר/ה כי לפי מיטב ידיעתי הפרטים שמילאתי בטופס נכונים.`));
 
-  // Date and signature
-  const today = new Date().toLocaleDateString('he-IL');
+  // Add spacing before signature section
   paragraphs.push(new Paragraph({
-    children: [
-      new TextRun({
-        text: `תאריך:\u200F ${today}`,
-        size: FONT_SIZES.BODY,
-        font: 'David',
-    
-      }),
-    ],
-    alignment: AlignmentType.START,
-    spacing: { before: SPACING.SECTION, after: SPACING.PARAGRAPH },
-    bidirectional: true,
-
+    children: [],
+    spacing: { before: SPACING.SECTION },
   }));
 
   // Client signature
@@ -1018,32 +1025,29 @@ function generateStatementOfDetails(
     paragraphs.push(new Paragraph({
       children: [
         new TextRun({
-          text: '__________________',
+          text: '___________________',
           size: FONT_SIZES.BODY,
           font: 'David',
-      
         }),
       ],
       alignment: AlignmentType.START,
-      spacing: { before: SPACING.SECTION, after: SPACING.MINIMAL },
+      spacing: { before: SPACING.PARAGRAPH, after: SPACING.MINIMAL },
       bidirectional: true,
-  
     }));
   }
 
+  // Signature label
   paragraphs.push(new Paragraph({
     children: [
       new TextRun({
-        text: basicInfo.fullName,
+        text: `חתימת ${plaintiff.title}`,
         size: FONT_SIZES.BODY,
         font: 'David',
-    
       }),
     ],
     alignment: AlignmentType.START,
     spacing: { after: SPACING.MINIMAL },
     bidirectional: true,
-
   }));
 
   return paragraphs;

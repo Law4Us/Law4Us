@@ -30,6 +30,20 @@ function extractSections(questions: Question[]): string[] {
   return sections;
 }
 
+// Helper to get value by path from nested object
+function getValueByPath<T = unknown>(source: unknown, path: string): T | undefined {
+  if (!path) return undefined;
+
+  return path
+    .split(".")
+    .reduce<unknown>((current, key) => {
+      if (current && typeof current === "object") {
+        return (current as Record<string, unknown>)[key];
+      }
+      return undefined;
+    }, source) as T | undefined;
+}
+
 export default function Step2DynamicForm() {
   const router = useRouter();
   const {
@@ -106,6 +120,36 @@ export default function Step2DynamicForm() {
   // Watch all fields for conditional rendering and auto-save
   const watchedValues = watch();
 
+  // Group questions by sections
+  const sections = React.useMemo(() => {
+    const result: { title: string; questions: Question[] }[] = [];
+    let currentSection: { title: string; questions: Question[] } | null = null;
+
+    processedQuestions.forEach((question) => {
+      if (question.type === "heading") {
+        // Start a new section
+        if (currentSection) {
+          result.push(currentSection);
+        }
+        currentSection = { title: question.label, questions: [] };
+      } else {
+        // Add question to current section
+        if (!currentSection) {
+          // If no heading yet, create a default section
+          currentSection = { title: "", questions: [] };
+        }
+        currentSection.questions.push(question);
+      }
+    });
+
+    // Push the last section
+    if (currentSection) {
+      result.push(currentSection);
+    }
+
+    return result;
+  }, [processedQuestions]);
+
   // Track current visible section (for mobile/sidebar navigation)
   const [currentSectionIndex, setCurrentSectionIndex] = React.useState(0);
 
@@ -117,6 +161,45 @@ export default function Step2DynamicForm() {
 
     return () => clearTimeout(timer);
   }, [watchedValues, updateFormData]);
+
+  // Auto-highlight sidebar section based on focused input
+  React.useEffect(() => {
+    // Create a map of question IDs to section indices
+    const questionToSectionMap = new Map<string, number>();
+
+    sections.forEach((section, sectionIndex) => {
+      section.questions.forEach((question) => {
+        questionToSectionMap.set(question.id, sectionIndex);
+      });
+    });
+
+    // Handle focus events
+    const handleFocus = (event: FocusEvent) => {
+      const target = event.target as HTMLElement;
+
+      // Get the field name from the input element
+      const fieldName =
+        target.getAttribute('name') ||
+        target.getAttribute('data-field-name') ||
+        target.closest('[data-field-name]')?.getAttribute('data-field-name');
+
+      if (fieldName) {
+        // Find which section this field belongs to
+        const sectionIndex = questionToSectionMap.get(fieldName);
+
+        if (sectionIndex !== undefined && sectionIndex !== currentSectionIndex) {
+          setCurrentSectionIndex(sectionIndex);
+        }
+      }
+    };
+
+    // Add event listener to the form
+    document.addEventListener('focusin', handleFocus, true);
+
+    return () => {
+      document.removeEventListener('focusin', handleFocus, true);
+    };
+  }, [sections, currentSectionIndex]);
 
   const onSubmit = (data: any) => {
     // Save before navigating
@@ -136,11 +219,56 @@ export default function Step2DynamicForm() {
     .map((key) => CLAIMS.find((c) => c.key === key)?.label)
     .filter(Boolean);
 
-  // Mock section completion data (would be calculated from form state)
-  const sectionData = sectionTitles.map((title, index) => ({
-    title,
-    isComplete: false, // TODO: Calculate actual completion
-  }));
+  // Check if section is complete (all required fields filled and no errors)
+  const isSectionComplete = React.useCallback(
+    (section: { title: string; questions: Question[] }): boolean => {
+      // Get all questions that are currently visible (conditionals met)
+      const visibleQuestions = section.questions.filter((q) => {
+        // Check if question should be shown based on conditionals
+        if (q.conditional) {
+          const { dependsOn, showWhen } = q.conditional;
+          const dependentValue = getValueByPath<string | undefined>(watchedValues, dependsOn);
+
+          if (Array.isArray(showWhen)) {
+            if (!dependentValue || !showWhen.includes(dependentValue)) return false;
+          } else {
+            if (dependentValue !== showWhen) return false;
+          }
+        }
+
+        return true;
+      });
+
+      // Get required questions from visible questions
+      const requiredQuestions = visibleQuestions.filter((q) => q.required);
+
+      // If there are no required questions, check if at least one optional field is filled
+      if (requiredQuestions.length === 0) {
+        return visibleQuestions.some((q) => {
+          const value = getValueByPath<unknown>(watchedValues, q.id);
+          return value !== undefined && value !== "" && value !== null;
+        });
+      }
+
+      // If there are required questions, all must be filled without errors
+      return requiredQuestions.every((q) => {
+        const value = getValueByPath<unknown>(watchedValues, q.id);
+        const hasError = getValueByPath<unknown>(errors, q.id);
+
+        // Field must have a value and no errors
+        return value !== undefined && value !== "" && value !== null && !hasError;
+      });
+    },
+    [watchedValues, errors]
+  );
+
+  // Calculate section completion data
+  const sectionData = React.useMemo(() => {
+    return sections.map((section) => ({
+      title: section.title,
+      isComplete: isSectionComplete(section),
+    }));
+  }, [sections, isSectionComplete]);
 
   const handleSectionNavigate = (index: number) => {
     setCurrentSectionIndex(index);

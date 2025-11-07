@@ -1,0 +1,13 @@
+fragment BlogParts on Blog {
+  __typename
+  title
+  slug
+  date
+  category
+  tags
+  excerpt
+  featuredImage
+  author
+  oldWordPressUrl
+  body
+}

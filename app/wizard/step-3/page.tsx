@@ -35,6 +35,12 @@ export default function Step3SignDocuments() {
   const [doc1Reviewed, setDoc1Reviewed] = React.useState(false);
   const [doc2Reviewed, setDoc2Reviewed] = React.useState(false);
 
+  // Check if should show Form 3 (only if claim includes non-alimony types)
+  const shouldShowForm3 = React.useMemo(() => {
+    // Show Form 3 if there's ANY claim OTHER than alimony
+    return selectedClaims.some(claim => claim !== 'alimony');
+  }, [selectedClaims]);
+
   // Prepare document data
   const documentData: DocumentData = React.useMemo(() => {
     const children = formData.children || [];
@@ -43,26 +49,76 @@ export default function Step3SignDocuments() {
       claimLabels[claim.key] = claim.label;
     });
 
+    // Helper to format yes/no
+    const yesNo = (val: any) => {
+      if (val === 'yes' || val === 'כן' || val === true) return 'כן';
+      if (val === 'no' || val === 'לא' || val === false) return 'לא';
+      return 'לא צוין';
+    };
+
+    // Convert signature to HTML img tag if signature exists
+    const signatureHTML = signature
+      ? `<img src="${signature}" alt="חתימה" style="width: 250px; height: 125px; display: block; margin: 10px 0;" />`
+      : "[חתימה תתווסף לאחר החתימה]";
+
+    // Split full names into first and last
+    const nameParts = (basicInfo.fullName || "").split(" ");
+    const firstName = nameParts.slice(0, -1).join(" ") || basicInfo.fullName || "";
+    const lastName = nameParts.slice(-1)[0] || basicInfo.fullName || "";
+
+    const nameParts2 = (basicInfo.fullName2 || "").split(" ");
+    const firstName2 = nameParts2.slice(0, -1).join(" ") || basicInfo.fullName2 || "";
+    const lastName2 = nameParts2.slice(-1)[0] || basicInfo.fullName2 || "";
+
+    // Determine applicant title based on gender
+    const applicantTitle = basicInfo.gender === 'male' ? 'התובע' : 'התובעת';
+
+    // Format children block for Form 3
+    const childrenBlock = children.length > 0
+      ? children.map((child: any, i: number) =>
+          `${i + 1}. שם: ${child.firstName || ''} ${child.lastName || ''}\n   תאריך לידה: ${child.birthDate || 'לא צוין'}\n   שם ההורה (שאינו המבקש): לא צוין\n   מקום מגורי הילד: ${child.address || 'לא צוין'}`
+        ).join('\n\n')
+      : 'אין ילדים';
+
     return {
       fullName: basicInfo.fullName || "",
+      firstName,
+      lastName,
       idNumber: basicInfo.idNumber || "",
       address: basicInfo.address || "",
       phone: basicInfo.phone || "",
       email: basicInfo.email || "",
       birthDate: basicInfo.birthDate || "",
       fullName2: basicInfo.fullName2 || "",
+      firstName2,
+      lastName2,
       idNumber2: basicInfo.idNumber2 || "",
       address2: basicInfo.address2 || "",
       phone2: basicInfo.phone2 || "",
       email2: basicInfo.email2 || "",
+      birthDate2: basicInfo.birthDate2 || "",
       relationshipType: basicInfo.relationshipType || "",
       weddingDay: basicInfo.weddingDay || "",
       claimTypes: formatClaimTypesList(selectedClaims, claimLabels),
-      childrenBlock: generateChildrenBlock(children),
+      childrenBlock,
       lawyerName: "עו\"ד אריאל דרור",
-      signature: signature || "[חתימה תתווסף לאחר החתימה]",
+      signature: signatureHTML,
       date: formatDate(new Date()),
-    };
+      applicantTitle,
+      previousMarriages: yesNo(formData.marriedBefore),
+      childrenFromPrevious: yesNo(formData.hadChildrenFromPrevious),
+      applicantHomeType: formData.applicantHomeType || 'לא צוין',
+      partnerHomeType: formData.partnerHomeType || 'לא צוין',
+      protectionOrder: yesNo(formData.protectionOrderRequested),
+      pastViolence: yesNo(formData.pastViolenceReported),
+      otherCases: formData.otherFamilyCases?.length > 0 ? 'קיימים תיקים אחרים' : 'אין תיקים אחרים',
+      contactedWelfare: yesNo(formData.contactedWelfare),
+      contactedMarriageCounseling: yesNo(formData.contactedMarriageCounseling),
+      contactedFamilyCounseling: yesNo(formData.contactedFamilyCounseling),
+      contactedMediation: yesNo(formData.contactedMediation),
+      willingFamilyCounseling: yesNo(formData.willingToJoinFamilyCounseling),
+      willingMediation: yesNo(formData.willingToJoinMediation),
+    } as any;
   }, [basicInfo, selectedClaims, formData, signature]);
 
   // Fill templates
@@ -80,11 +136,13 @@ export default function Step3SignDocuments() {
     setSignature(sig);
   };
 
-  // Check if can proceed
-  const canProceed = doc1Reviewed && doc2Reviewed && signature;
+  // Check if can proceed - doc2 only required if Form 3 is shown
+  const canProceed = shouldShowForm3
+    ? (doc1Reviewed && doc2Reviewed && signature)
+    : (doc1Reviewed && signature);
 
   const handleNext = () => {
-    if (!doc1Reviewed || !doc2Reviewed) {
+    if (!doc1Reviewed || (shouldShowForm3 && !doc2Reviewed)) {
       alert("אנא קראו ואשרו את כל המסמכים לפני המשך");
       return;
     }
@@ -128,18 +186,22 @@ export default function Step3SignDocuments() {
             content={powerOfAttorney}
             isReviewed={doc1Reviewed}
             onReviewChange={setDoc1Reviewed}
+            renderAsHTML={true}
           />
         </SlideInView>
 
-        <SlideInView direction="up" delay={200}>
-          <DocumentReviewCard
-            documentNumber={2}
-            title="טופס 3 - הרצאת פרטים"
-            content={form3}
-            isReviewed={doc2Reviewed}
-            onReviewChange={setDoc2Reviewed}
-          />
-        </SlideInView>
+        {shouldShowForm3 && (
+          <SlideInView direction="up" delay={200}>
+            <DocumentReviewCard
+              documentNumber={2}
+              title="טופס 3 - הרצאת פרטים"
+              content={form3}
+              isReviewed={doc2Reviewed}
+              onReviewChange={setDoc2Reviewed}
+              renderAsHTML={true}
+            />
+          </SlideInView>
+        )}
       </div>
 
       {/* Signature Section */}
@@ -155,26 +217,28 @@ export default function Step3SignDocuments() {
           <div className="mb-6">
             <h2 className="text-h2 font-semibold mb-2">החתימה שלכם</h2>
             <p className="text-body text-neutral-dark">
-              חתימתכם תופיע על שני המסמכים שקראתם למעלה
+              {shouldShowForm3
+                ? "חתימתכם תופיע על שני המסמכים שקראתם למעלה"
+                : "חתימתכם תופיע על ייפוי הכוח שקראתם למעלה"}
             </p>
           </div>
 
           {/* Signature disabled notice */}
-          {(!doc1Reviewed || !doc2Reviewed) && (
+          {(!doc1Reviewed || (shouldShowForm3 && !doc2Reviewed)) && (
             <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
               <p className="text-body font-medium text-amber-800">
                 יש לקרוא ולאשר את כל המסמכים לפני החתימה
               </p>
               <p className="text-body-small text-amber-700 mt-1">
                 {!doc1Reviewed && "✗ ייפוי כוח לא נקרא"}
-                {!doc1Reviewed && !doc2Reviewed && " • "}
-                {!doc2Reviewed && "✗ טופס 3 לא נקרא"}
+                {!doc1Reviewed && shouldShowForm3 && !doc2Reviewed && " • "}
+                {shouldShowForm3 && !doc2Reviewed && "✗ טופס 3 לא נקרא"}
               </p>
             </div>
           )}
 
           {/* Signature Pad */}
-          <div className={cn(!doc1Reviewed || !doc2Reviewed ? "pointer-events-none" : "")}>
+          <div className={cn(!doc1Reviewed || (shouldShowForm3 && !doc2Reviewed) ? "pointer-events-none" : "")}>
             <SignaturePad value={signature} onChange={handleSignatureChange} />
           </div>
         </div>
@@ -189,7 +253,7 @@ export default function Step3SignDocuments() {
             </p>
             <ul className="space-y-1 text-body-small text-red-600">
               {!doc1Reviewed && <li>✗ קראתם ואישרתם את ייפוי הכוח</li>}
-              {!doc2Reviewed && <li>✗ קראתם ואישרתם את טופס 3</li>}
+              {shouldShowForm3 && !doc2Reviewed && <li>✗ קראתם ואישרתם את טופס 3</li>}
               {!signature && <li>✗ חתמתם על המסמכים</li>}
             </ul>
           </div>

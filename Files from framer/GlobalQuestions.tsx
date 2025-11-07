@@ -171,12 +171,12 @@ export const globalQuestions = [
         name: "otherFamilyCases",
         fields: [
             { label: "מספר התיק", type: "text", name: "caseNumber" },
-            { label: "בפני מי נדון התיק", type: "text", name: "judge" },
-            { label: "מהות התיק", type: "text", name: "caseNature" },
+            { label: "בפני מי נדון התיק", type: "text", name: "court" },
+            { label: "מהות התיק", type: "text", name: "caseType" },
             {
                 label: "מתי הסתיים הדיון בתיק",
-                type: "date",
-                name: "caseEndDate",
+                type: "text",
+                name: "status",
             },
         ],
     },
@@ -199,6 +199,24 @@ export const globalQuestions = [
         label: "האם היית/ם בקשר עם ייעוץ נישואין או ייעוץ זוגי?",
         type: "radio",
         name: "contactedMarriageCounseling",
+        options: [
+            { label: "כן", value: "כן" },
+            { label: "לא", value: "לא" },
+        ],
+    },
+    {
+        label: "האם היית/ם בקשר עם ייעוץ משפחתי?",
+        type: "radio",
+        name: "contactedFamilyCounseling",
+        options: [
+            { label: "כן", value: "כן" },
+            { label: "לא", value: "לא" },
+        ],
+    },
+    {
+        label: "האם היית/ם בקשר עם גישור?",
+        type: "radio",
+        name: "contactedMediation",
         options: [
             { label: "כן", value: "כן" },
             { label: "לא", value: "לא" },

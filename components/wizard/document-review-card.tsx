@@ -10,6 +10,7 @@ interface DocumentReviewCardProps {
   isReviewed: boolean;
   onReviewChange: (reviewed: boolean) => void;
   documentNumber: number;
+  renderAsHTML?: boolean; // Optional flag to render content as HTML
 }
 
 /**
@@ -27,6 +28,7 @@ export function DocumentReviewCard({
   isReviewed,
   onReviewChange,
   documentNumber,
+  renderAsHTML = false,
 }: DocumentReviewCardProps) {
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const [hasScrolledToBottom, setHasScrolledToBottom] = React.useState(false);
@@ -98,9 +100,16 @@ export function DocumentReviewCard({
           scrollbarColor: "#019FB7 #f1f1f1",
         }}
       >
-        <pre className="whitespace-pre-wrap font-assistant text-body leading-relaxed text-neutral-darkest">
-          {content}
-        </pre>
+        {renderAsHTML ? (
+          <div
+            className="whitespace-pre-wrap font-assistant text-body leading-relaxed text-neutral-darkest"
+            dangerouslySetInnerHTML={{ __html: content }}
+          />
+        ) : (
+          <pre className="whitespace-pre-wrap font-assistant text-body leading-relaxed text-neutral-darkest">
+            {content}
+          </pre>
+        )}
 
         {/* Scroll indicator if not at bottom */}
         {!hasScrolledToBottom && (

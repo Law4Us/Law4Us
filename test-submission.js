@@ -10,20 +10,23 @@ const testData = {
     email: 'sarah.levy@example.com',
     phone: '0501234567',
     address: 'רחוב הרצל 123, תל אביב',
+    birthDate: '1985-05-15',
     gender: 'female', // female or male
     fullName2: 'דוד לוי',
     idNumber2: '987654321',
     email2: 'david.levy@example.com',
     phone2: '0509876543',
     address2: 'רחוב ביאליק 456, חיפה',
+    birthDate2: '1983-09-20',
     gender2: 'male',
-    marriageDate: '2015-06-15',
-    weddingLocation: 'תל אביב',
+    relationshipType: 'married',
+    weddingDay: '2015-06-15',
   },
   formData: {
     // Children (for property, custody, alimony)
     children: [
       {
+        __id: 'child-1',
         firstName: 'נועם',
         lastName: 'לוי',
         idNumber: '567890123',
@@ -33,6 +36,7 @@ const testData = {
         relationshipDescription: 'יש לי קשר קרוב מאוד עם נועם. אני מבלה איתו כל יום, עוזרת לו בשיעורי בית ומלווה אותו לפעילויות חוץ בית ספריות.',
       },
       {
+        __id: 'child-2',
         firstName: 'תמר',
         lastName: 'לוי',
         idNumber: '678901234',
@@ -132,14 +136,30 @@ const testData = {
     childrenLivingWith: 'applicant', // applicant, respondent, both
     alimonyPropertyDescription: 'כמתואר לעיל, יש לנו דירה, שני רכבים, חסכונות וקופות גמל.',
 
-    // Global questions (asked for all claims)
-    previousMarriages: 'no', // yes or no
-    housingType: 'jointOwnership', // jointOwnership, applicantOwnership, respondentOwnership, rental, other
-    housingAddress: 'רחוב הרצל 123, תל אביב',
-    familyViolence: 'no', // yes or no
-    otherFamilyCases: [], // empty array or objects with {type, court, status}
-    welfareCounseling: 'no', // yes or no
-    willingToParticipate: 'yes', // yes or no
+    // Global questions - Form 3 fields (Section 2: Marital Status)
+    marriedBefore: 'לא',
+    hadChildrenFromPrevious: 'לא',
+    marriedBefore2: 'לא',
+    hadChildrenFromPrevious2: 'לא',
+
+    // Global questions - Form 3 fields (Section 4: Housing)
+    applicantHomeType: 'jointOwnership', // jointOwnership, applicantOwnership, respondentOwnership, rental, other
+    partnerHomeType: 'rental',
+
+    // Global questions - Form 3 fields (Section 5: Domestic Violence)
+    protectionOrderRequested: 'לא',
+    pastViolenceReported: 'לא',
+
+    // Global questions - Form 3 fields (Section 6: Other Family Cases)
+    otherFamilyCases: [], // empty array or objects with {caseNumber, court, caseType, status}
+
+    // Global questions - Form 3 fields (Section 7: Therapeutic Contact)
+    contactedWelfare: 'לא',
+    contactedMarriageCounseling: 'לא',
+    contactedFamilyCounseling: 'לא',
+    contactedMediation: 'לא',
+    willingToJoinFamilyCounseling: 'כן',
+    willingToJoinMediation: 'כן',
   },
   selectedClaims: ['property', 'custody', 'alimony'],
   signature: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', // 1x1 transparent PNG as placeholder
@@ -162,7 +182,7 @@ async function testSubmission() {
   console.log('');
 
   try {
-    const response = await fetch('http://localhost:3000/api/submit', {
+    const response = await fetch('http://localhost:3002/api/submit', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
