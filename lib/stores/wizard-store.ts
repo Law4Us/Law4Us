@@ -10,6 +10,7 @@ interface WizardStore extends WizardState {
   nextStep: () => void;
   prevStep: () => void;
   goToStep: (step: number) => void;
+  canNavigateToStep: (targetStep: number) => boolean;
 
   // Data update actions
   setSelectedClaims: (claims: ClaimType[]) => void;
@@ -85,12 +86,34 @@ export const useWizardStore = create<WizardStore>((set, get) => ({
       currentStep: Math.max(state.currentStep - 1, 0),
     })),
 
+  canNavigateToStep: (targetStep) => {
+    const state = get();
+
+    // Can always go to current step
+    if (targetStep === state.currentStep) return true;
+
+    // Can't go beyond max reached step
+    if (targetStep > state.maxReachedStep) return false;
+
+    // Special rule: Can't navigate back to payment step (step 3) once completed
+    // This prevents users from double-paying or bypassing payment
+    if (targetStep === 3 && state.paymentData.paid && state.currentStep > 3) {
+      return false;
+    }
+
+    // Can navigate to any previously completed step
+    return targetStep <= state.maxReachedStep;
+  },
+
   goToStep: (step) =>
     set((state) => {
-      // Only allow going to steps that have been reached
-      if (step <= state.maxReachedStep) {
+      const canNavigate = get().canNavigateToStep(step);
+
+      if (canNavigate) {
         return { currentStep: step };
       }
+
+      console.warn(`Navigation to step ${step} is not allowed`);
       return state;
     }),
 

@@ -7,6 +7,7 @@ export type ClaimType = "divorceAgreement" | "divorce" | "property" | "custody" 
 export interface Claim {
   key: ClaimType;
   label: string;
+  description?: string;
   price: number;
 }
 

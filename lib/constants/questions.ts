@@ -985,7 +985,7 @@ export const ALIMONY_QUESTIONS: Question[] = [
     label: "תארו בקצרה את מערכת היחסים:",
     placeholder: "תארו את מערכת היחסים בינכם...",
     maxLength: 500,
-    helper: "תיאור זה יעובד באמצעות AI לשפה משפטית מקצועית",
+    helper: "כתבו בחופשיות במילים שלכם - אין צורך בשפה משפטית",
   },
 
   // Previous alimony payments

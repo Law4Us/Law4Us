@@ -2,10 +2,13 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, AlertCircle, Download, Printer, Home } from "lucide-react";
+import { AlertCircle, Home, Mail, Phone } from "lucide-react";
 import { Button } from "@/components/ui";
 import { useWizardStore } from "@/lib/stores/wizard-store";
 import { CLAIMS } from "@/lib/constants/claims";
+import { SuccessAnimation } from "@/components/wizard/success-animation";
+import { Timeline } from "@/components/wizard/timeline";
+import { SlideInView } from "@/components/animations/slide-in-view";
 import {
   fillDocumentTemplate,
   generateChildrenBlock,
@@ -17,7 +20,7 @@ import {
 import { formatDate } from "@/lib/utils/format";
 import { convertFormDataFiles, extractAttachmentsFromFormData } from "@/lib/utils/file-converter";
 
-type SubmissionState = "idle" | "submitting" | "success" | "error";
+type SubmissionState = "confirming" | "submitting" | "success" | "error";
 
 export default function Step5FinalSubmission() {
   const router = useRouter();
@@ -28,15 +31,14 @@ export default function Step5FinalSubmission() {
     signature,
     paymentData,
     reset,
-    prevStep,
   } = useWizardStore();
 
   const [submissionState, setSubmissionState] =
-    React.useState<SubmissionState>("idle");
+    React.useState<SubmissionState>("confirming");
   const [errorMessage, setErrorMessage] = React.useState("");
   const [retryCount, setRetryCount] = React.useState(0);
 
-  // Prepare filled documents
+  // Prepare filled documents (for backend processing)
   const filledDocuments = React.useMemo(() => {
     const children = formData.children || [];
     const claimLabels: { [key: string]: string } = {};
@@ -80,7 +82,6 @@ export default function Step5FinalSubmission() {
 
     try {
       // Convert all File objects to base64 before submission
-      console.log('📄 Converting file uploads to base64...');
       const convertedFormData = await convertFormDataFiles(formData);
 
       // Extract attachments for document generation
@@ -88,10 +89,6 @@ export default function Step5FinalSubmission() {
         ...convertedFormData,
         basicInfo,
       });
-
-      if (attachments.length > 0) {
-        console.log(`📎 Found ${attachments.length} attachments to include in documents`);
-      }
 
       // Prepare data for submission
       const submissionData = {
@@ -118,153 +115,124 @@ export default function Step5FinalSubmission() {
       });
 
       if (!response.ok) {
-        throw new Error(`שגיאת שרת: ${response.status}`);
+        const errorData = await response.json();
+        throw new Error(errorData.error || "שגיאה בשליחת הטופס");
       }
 
-      const result = await response.json();
+      // Success
+      setSubmissionState("success");
 
-      if (result.success) {
-        setSubmissionState("success");
-        // Clear localStorage after successful submission
-        setTimeout(() => {
-          localStorage.removeItem("law4us-wizard-v1");
-          reset();
-        }, 2000);
-      } else {
-        throw new Error(result.error || "שגיאה בשליחת הטופס");
-      }
-    } catch (error) {
+      // Clear localStorage after successful submission
+      setTimeout(() => {
+        localStorage.removeItem("law4us-wizard-v1");
+        reset();
+      }, 2000);
+    } catch (error: any) {
       console.error("Submission error:", error);
       setSubmissionState("error");
-      setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : "שגיאה לא צפויה. אנא נסו שנית."
-      );
+      setErrorMessage(error.message || "שגיאה לא ידועה");
+      setRetryCount((prev) => prev + 1);
     }
   };
 
   const handleRetry = () => {
-    setRetryCount((prev) => prev + 1);
     handleSubmit();
   };
 
-  const handleBack = () => {
-    prevStep();
-    router.push("/wizard/step-4");
-  };
+  // Get selected claim labels
+  const selectedClaimLabels = selectedClaims
+    .map((key) => CLAIMS.find((c) => c.key === key)?.label)
+    .filter(Boolean);
 
-  const handleDownloadDocument = (docName: string, content: string) => {
-    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${docName}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
-  const handlePrint = () => {
-    window.print();
-  };
-
-  // Idle state - ready to submit
-  if (submissionState === "idle") {
+  // Confirmation state - before submission
+  if (submissionState === "confirming") {
     return (
-      <div className="max-w-4xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-h1 font-bold mb-2">סיכום ושליחה</h1>
-          <p className="text-body text-neutral-dark">
-            בדקו את המסמכים ושלחו את התביעה
-          </p>
-        </div>
+      <div className="max-w-3xl mx-auto">
+        <SlideInView direction="up" delay={0}>
+          <div className="mb-8 text-center">
+            <h1 className="text-h1 font-bold mb-2">סיכום ושליחה</h1>
+            <p className="text-body text-neutral-dark">
+              אנו מוכנים לשלוח את התביעה שלכם למשרד עו"ד אריאל דרור
+            </p>
+          </div>
+        </SlideInView>
 
-        {/* Document previews */}
-        <div className="space-y-6 mb-8">
-          {/* Power of Attorney */}
-          <div className="bg-white rounded-lg p-6 border border-neutral">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-h3 font-semibold">ייפוי כוח לייצוג משפטי</h2>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    handleDownloadDocument(
-                      "ייפוי-כוח",
-                      filledDocuments.powerOfAttorney
-                    )
-                  }
-                >
-                  <Download className="w-4 h-4 ml-1" />
-                  הורד
-                </Button>
+        {/* Summary Card */}
+        <SlideInView direction="up" delay={100}>
+          <div className="bg-white rounded-xl border-2 border-primary/20 p-8 mb-6">
+            <h2 className="text-h2 font-semibold mb-6 text-primary">פרטי התביעה</h2>
+
+            {/* Client Info */}
+            <div className="mb-6 pb-6 border-b border-neutral-light">
+              <h3 className="text-h4 font-semibold mb-3">פרטי הלקוח</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <p className="text-body-small text-neutral-dark">שם מלא</p>
+                  <p className="text-body font-medium">{basicInfo.fullName}</p>
+                </div>
+                <div>
+                  <p className="text-body-small text-neutral-dark">דוא"ל</p>
+                  <p className="text-body font-medium">{basicInfo.email}</p>
+                </div>
+                <div>
+                  <p className="text-body-small text-neutral-dark">טלפון</p>
+                  <p className="text-body font-medium">{basicInfo.phone}</p>
+                </div>
               </div>
             </div>
-            <div className="max-h-[300px] overflow-y-auto">
-              <pre className="whitespace-pre-wrap font-assistant text-body-small leading-relaxed text-neutral-dark">
-                {filledDocuments.powerOfAttorney}
-              </pre>
-            </div>
-          </div>
 
-          {/* Form 3 */}
-          <div className="bg-white rounded-lg p-6 border border-neutral">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-h3 font-semibold">טופס 3 - הרצאת פרטים</h2>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    handleDownloadDocument("טופס-3", filledDocuments.form3)
-                  }
-                >
-                  <Download className="w-4 h-4 ml-1" />
-                  הורד
-                </Button>
+            {/* Selected Claims */}
+            <div>
+              <h3 className="text-h4 font-semibold mb-3">תביעות שנבחרו</h3>
+              <div className="flex flex-wrap gap-2">
+                {selectedClaimLabels.map((label, index) => (
+                  <span
+                    key={index}
+                    className="px-4 py-2 bg-primary/10 text-primary rounded-lg text-body font-medium"
+                  >
+                    {label}
+                  </span>
+                ))}
               </div>
             </div>
-            <div className="max-h-[300px] overflow-y-auto">
-              <pre className="whitespace-pre-wrap font-assistant text-body-small leading-relaxed text-neutral-dark">
-                {filledDocuments.form3}
-              </pre>
-            </div>
           </div>
-        </div>
+        </SlideInView>
 
-        {/* Actions */}
-        <div className="bg-neutral-lightest rounded-lg p-6 mb-6">
-          <div className="flex gap-3 justify-center mb-4">
-            <Button variant="outline" onClick={handlePrint}>
-              <Printer className="w-4 h-4 ml-1" />
-              הדפס הכל
+        {/* Confirmation Notice */}
+        <SlideInView direction="up" delay={200}>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+            <h3 className="text-h4 font-semibold text-blue-800 mb-2">
+              לפני שליחת התביעה
+            </h3>
+            <ul className="space-y-2 text-body text-blue-700">
+              <li className="flex items-start gap-2">
+                <span className="text-blue-500 mt-1">•</span>
+                <span>המסמכים יופקו אוטומטית ויישלחו למשרד עו"ד</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-blue-500 mt-1">•</span>
+                <span>תקבלו אישור בדוא"ל עם סיכום הפרטים</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-blue-500 mt-1">•</span>
+                <span>נציג יצור קשר בתוך 24 שעות</span>
+              </li>
+            </ul>
+          </div>
+        </SlideInView>
+
+        {/* Submit Button */}
+        <SlideInView direction="up" delay={300}>
+          <div className="flex justify-center">
+            <Button
+              onClick={handleSubmit}
+              size="lg"
+              className="w-full md:w-auto min-w-[300px]"
+            >
+              שלח תביעה
             </Button>
           </div>
-        </div>
-
-        {/* Submit button */}
-        <div className="bg-primary/5 border border-primary/20 rounded-lg p-6 mb-8">
-          <h3 className="text-h3 font-semibold text-neutral-darkest mb-2">
-            מוכנים לשליחה?
-          </h3>
-          <p className="text-body text-neutral-dark mb-4">
-            לחיצה על "שלח תביעה" תעביר את כל המידע למשרד עו"ד אריאל דרור. נציג
-            יצור קשר בתוך 24 שעות.
-          </p>
-          <Button onClick={handleSubmit} size="lg" className="w-full">
-            שלח תביעה
-          </Button>
-        </div>
-
-        {/* Navigation */}
-        <div className="flex justify-between">
-          <Button variant="ghost" onClick={handleBack}>
-            חזור
-          </Button>
-        </div>
+        </SlideInView>
       </div>
     );
   }
@@ -286,36 +254,118 @@ export default function Step5FinalSubmission() {
 
   // Success state
   if (submissionState === "success") {
+    const timelineItems = [
+      {
+        title: "אישור התקבל",
+        description: "קיבלתם אישור בדוא\"ל עם סיכום מלא של הפרטים שהוגשו",
+        status: "completed" as const,
+      },
+      {
+        title: "יצירת קשר ראשונית",
+        description: "נציג מהמשרד יצור קשר בתוך 24 שעות לבירור פרטים נוספים",
+        status: "current" as const,
+      },
+      {
+        title: "פגישת ייעוץ",
+        description: "תתואם פגישת זום או פגישה פרונטלית לדיון מפורט בתיק",
+        status: "upcoming" as const,
+      },
+      {
+        title: "הגשת התביעה",
+        description: "התביעה תוגש לבית המשפט המשפחה תוך 3-5 ימי עסקים",
+        status: "upcoming" as const,
+      },
+      {
+        title: "מעקב שוטף",
+        description: "תקבלו עדכונים באופן שוטף לגבי התקדמות התיק",
+        status: "upcoming" as const,
+      },
+    ];
+
     return (
-      <div className="max-w-2xl mx-auto text-center py-16">
-        <div className="mb-6">
-          <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-green-100">
-            <CheckCircle2 className="w-16 h-16 text-green-600" />
+      <div className="max-w-4xl mx-auto">
+        {/* Success Animation */}
+        <div className="text-center mb-8">
+          <SuccessAnimation size="xl" />
+          <SlideInView direction="up" delay={400}>
+            <h1 className="text-h1 font-bold mb-2 text-green-700 mt-6">
+              התביעה נשלחה בהצלחה!
+            </h1>
+            <p className="text-body-large text-neutral-dark">
+              תודה שבחרתם במשרד עו"ד אריאל דרור
+            </p>
+          </SlideInView>
+        </div>
+
+        {/* Email Confirmation */}
+        <SlideInView direction="up" delay={500}>
+          <div className="bg-green-50 border border-green-200 rounded-xl p-6 mb-8">
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0 w-12 h-12 rounded-full bg-green-500 flex items-center justify-center">
+                <Mail className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-h4 font-semibold text-green-800 mb-1">
+                  אישור נשלח לדוא"ל
+                </h3>
+                <p className="text-body text-green-700 mb-2">
+                  שלחנו אישור מפורט לכתובת: <strong>{basicInfo.email}</strong>
+                </p>
+                <p className="text-body-small text-green-600">
+                  (אם לא רואים את המייל, בדקו בתיקיית הספאם)
+                </p>
+              </div>
+            </div>
           </div>
-        </div>
-        <h1 className="text-h1 font-bold mb-4 text-green-800">
-          התביעה נשלחה בהצלחה!
-        </h1>
-        <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-8">
-          <p className="text-body text-green-800 mb-3">
-            <strong>מה הלאה?</strong>
-          </p>
-          <ul className="text-body text-green-700 space-y-2 text-right">
-            <li>✓ קיבלתם אישור בדוא"ל עם סיכום הפרטים</li>
-            <li>✓ נציג מהמשרד יצור קשר בתוך 24 שעות</li>
-            <li>✓ נקבע פגישת זום לבירור פרטים נוספים</li>
-            <li>✓ התביעה תוגש לבית המשפט תוך 3-5 ימי עסקים</li>
-          </ul>
-        </div>
-        <Button
-          size="lg"
-          onClick={() => {
-            router.push("/");
-          }}
-        >
-          <Home className="w-5 h-5 ml-2" />
-          חזרה לדף הבית
-        </Button>
+        </SlideInView>
+
+        {/* Timeline - What's Next */}
+        <SlideInView direction="up" delay={600}>
+          <div className="bg-white rounded-xl border-2 border-neutral-light p-8 mb-8">
+            <h2 className="text-h2 font-semibold mb-6 text-primary">
+              מה קורה עכשיו?
+            </h2>
+            <Timeline items={timelineItems} />
+          </div>
+        </SlideInView>
+
+        {/* Contact Information */}
+        <SlideInView direction="up" delay={700}>
+          <div className="bg-neutral-lightest rounded-xl p-6 mb-8">
+            <h3 className="text-h3 font-semibold mb-4 text-center">
+              יש שאלות? נשמח לעזור
+            </h3>
+            <div className="flex flex-col sm:flex-row justify-center gap-4">
+              <a
+                href="tel:0545882736"
+                className="flex items-center justify-center gap-2 px-6 py-3 bg-white border-2 border-neutral-light rounded-lg hover:border-primary hover:bg-primary/5 transition-colors"
+              >
+                <Phone className="w-5 h-5 text-primary" />
+                <span className="font-medium">054-588-2736</span>
+              </a>
+              <a
+                href={`mailto:${basicInfo.email}`}
+                className="flex items-center justify-center gap-2 px-6 py-3 bg-white border-2 border-neutral-light rounded-lg hover:border-primary hover:bg-primary/5 transition-colors"
+              >
+                <Mail className="w-5 h-5 text-primary" />
+                <span className="font-medium">שלחו מייל</span>
+              </a>
+            </div>
+          </div>
+        </SlideInView>
+
+        {/* Return Home Button */}
+        <SlideInView direction="up" delay={800}>
+          <div className="flex justify-center">
+            <Button
+              size="lg"
+              onClick={() => router.push("/")}
+            >
+              <Home className="w-5 h-5 ml-2" />
+              חזרה לדף הבית
+            </Button>
+          </div>
+        </SlideInView>
       </div>
     );
   }
@@ -347,8 +397,12 @@ export default function Step5FinalSubmission() {
           <Button onClick={handleRetry} size="lg">
             נסה שנית
           </Button>
-          <Button variant="outline" size="lg" onClick={handleBack}>
-            חזור לשלב הקודם
+          <Button
+            variant="outline"
+            size="lg"
+            onClick={() => setSubmissionState("confirming")}
+          >
+            חזור
           </Button>
         </div>
         <p className="text-body-small text-neutral-dark mt-6">
