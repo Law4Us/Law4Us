@@ -1,9 +1,15 @@
 import { NextResponse } from 'next/server'
 import { client } from '@/sanity/client'
+import { projectId } from '@/sanity/env'
 import { groq } from 'next-sanity'
 
 export async function GET() {
   try {
+    // Return empty array if Sanity is not configured (e.g., during build)
+    if (!projectId || projectId === 'placeholder') {
+      return NextResponse.json([])
+    }
+
     const query = groq`*[_type == "blogPost"] | order(date desc) [0...3] {
       title,
       "slug": slug.current,

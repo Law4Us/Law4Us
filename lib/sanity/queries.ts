@@ -1,4 +1,5 @@
 import { client } from '@/sanity/client'
+import { projectId } from '@/sanity/env'
 import { groq } from 'next-sanity'
 import type { BlogCategory } from '@/lib/types/blog'
 
@@ -59,6 +60,11 @@ export interface BlogPost extends BlogPostPreview {
  * Get all blog posts
  */
 export async function getAllPosts(limit?: number): Promise<BlogPostPreview[]> {
+  // Return empty array if Sanity is not configured (e.g., during build)
+  if (!projectId || projectId === 'placeholder') {
+    return []
+  }
+
   const query = limit
     ? groq`*[_type == "blogPost"] | order(date desc) [0...${limit}] {
         title,
@@ -91,6 +97,11 @@ export async function getAllPosts(limit?: number): Promise<BlogPostPreview[]> {
  * Get blog post by slug
  */
 export async function getPostBySlug(slug: string): Promise<BlogPost | null> {
+  // Return null if Sanity is not configured (e.g., during build)
+  if (!projectId || projectId === 'placeholder') {
+    return null
+  }
+
   const query = groq`*[_type == "blogPost" && slug.current == $slug][0] {
     title,
     "slug": slug.current,
@@ -119,6 +130,11 @@ export async function getPostBySlug(slug: string): Promise<BlogPost | null> {
  * Get all post slugs for static generation
  */
 export async function getAllPostSlugs(): Promise<string[]> {
+  // Return empty array if Sanity is not configured (e.g., during build)
+  if (!projectId || projectId === 'placeholder') {
+    return []
+  }
+
   const query = groq`*[_type == "blogPost"].slug.current`
   return client.fetch<string[]>(query)
 }
@@ -129,6 +145,11 @@ export async function getAllPostSlugs(): Promise<string[]> {
 export async function getCategories(): Promise<
   Array<{ category: BlogCategory; count: number }>
 > {
+  // Return empty array if Sanity is not configured (e.g., during build)
+  if (!projectId || projectId === 'placeholder') {
+    return []
+  }
+
   const query = groq`*[_type == "blogPost" && defined(category)]{ category }`
   const categories = await client.fetch<Array<{ category: BlogCategory | null }>>(query)
 
@@ -151,6 +172,11 @@ export async function getCategories(): Promise<
 export async function getPostsByCategory(
   category: BlogCategory
 ): Promise<BlogPostPreview[]> {
+  // Return empty array if Sanity is not configured (e.g., during build)
+  if (!projectId || projectId === 'placeholder') {
+    return []
+  }
+
   const query = groq`*[_type == "blogPost" && category == $category] | order(date desc) {
     title,
     "slug": slug.current,
@@ -177,6 +203,11 @@ export async function getRelatedPosts(
   category: BlogCategory,
   limit: number = 3
 ): Promise<BlogPostPreview[]> {
+  // Return empty array if Sanity is not configured (e.g., during build)
+  if (!projectId || projectId === 'placeholder') {
+    return []
+  }
+
   const query = groq`*[_type == "blogPost" && category == $category && slug.current != $currentSlug] | order(date desc) [0...$limit] {
     title,
     "slug": slug.current,
