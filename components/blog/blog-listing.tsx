@@ -1,15 +1,17 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useEffect, useTransition } from 'react'
 import Link from 'next/link'
 import { format } from 'date-fns'
 import { he } from 'date-fns/locale'
 import { Search } from 'lucide-react'
-import { BlogPostPreview, getCategorySlug } from '@/lib/types/blog'
+import { getCategorySlug } from '@/lib/types/blog'
 import { CARD_STYLES, TYPOGRAPHY } from '@/lib/constants/styles'
 import { animations } from '@/lib/utils/animations'
 import { ProgressiveImage } from '@/components/ui/progressive-image'
 import { generatePlaceholderDataURL } from '@/lib/utils/image-placeholders'
+import { LoadingSpinner } from '@/components/blog/loading-spinner'
+import { getPaginatedPosts, getAllPostsForSearch, type BlogPostPreview } from '@/lib/sanity/actions'
 
 // Convert English reading time to Hebrew
 function toHebrewReadingTime(readingTime: string): string {
@@ -22,27 +24,94 @@ function toHebrewReadingTime(readingTime: string): string {
 }
 
 interface BlogListingProps {
-  posts: BlogPostPreview[]
+  initialPosts: BlogPostPreview[]
+  initialHasMore: boolean
+  initialCursor: number
   categories: Array<{ category: string; count: number }>
 }
 
-export function BlogListing({ posts, categories }: BlogListingProps) {
+export function BlogListing({
+  initialPosts,
+  initialHasMore,
+  initialCursor,
+  categories
+}: BlogListingProps) {
+  const [posts, setPosts] = useState(initialPosts)
+  const [hasMore, setHasMore] = useState(initialHasMore)
+  const [cursor, setCursor] = useState(initialCursor)
   const [searchQuery, setSearchQuery] = useState('')
+  const [isPending, startTransition] = useTransition()
+  const [allPostsLoaded, setAllPostsLoaded] = useState(false)
+  const [allPosts, setAllPosts] = useState<BlogPostPreview[]>([])
+
+  const observerRef = useRef<IntersectionObserver | null>(null)
+  const loadMoreRef = useRef<HTMLDivElement | null>(null)
+
+  // Load all posts when search becomes active
+  useEffect(() => {
+    if (searchQuery.trim() && !allPostsLoaded) {
+      startTransition(async () => {
+        const all = await getAllPostsForSearch()
+        setAllPosts(all)
+        setAllPostsLoaded(true)
+      })
+    }
+  }, [searchQuery, allPostsLoaded])
 
   // Filter posts based on search query
   const filteredPosts = useMemo(() => {
+    const postsToFilter = searchQuery.trim() ? allPosts : posts
+
     if (!searchQuery.trim()) {
-      return posts
+      return postsToFilter
     }
 
     const query = searchQuery.toLowerCase()
-    return posts.filter(
+    return postsToFilter.filter(
       (post) =>
         post.title.toLowerCase().includes(query) ||
         post.excerpt.toLowerCase().includes(query) ||
         post.category.toLowerCase().includes(query)
     )
-  }, [posts, searchQuery])
+  }, [posts, allPosts, searchQuery])
+
+  // Load more posts
+  const loadMorePosts = async () => {
+    if (!hasMore || isPending || searchQuery.trim()) return
+
+    startTransition(async () => {
+      const { posts: newPosts, hasMore: moreAvailable, nextCursor } =
+        await getPaginatedPosts(cursor)
+
+      setPosts((prev) => [...prev, ...newPosts])
+      setHasMore(moreAvailable)
+      setCursor(nextCursor)
+    })
+  }
+
+  // Setup Intersection Observer for infinite scroll
+  useEffect(() => {
+    if (!hasMore || searchQuery.trim()) return
+
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !isPending) {
+          loadMorePosts()
+        }
+      },
+      { threshold: 0.1, rootMargin: '100px' }
+    )
+
+    if (loadMoreRef.current) {
+      observerRef.current.observe(loadMoreRef.current)
+    }
+
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect()
+      }
+    }
+  }, [hasMore, cursor, isPending, searchQuery])
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -80,7 +149,7 @@ export function BlogListing({ posts, categories }: BlogListingProps) {
               >
                 <span className="text-body">הכל</span>
                 <span className="text-body-small text-neutral-dark bg-neutral-light px-2 py-1 rounded">
-                  {posts.length}
+                  {categories.reduce((sum, cat) => sum + cat.count, 0)}
                 </span>
               </Link>
             </li>
@@ -185,6 +254,13 @@ export function BlogListing({ posts, categories }: BlogListingProps) {
                 </div>
               </Link>
             ))}
+          </div>
+        )}
+
+        {/* Infinite scroll trigger and loading indicator */}
+        {hasMore && !searchQuery.trim() && (
+          <div ref={loadMoreRef} className="py-8 text-center">
+            {isPending && <LoadingSpinner />}
           </div>
         )}
       </main>

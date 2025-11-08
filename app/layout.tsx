@@ -1,10 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Assistant } from "next/font/google";
-import { Header, Footer } from "@/components/layout";
-import { ErrorBoundary } from "@/components/error-boundary";
-import { PageTransition } from "@/components/animations/page-transition";
-import { PageLoader } from "@/components/animations/page-loader";
-import { ToastProvider } from "@/lib/context/ToastContext";
 import "./globals.css";
 
 const assistant = Assistant({
@@ -78,22 +73,7 @@ export default function RootLayout({
   return (
     <html lang="he" dir="rtl" className={assistant.variable}>
       <body className="font-sans bg-neutral-light text-neutral-darkest antialiased">
-        <PageLoader
-          duration={1200}
-          logoSrc="/law4uslogo-blac.svg"
-          logoAlt="Law4Us - גירושין אונליין"
-        />
-        <ErrorBoundary>
-          <ToastProvider>
-            <Header />
-            <main className="pt-20">
-              <PageTransition type="fade-slide" duration={300}>
-                {children}
-              </PageTransition>
-            </main>
-            <Footer />
-          </ToastProvider>
-        </ErrorBoundary>
+        {children}
       </body>
     </html>
   );
