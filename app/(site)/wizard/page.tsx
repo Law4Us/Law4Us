@@ -185,19 +185,6 @@ export default function Step1ClaimPicker() {
         </div>
       </SlideInView>
 
-      {selectedClaims.includes("divorce") && (
-        <SlideInView direction="up" delay={50}>
-          <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-6 py-4 text-right">
-            <p className="text-body font-semibold text-amber-900">
-              ⚠️ לתשומת לבכם: תביעת גירושין בבית הדין הרבני כרוכה בהגשת תביעות נלוות (רכוש, מזונות, משמורת).
-            </p>
-            <p className="text-caption text-amber-800 mt-1">
-              מומלץ לסמן גם את התביעות הרלוונטיות כדי שנוכל למלא את כלל הטפסים והנספחים עבורך.
-            </p>
-          </div>
-        </SlideInView>
-      )}
-
       <ProgressiveSections>
         {/* Section 1: Plaintiff Information */}
         <SlideInView direction="up" delay={100}>
@@ -524,6 +511,19 @@ export default function Step1ClaimPicker() {
             canExpand={isSection3Complete}
             onToggle={() => handleSectionToggle(4)}
           >
+            {selectedClaims.includes("divorce") &&
+             !(selectedClaims.includes("property") &&
+               selectedClaims.includes("custody") &&
+               selectedClaims.includes("alimony")) && (
+              <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-6 py-4 text-right">
+                <p className="text-body font-semibold text-amber-900">
+                  ⚠️ לתשומת לבכם: תביעת גירושין בבית הדין הרבני כרוכה בהגשת תביעות נלוות (רכוש, מזונות, משמורת).
+                </p>
+                <p className="text-caption text-amber-800 mt-1">
+                  מומלץ לסמן גם את התביעות הרלוונטיות כדי שנוכל למלא את כלל הטפסים והנספחים עבורך.
+                </p>
+              </div>
+            )}
             {selectedClaims.length === 0 && expandedSection === 4 && (
               <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
                 <p className="text-body-small text-red-600 font-medium">
