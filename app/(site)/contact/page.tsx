@@ -174,12 +174,12 @@ export default function ContactPage() {
             </div>
 
             {/* Content Grid */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr',
-              gap: spacing[10],
-            }}
-              className="lg:grid-cols-[0.85fr,1.15fr]"
+            <div
+              style={{
+                display: 'grid',
+                gap: spacing[10],
+              }}
+              className="grid-cols-1 lg:grid-cols-[0.85fr,1.15fr]"
             >
               {/* Contact Methods */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[6] }}>
