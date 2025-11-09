@@ -104,6 +104,8 @@ export function SlideInView({
         transform: isVisible ? 'translate(0, 0)' : getTransformOrigin(),
         transitionDuration: `${duration}ms`,
         transitionDelay: `${delay}ms`,
+        contain: 'layout',
+        willChange: isVisible ? 'auto' : 'transform',
       }}
     >
       {children}

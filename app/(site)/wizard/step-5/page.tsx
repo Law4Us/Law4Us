@@ -226,6 +226,7 @@ export default function Step5FinalSubmission() {
           <div className="flex justify-center">
             <Button
               onClick={handleSubmit}
+              variant="primary"
               size="lg"
               className="w-full md:w-auto min-w-[300px]"
             >

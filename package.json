@@ -4,12 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "NODE_OPTIONS='--max-old-space-size=4096' next build",
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
     "test:document-gen": "tsx scripts/test-document-generation.ts",
-    "migrate:blog": "tsx scripts/migrate-wordpress.ts",
+    "migrate:blog": "tsx scripts/archive/migrate-wordpress.ts",
     "migrate:blog-to-sanity": "tsx scripts/migrate-blog-to-sanity.ts",
     "upload:blog-images": "tsx scripts/upload-blog-images-to-sanity.ts",
     "generate:redirects": "tsx scripts/generate-redirects.ts"
@@ -66,19 +66,14 @@
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@types/react-signature-canvas": "^1.0.7",
-    "@types/turndown": "^5.0.6",
     "autoprefixer": "^10.4.20",
-    "axios": "^1.13.2",
     "babel-plugin-styled-components": "^2.1.4",
-    "dotenv": "^17.2.3",
     "eslint": "^8.57.0",
     "eslint-config-next": "^14.2.18",
     "patch-package": "^8.0.1",
     "postcss": "^8.4.49",
-    "slugify": "^1.6.6",
     "tailwindcss": "^3.4.15",
     "tsx": "^4.20.6",
-    "turndown": "^7.2.2",
     "typescript": "^5.7.2"
   }
 }

@@ -18,10 +18,8 @@ import path from 'path'
 import matter from 'gray-matter'
 import { createClient } from '@sanity/client'
 import { randomUUID } from 'crypto'
-import dotenv from 'dotenv'
 
-// Load environment variables
-dotenv.config({ path: '.env.local' })
+// Environment variables are automatically loaded by Node.js from .env.local
 
 const client = createClient({
   projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || '',

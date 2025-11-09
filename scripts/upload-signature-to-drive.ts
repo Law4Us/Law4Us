@@ -3,13 +3,11 @@
  * Run with: npx tsx scripts/upload-signature-to-drive.ts
  */
 
-import { config } from 'dotenv';
 import { uploadToDrive } from '../lib/api/services/google-drive';
 import * as fs from 'fs';
 import * as path from 'path';
 
-// Load environment variables
-config({ path: path.join(__dirname, '..', '.env.local') });
+// Environment variables are automatically loaded by Node.js from .env.local
 
 async function uploadSignature() {
   console.log('📤 Uploading lawyer signature to Google Drive...\n');

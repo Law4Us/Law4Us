@@ -43,6 +43,10 @@ export function formatIdNumber(value: string): string {
  * Input: 3900 -> Output: "3,900 ₪"
  */
 export function formatCurrency(amount: number): string {
+  // Handle undefined, null, or NaN values
+  if (amount === undefined || amount === null || isNaN(amount)) {
+    amount = 0;
+  }
   return `${amount.toLocaleString("he-IL")} ₪`;
 }
 

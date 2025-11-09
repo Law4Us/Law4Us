@@ -66,7 +66,7 @@ export const wizardSession = defineType({
         defineField({
           name: 'formData',
           title: 'Form Data',
-          type: 'json',
+          type: 'text',
           description: 'Claim-specific answers (stored as JSON)',
         }),
         defineField({

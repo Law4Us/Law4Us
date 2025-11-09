@@ -57,6 +57,10 @@ export const SPACING = {
  * Format currency in Hebrew locale
  */
 export function formatCurrency(amount: number): string {
+  // Handle undefined, null, or NaN values
+  if (amount === undefined || amount === null || isNaN(amount)) {
+    amount = 0;
+  }
   return `₪${amount.toLocaleString('he-IL')}`;
 }
 

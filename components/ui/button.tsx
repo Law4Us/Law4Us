@@ -34,7 +34,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           // Variants with animations
           variant === "primary" &&
             cn(
-              "text-white border border-primary-dark shadow-md shadow-primary/30",
+              "!text-white border border-primary-dark shadow-md shadow-primary/30",
               "bg-gradient-to-r from-primary to-primary-dark",
               "hover:from-primary-dark hover:to-primary-dark hover:shadow-lg hover:shadow-primary/40",
               animations.buttonVariants.primary
