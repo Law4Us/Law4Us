@@ -204,7 +204,8 @@ export async function generateBackupDocument(data: BackupDocumentData): Promise<
     })
   );
 
-  paragraphs.push(new Paragraph({ children: [basicInfoTable1] }));
+  // Tables must be added directly, not wrapped in paragraphs
+  (paragraphs as any).push(basicInfoTable1);
 
   // ========== BASIC INFO - PART 2 ==========
   paragraphs.push(createSectionHeader('פרטים אישיים - משיב/ה'));
@@ -229,7 +230,7 @@ export async function generateBackupDocument(data: BackupDocumentData): Promise<
     })
   );
 
-  paragraphs.push(new Paragraph({ children: [basicInfoTable2] }));
+  (paragraphs as any).push(basicInfoTable2);
 
   // ========== RELATIONSHIP INFO ==========
   paragraphs.push(createSectionHeader('פרטי קשר'));
@@ -261,7 +262,7 @@ export async function generateBackupDocument(data: BackupDocumentData): Promise<
     })
   );
 
-  paragraphs.push(new Paragraph({ children: [relationshipTable] }));
+  (paragraphs as any).push(relationshipTable);
 
   // ========== CHILDREN ==========
   if (formData.children && formData.children.length > 0) {
@@ -295,7 +296,7 @@ export async function generateBackupDocument(data: BackupDocumentData): Promise<
         })
       );
 
-      paragraphs.push(new Paragraph({ children: [childTable] }));
+      (paragraphs as any).push(childTable);
     });
   }
 
@@ -349,7 +350,7 @@ export async function generateBackupDocument(data: BackupDocumentData): Promise<
       })
     );
 
-    paragraphs.push(new Paragraph({ children: [globalTable] }));
+    (paragraphs as any).push(globalTable);
   }
 
   // ========== CLAIM-SPECIFIC DATA ==========
@@ -394,7 +395,7 @@ export async function generateBackupDocument(data: BackupDocumentData): Promise<
         })
       );
 
-      paragraphs.push(new Paragraph({ children: [propTable] }));
+      (paragraphs as any).push(propTable);
     }
 
     // Assets
@@ -412,7 +413,7 @@ export async function generateBackupDocument(data: BackupDocumentData): Promise<
           rows: aptRows,
         });
         paragraphs.push(new Paragraph({ children: [], spacing: { after: SPACING.MINIMAL } }));
-        paragraphs.push(new Paragraph({ children: [aptTable] }));
+        (paragraphs as any).push(aptTable);
       });
     }
 
@@ -430,7 +431,7 @@ export async function generateBackupDocument(data: BackupDocumentData): Promise<
           rows: vehicleRows,
         });
         paragraphs.push(new Paragraph({ children: [], spacing: { after: SPACING.MINIMAL } }));
-        paragraphs.push(new Paragraph({ children: [vehicleTable] }));
+        (paragraphs as any).push(vehicleTable);
       });
     }
   }
@@ -454,7 +455,7 @@ export async function generateBackupDocument(data: BackupDocumentData): Promise<
     });
 
     paragraphs.push(new Paragraph({ children: [], spacing: { after: SPACING.MINIMAL } }));
-    paragraphs.push(new Paragraph({ children: [custodyTable] }));
+    (paragraphs as any).push(custodyTable);
   }
 
   // Alimony claim
@@ -475,7 +476,7 @@ export async function generateBackupDocument(data: BackupDocumentData): Promise<
     });
 
     paragraphs.push(new Paragraph({ children: [], spacing: { after: SPACING.MINIMAL } }));
-    paragraphs.push(new Paragraph({ children: [alimonyTable] }));
+    (paragraphs as any).push(alimonyTable);
   }
 
   // Divorce claim
@@ -503,7 +504,7 @@ export async function generateBackupDocument(data: BackupDocumentData): Promise<
     });
 
     paragraphs.push(new Paragraph({ children: [], spacing: { after: SPACING.MINIMAL } }));
-    paragraphs.push(new Paragraph({ children: [divorceTable] }));
+    (paragraphs as any).push(divorceTable);
   }
 
   // Divorce agreement
@@ -527,7 +528,7 @@ export async function generateBackupDocument(data: BackupDocumentData): Promise<
     });
 
     paragraphs.push(new Paragraph({ children: [], spacing: { after: SPACING.MINIMAL } }));
-    paragraphs.push(new Paragraph({ children: [agreementTable] }));
+    (paragraphs as any).push(agreementTable);
   }
 
   // ========== CREATE DOCUMENT ==========
