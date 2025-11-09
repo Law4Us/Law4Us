@@ -50,11 +50,23 @@ export const divorceClaimSchema = z.object({
   separationDate: z.string().optional(),
   divorceReason: z.string().optional(),
   additionalInfo: z.string().optional(),
+  weddingCity: z.string().optional(),
+  religiousMarriage: z.enum(["כן", "לא"]).optional(),
+  religiousCouncil: z.string().optional(),
+  policeComplaints: z.enum(["כן", "לא"]).optional(),
+  policeComplaintsWho: z.string().optional(),
+  policeComplaintsWhere: z.string().optional(),
+  policeComplaintsDate: z.string().optional(),
+  policeComplaintsOutcome: z.string().optional(),
+  divorceReasons: z.string().optional(),
 });
 
 // Property Claim schema
 export const propertyClaimSchema = z.object({
   children: z.array(childFullSchema).optional(),
+  hasAssets: z.enum(["yes", "no"], {
+    required_error: "יש לציין האם קיימים נכסים או חובות",
+  }),
   // Properties, debts, accounts will be added as repeaters in Prompt 4
   hasSharedProperty: z.enum(["כן", "לא"]).optional(),
   hasSharedDebts: z.enum(["כן", "לא"]).optional(),
@@ -75,6 +87,12 @@ export const custodyClaimSchema = z.object({
 // Alimony Claim schema
 export const alimonyClaimSchema = z.object({
   children: z.array(childFullSchema).min(1, "יש להוסיף לפחות ילד אחד"),
+  hasChildrenNeeds: z.enum(["yes", "no"], {
+    required_error: "יש לציין האם קיימות הוצאות לקטינים",
+  }),
+  hasHouseholdNeeds: z.enum(["yes", "no"], {
+    required_error: "יש לציין האם קיימות הוצאות מדור",
+  }),
   // Needs table will be added in Prompt 4
   hasChildSupport: z.enum(["כן", "לא"]).optional(),
   hasSpousalSupport: z.enum(["כן", "לא"]).optional(),

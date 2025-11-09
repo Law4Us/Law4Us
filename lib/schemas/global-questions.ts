@@ -85,12 +85,20 @@ export const welfareSchema = z.object({
   }),
 });
 
+// Children overview
+export const childrenOverviewSchema = z.object({
+  hasSharedChildren: z.enum(["yes", "no"], {
+    required_error: "יש לציין האם יש ילדים משותפים",
+  }),
+});
+
 // Combined global questions schema
 export const globalQuestionsSchema = z.object({
   ...previousMarriagesSchema.shape,
   ...housingSchema.shape,
   ...familyViolenceSchema.shape,
   ...welfareSchema.shape,
+  ...childrenOverviewSchema.shape,
 });
 
 export type GlobalQuestions = z.infer<typeof globalQuestionsSchema>;

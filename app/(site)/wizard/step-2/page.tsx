@@ -376,6 +376,7 @@ export default function Step2DynamicForm() {
                 type="submit"
                 size="lg"
                 disabled={!isValid}
+                className="text-white"
               >
                 המשך לשלב הבא
               </Button>

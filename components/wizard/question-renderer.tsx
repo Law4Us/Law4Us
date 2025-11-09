@@ -106,6 +106,7 @@ export function QuestionRenderer({
 
   // Render textarea
   if (question.type === "textarea") {
+    const currentValue = getValueByPath<string | undefined>(watchFields, fieldName) || "";
     return (
       <div className="col-span-2">
         <FormField
@@ -124,7 +125,7 @@ export function QuestionRenderer({
           />
           {question.maxLength && (
             <div className="text-caption text-neutral-dark text-left mt-1">
-              {watchFields[fieldName]?.length || 0} / {question.maxLength}
+              {currentValue.length} / {question.maxLength}
             </div>
           )}
         </FormField>

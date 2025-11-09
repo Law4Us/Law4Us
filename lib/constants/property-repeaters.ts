@@ -108,6 +108,17 @@ export const CHILDREN_FIELDS: RepeaterField[] = [
     type: "text",
     placeholder: "שם ההורה השני",
   },
+  {
+    id: "residingWith",
+    name: "residingWith",
+    label: "הילד/ה מתגורר/ת בעיקר אצל",
+    type: "select",
+    options: [
+      { value: "applicant", label: "המבקש/ת" },
+      { value: "respondent", label: "ההורה השני" },
+      { value: "both", label: "שני ההורים/חלוקה שווה" },
+    ],
+  },
 ];
 
 // Apartments (דירות)

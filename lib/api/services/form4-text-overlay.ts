@@ -284,8 +284,6 @@ export async function fillForm4WithTextOverlay(
         drawText(data.vehicleDetails.substring(0, 50), 200, 710, 8);
       }
 
-      // Section 15: Requested Alimony Amount
-      drawText(`₪${data.requestedAmount.toLocaleString('he-IL')}`, 350, 750, 10);
     }
 
     // ==============================================

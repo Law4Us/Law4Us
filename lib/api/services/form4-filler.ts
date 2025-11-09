@@ -94,9 +94,6 @@ export interface Form4Data {
   hasVehicle: boolean;
   vehicleDetails?: string;
 
-  // Field 15: Requested alimony amount
-  requestedAmount: number;
-
   // Section B: Spouse-specific fields
   marriageDate?: string;
   separationDate?: string;
@@ -279,9 +276,6 @@ async function fillPdfForm(data: Form4Data): Promise<Uint8Array> {
     if (data.hasVehicle && data.vehicleDetails) {
       setTextFieldSafe(form, 'vehicle_details', data.vehicleDetails);
     }
-
-    // Field 15: Requested alimony amount
-    setTextFieldSafe(form, 'requested_alimony_amount', `₪${data.requestedAmount.toLocaleString('he-IL')}`);
 
     // Section B: Spouse-specific fields
     if (data.marriageDate) {
@@ -528,6 +522,20 @@ export function mapFormDataToForm4Data(
       residingWith: child.residingWith || 'applicant',
     }));
 
+  const vehicleEntries = Array.isArray(property.vehicles) ? property.vehicles : [];
+  const hasVehicle = vehicleEntries.length > 0;
+  const vehicleDetails = hasVehicle
+    ? vehicleEntries
+        .map((vehicle: any) => {
+          if (!vehicle || typeof vehicle !== 'object') return '';
+          const description = vehicle.description || '';
+          const owner = vehicle.owner ? `(${vehicle.owner})` : '';
+          return `${description} ${owner}`.trim();
+        })
+        .filter((entry: string) => entry && entry !== '()')
+        .join('; ')
+    : undefined;
+
   return {
     // Personal details
     applicantName: basicInfo.fullName || '',
@@ -599,11 +607,8 @@ export function mapFormDataToForm4Data(
     bankAccounts: alimony.bankAccounts || [],
 
     // Vehicle
-    hasVehicle: alimony.hasVehicle === 'yes',
-    vehicleDetails: alimony.vehicleDetails,
-
-    // Requested amount
-    requestedAmount: alimony.requestedAmount || 0,
+    hasVehicle,
+    vehicleDetails,
 
     // Spouse-specific
     marriageDate: basicInfo.weddingDay,

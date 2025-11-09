@@ -17,6 +17,7 @@ import { insertAttachmentPages } from './document-attachment-inserter';
 import { generatePropertyClaimDocument } from './property-claim-generator';
 import { generateCustodyClaim } from './custody-claim-generator';
 import { generateAlimonyClaim } from './alimony-claim-generator';
+import { generateDivorceClaim } from './divorce-claim-generator';
 import { generateDivorceAgreement } from './divorce-agreement-generator';
 import {
   ClaimType,
@@ -60,8 +61,8 @@ function getTemplatePath(claimType: ClaimType): string {
  * Check if template exists
  */
 export function templateExists(claimType: ClaimType): boolean {
-  // Property, custody, alimony, and divorceAgreement claims don't use templates - they're programmatically generated
-  if (claimType === 'property' || claimType === 'custody' || claimType === 'alimony' || claimType === 'divorceAgreement') {
+  // Property, custody, alimony, divorce, and divorceAgreement claims don't use templates - they're programmatically generated
+  if (claimType === 'property' || claimType === 'custody' || claimType === 'alimony' || claimType === 'divorce' || claimType === 'divorceAgreement') {
     return true;
   }
 
@@ -192,6 +193,10 @@ async function fillTemplate(
     paragraphLoop: true,
     linebreaks: true,
     nullGetter: () => '',
+    delimiters: {
+      start: '{{',
+      end: '}}',
+    },
   });
 
   // Fill template
@@ -254,6 +259,15 @@ export async function generateDocument(
       // Convert docx Document object to buffer
       const { Packer } = await import('docx');
       documentBuffer = await Packer.toBuffer(document);
+    } else if (claimType === 'divorce') {
+      console.log('📝 Using programmatic generator for divorce claim...');
+      documentBuffer = await generateDivorceClaim({
+        basicInfo,
+        formData,
+        signature: options.signature,
+        lawyerSignature: options.lawyerSignature,
+        attachments: options.attachments,
+      });
     } else if (claimType === 'divorceAgreement') {
       console.log('📝 Using compact programmatic generator for divorce agreement...');
       documentBuffer = await generateDivorceAgreement({

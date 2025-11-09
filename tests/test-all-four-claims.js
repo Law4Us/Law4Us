@@ -123,7 +123,6 @@ const testData = {
       bankAccounts: [{ bankName: 'בנק הפועלים', accountNumber: '98765432' }],
       hasVehicle: 'yes',
       vehicleDetails: 'יונדאי טוסון 2022',
-      requestedAmount: 9000,
     },
 
     // CUSTODY
@@ -196,7 +195,6 @@ const totalAssets = 3500000 + 140000 + 220000 + 380000;
 console.log(`   Assets: ${totalAssets.toLocaleString()} ILS`);
 console.log(`   Debts: 1,100,000 ILS`);
 console.log(`   Net: ${(totalAssets - 1100000).toLocaleString()} ILS`);
-console.log(`   Alimony: ${testData.formData.alimony.requestedAmount.toLocaleString()} ILS/month`);
 console.log('');
 
 axios

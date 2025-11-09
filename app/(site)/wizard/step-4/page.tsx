@@ -299,11 +299,11 @@ export default function Step4Payment() {
                 </li>
                 <li className="flex items-start gap-2">
                   <Check className="w-4 h-4 mt-0.5 text-primary flex-shrink-0" />
-                  <span>הגשת התביעה לבית המשפט</span>
+                  <span>בדיקה ידנית של עו&quot;ד מומחה לפני שליחה</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <Check className="w-4 h-4 mt-0.5 text-primary flex-shrink-0" />
-                  <span>ייצוג משפטי מלא</span>
+                  <span>תמיכה אישית בטלפון או בוואטסאפ לאורך כל הדרך</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <Check className="w-4 h-4 mt-0.5 text-primary flex-shrink-0" />
@@ -323,7 +323,7 @@ export default function Step4Payment() {
                   <strong className="text-primary">24 שעות</strong> - יצירת קשר ראשונית
                 </li>
                 <li>
-                  <strong className="text-primary">3-5 ימים</strong> - הגשת תביעה
+                  <strong className="text-primary">3-5 ימים</strong> - קבלת טיוטת מסמכים מלאה לאישור
                 </li>
                 <li>
                   <strong className="text-primary">שוטף</strong> - עדכונים במייל ו-SMS

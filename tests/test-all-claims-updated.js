@@ -136,7 +136,6 @@ const testData = {
       ],
       hasVehicle: 'yes',
       vehicleDetails: 'מאזדה 3 לבן',
-      requestedAmount: 8000,
     },
 
     // CUSTODY-specific data
@@ -190,7 +189,6 @@ console.log(`     - Shared children: ${testData.formData.children.filter(c => c.
 console.log(`     - From previous marriage: ${testData.formData.children.filter(c => c.nameOfParent !== testData.basicInfo.fullName2 && c.nameOfParent).length}`);
 console.log(`   Property value: ${(2500000 + 80000 + 150000 + 300000 + 50000).toLocaleString()} ILS`);
 console.log(`   Debts: ${800000.toLocaleString()} ILS`);
-console.log(`   Requested alimony: ${testData.formData.alimony.requestedAmount.toLocaleString()} ILS/month`);
 console.log(`   Living arrangement: ${testData.formData.custody.currentLivingArrangement}`);
 console.log('');
 console.log('🔑 Key Updates Tested:');

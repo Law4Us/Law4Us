@@ -194,7 +194,6 @@ const testData = {
       ],
       hasVehicle: 'yes',
       vehicleDetails: 'הונדה סיוויק 2021 לבן',
-      requestedAmount: 10000,
     },
 
     // CUSTODY-specific data
@@ -267,7 +266,6 @@ const totalAssets = 3200000 + 1800000 + 120000 + 150000 + 280000 + 150000 + 4500
 console.log(`   Total Assets: ${totalAssets.toLocaleString()} ILS`);
 console.log(`   Total Debts: 1,200,000 ILS`);
 console.log(`   Net Worth: ${(totalAssets - 1200000).toLocaleString()} ILS`);
-console.log(`   Requested Alimony: ${testData.formData.alimony.requestedAmount.toLocaleString()} ILS/month`);
 console.log('');
 
 axios

@@ -22,7 +22,8 @@ interface Property {
 }
 
 interface Financial {
-  amount: string;
+  amount?: string;
+  value?: string;
   owner: string;
   date?: string;
   purpose?: string;
@@ -104,7 +105,10 @@ export function formatSavings(savings: Financial[]): string {
   if (!savings || savings.length === 0) return "";
 
   return savings
-    .map((saving) => `על סך: ${saving.amount} בעלים: ${saving.owner}`)
+    .map((saving) => {
+      const amount = saving.amount || saving.value || "";
+      return `על סך: ${amount} בעלים: ${saving.owner}`;
+    })
     .join("\n");
 }
 
@@ -116,7 +120,10 @@ export function formatBenefits(benefits: Financial[]): string {
   if (!benefits || benefits.length === 0) return "";
 
   return benefits
-    .map((benefit) => `על סך: ${benefit.amount} בעלים: ${benefit.owner}`)
+    .map((benefit) => {
+      const amount = benefit.amount || benefit.value || "";
+      return `על סך: ${amount} בעלים: ${benefit.owner}`;
+    })
     .join("\n");
 }
 
@@ -130,7 +137,8 @@ export function formatDebts(debts: Financial[]): string {
 
   return debts
     .map((debt) => {
-      let output = `על סך: ${debt.amount} בעלים: ${debt.owner}`;
+      const amount = debt.amount || debt.value || "";
+      let output = `על סך: ${amount} בעלים: ${debt.owner}`;
 
       if (debt.date) {
         output += ` נלקח בתאריך ${debt.date}`;
@@ -189,24 +197,56 @@ export function prepareFormattedData(
   basicInfo: BasicInfo,
   formData: FormData
 ): Record<string, any> {
+  const divorceData =
+    (formData?.divorce as Record<string, any> | undefined) || ({} as Record<string, any>);
+
   const formatted: Record<string, any> = {
     // Basic info
     fullName: basicInfo.fullName,
     idNumber: basicInfo.idNumber,
     address: basicInfo.address,
+    applicantCity: basicInfo.address,
+    applicantStreet: basicInfo.address,
+    applicantHouseNumber: "",
+    applicantZip: "",
     phone: basicInfo.phone,
     email: basicInfo.email,
     birthDate: basicInfo.birthDate,
+    applicantWorkplace: formData.applicantEmployer || "",
+    applicantWorkPhone: formData.applicantEmployerPhone || "",
 
     fullName2: basicInfo.fullName2,
     idNumber2: basicInfo.idNumber2,
     address2: basicInfo.address2,
+    respondentCity: basicInfo.address2,
+    respondentStreet: basicInfo.address2,
+    respondentHouseNumber: "",
+    respondentZip: "",
     phone2: basicInfo.phone2,
     email2: basicInfo.email2,
     birthDate2: basicInfo.birthDate2,
+    respondentWorkplace: formData.respondentEmployer || "",
+    respondentWorkPhone: formData.respondentEmployerPhone || "",
+    respondentSecondaryPhone: formData.respondentSecondaryPhone || "",
 
     weddingDay: basicInfo.weddingDay,
+    weddingCity: divorceData.weddingCity || "",
+    religiousMarriage: divorceData.religiousMarriage || "",
+    religiousCouncil: divorceData.religiousCouncil || "",
     relationshipType: basicInfo.relationshipType,
+
+    // Attorney details (fixed)
+    attorneyFirstName: "אריאל",
+    attorneyLastName: "דרור",
+    attorneyLicenseNumber: "31892",
+    attorneyCity: "רמת גן",
+    attorneyStreet: "אבא שאול 15",
+    attorneyHouseNumber: "",
+    attorneyZip: "",
+    attorneyPhone: "03-6951408",
+    attorneyFax: "03-6951683",
+    attorneyEmail: "office@dror-law.co.il",
+    powerOfAttorneyAttached: "כן",
 
     // Current date
     date: new Date().toLocaleDateString("he-IL"),
@@ -300,7 +340,107 @@ export function prepareFormattedData(
 
     // Remedies requested
     remedies: formData.remedies,
+    filingFee: "503 ₪",
+    claimValue: "סכום לא קצוב",
+    requestedReliefSummary:
+      "הסעדים מבוקשים במלואם כפי שיפורטו בתביעות הרכוש, המזונות והמשמורת המוגשות במקביל",
+    parallelProceedings: "",
+    respondentRepresentedByAttorney: "לא נמסר",
+    respondentRepresentativeType: "",
+    respondentAttorneyFirstName: "",
+    respondentAttorneyLastName: "",
+    respondentAttorneyLicenseNumber: "",
+    respondentAttorneyCity: "",
+    respondentAttorneyStreet: "",
+    respondentAttorneyHouseNumber: "",
+    respondentAttorneyZip: "",
+    respondentAttorneyPhone: "",
+    respondentAttorneyFax: "",
+    respondentAttorneyEmail: "",
+    respondentAttorneyAddress: "",
+    primaryResidenceAddress: basicInfo.address,
+    primaryResidenceOwner: basicInfo.fullName,
+    primaryResidenceRegistry: "",
+    primaryResidenceRelief: "כמפורט בתביעה הרכושית",
+    primaryResidenceReason: "",
+    secondaryPropertyAddress: "",
+    secondaryPropertyOwner: "",
+    secondaryPropertyRelief: "",
+    secondaryPropertyReason: "",
+    businessAssetDetails: "",
+    businessAssetOwner: "",
+    businessAssetRelief: "",
+    businessAssetReason: "",
+    vehiclesRelief: "כמפורט בתביעה הרכושית",
+    providentFunds: "",
+    pensionFunds: "",
+    severanceFunds: "",
+    otherSavings: "",
+    additionalProperties: "",
+    additionalRights: "",
+    mortgageDetails: formData.mortgageDetails || "",
+    mortgageRelief: formData.mortgageRelief || "",
+    otherDebts: formData.otherDebts || "",
+    debtsRelief: formData.debtsRelief || "",
+    movableAssets: formData.movableAssets || "",
+    movableRelief: formData.movableRelief || "",
+    spousalSupportRequested: "כאמור בתביעת המזונות הנפרדת",
+    spousalMonthlyNeeds: formData.spousalMonthlyNeeds || "",
+    housingNeeds: formData.housingNeeds || "",
+    extraExpenses: formData.extraExpenses || "",
+    lastSpousalPayment: formData.lastSpousalPayment || "",
+    spousalSupportRelief: "כאמור בתביעת המזונות",
+    childSupportWithinDivorce: "כן",
+    childSupportRequested: "כאמור בתביעת המזונות",
+    childrenExpensesBreakdown: formData.childrenExpensesBreakdown || "",
+    childrenHousingNeeds: formData.childrenHousingNeeds || "",
+    lastChildSupportPayment: formData.lastChildSupportPayment || "",
+    childSupportRelief: "כאמור בתביעת המזונות",
+    custodyRequest: "כאמור בתביעת המשמורת",
+    custodyReason: formData.custodyReason || "",
+    welfareReport: formData.welfareReport || "",
+    welfareRecommendation: formData.welfareRecommendation || "",
+    visitationRequested: formData.visitationRequested || "",
+    childrenEducationCurrent: formData.childrenEducationCurrent || "",
+    childrenEducationRelief: formData.childrenEducationRelief || "",
+    additionalChildrenMatters: formData.additionalChildrenMatters || "",
+    ketubahAmount: formData.ketubahAmount || "",
+    ketubahRelief: formData.ketubahRelief || "",
+    annexA: formData.annexA || "",
+    annexB: formData.annexB || "",
+    annexC: formData.annexC || "",
+    annexOther: formData.annexOther || "",
   };
+
+  const livingTogetherValue = formData.livingTogether;
+  if (livingTogetherValue) {
+    formatted.livingSeparately = livingTogetherValue === "no" || livingTogetherValue === "לא" ? "כן" : "לא";
+  } else {
+    formatted.livingSeparately = "";
+  }
+
+  formatted.policeComplaints = divorceData.policeComplaints
+    ? formatYesNo(divorceData.policeComplaints)
+    : "";
+  formatted.policeComplaintsWho = divorceData.policeComplaintsWho || "";
+  formatted.policeComplaintsWhere = divorceData.policeComplaintsWhere || "";
+  formatted.policeComplaintsDate = divorceData.policeComplaintsDate || "";
+  formatted.criminalProceedingsOutcome = divorceData.policeComplaintsOutcome || "";
+
+  // Split divorce reasons into up to 5 entries
+  if (divorceData.divorceReasons) {
+    const reasons = divorceData.divorceReasons
+      .split(/\r?\n/)
+      .map((reason: string) => reason.trim())
+      .filter((reason: string) => reason.length > 0)
+      .slice(0, 5);
+
+    reasons.forEach((reason: string, index: number) => {
+      formatted[`divorceReason${index + 1}`] = reason;
+    });
+  }
+
+  formatted.divorceProofs = divorceData.divorceProofsDescription || "";
 
   // Add all other formData fields as-is
   Object.keys(formData).forEach((key) => {
@@ -327,8 +467,8 @@ export function calculateTotalDebts(debts: Financial[]): number {
   if (!debts || debts.length === 0) return 0;
 
   return debts.reduce((total, debt) => {
-    const amount = parseFloat(debt.amount.replace(/,/g, ""));
-    return total + (isNaN(amount) ? 0 : amount);
+    const amount = toNumericValue(debt.amount || debt.value);
+    return total + amount;
   }, 0);
 }
 
@@ -339,8 +479,8 @@ export function calculateTotalSavings(savings: Financial[]): number {
   if (!savings || savings.length === 0) return 0;
 
   return savings.reduce((total, saving) => {
-    const amount = parseFloat(saving.amount.replace(/,/g, ""));
-    return total + (isNaN(amount) ? 0 : amount);
+    const amount = toNumericValue(saving.amount || saving.value);
+    return total + amount;
   }, 0);
 }
 
@@ -351,9 +491,16 @@ export function calculateTotalBenefits(benefits: Financial[]): number {
   if (!benefits || benefits.length === 0) return 0;
 
   return benefits.reduce((total, benefit) => {
-    const amount = parseFloat(benefit.amount.replace(/,/g, ""));
-    return total + (isNaN(amount) ? 0 : amount);
+    const amount = toNumericValue(benefit.amount || benefit.value);
+    return total + amount;
   }, 0);
+}
+
+function toNumericValue(raw?: string): number {
+  if (!raw) return 0;
+  const normalized = raw.toString().replace(/,/g, "");
+  const parsed = parseFloat(normalized);
+  return isNaN(parsed) ? 0 : parsed;
 }
 
 /**

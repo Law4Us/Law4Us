@@ -22,7 +22,8 @@ interface Property {
 }
 
 interface Financial {
-  amount: string;
+  amount?: string;
+  value?: string;
   owner: string;
   date?: string;
   purpose?: string;
@@ -104,7 +105,10 @@ export function formatSavings(savings: Financial[]): string {
   if (!savings || savings.length === 0) return "";
 
   return savings
-    .map((saving) => `על סך: ${saving.amount} בעלים: ${saving.owner}`)
+    .map((saving) => {
+      const amount = saving.amount || saving.value || "";
+      return `על סך: ${amount} בעלים: ${saving.owner}`;
+    })
     .join("\n");
 }
 
@@ -116,7 +120,10 @@ export function formatBenefits(benefits: Financial[]): string {
   if (!benefits || benefits.length === 0) return "";
 
   return benefits
-    .map((benefit) => `על סך: ${benefit.amount} בעלים: ${benefit.owner}`)
+    .map((benefit) => {
+      const amount = benefit.amount || benefit.value || "";
+      return `על סך: ${amount} בעלים: ${benefit.owner}`;
+    })
     .join("\n");
 }
 
@@ -130,7 +137,8 @@ export function formatDebts(debts: Financial[]): string {
 
   return debts
     .map((debt) => {
-      let output = `על סך: ${debt.amount} בעלים: ${debt.owner}`;
+      const amount = debt.amount || debt.value || "";
+      let output = `על סך: ${amount} בעלים: ${debt.owner}`;
 
       if (debt.date) {
         output += ` נלקח בתאריך ${debt.date}`;
@@ -327,8 +335,8 @@ export function calculateTotalDebts(debts: Financial[]): number {
   if (!debts || debts.length === 0) return 0;
 
   return debts.reduce((total, debt) => {
-    const amount = parseFloat(debt.amount.replace(/,/g, ""));
-    return total + (isNaN(amount) ? 0 : amount);
+    const amount = toNumericValue(debt.amount || debt.value);
+    return total + amount;
   }, 0);
 }
 
@@ -339,8 +347,8 @@ export function calculateTotalSavings(savings: Financial[]): number {
   if (!savings || savings.length === 0) return 0;
 
   return savings.reduce((total, saving) => {
-    const amount = parseFloat(saving.amount.replace(/,/g, ""));
-    return total + (isNaN(amount) ? 0 : amount);
+    const amount = toNumericValue(saving.amount || saving.value);
+    return total + amount;
   }, 0);
 }
 
@@ -351,8 +359,8 @@ export function calculateTotalBenefits(benefits: Financial[]): number {
   if (!benefits || benefits.length === 0) return 0;
 
   return benefits.reduce((total, benefit) => {
-    const amount = parseFloat(benefit.amount.replace(/,/g, ""));
-    return total + (isNaN(amount) ? 0 : amount);
+    const amount = toNumericValue(benefit.amount || benefit.value);
+    return total + amount;
   }, 0);
 }
 
@@ -361,4 +369,11 @@ export function calculateTotalBenefits(benefits: Financial[]): number {
  */
 export function formatCurrency(amount: number): string {
   return amount.toLocaleString("he-IL");
+}
+
+function toNumericValue(raw?: string): number {
+  if (!raw) return 0;
+  const normalized = raw.toString().replace(/,/g, "");
+  const parsed = parseFloat(normalized);
+  return isNaN(parsed) ? 0 : parsed;
 }

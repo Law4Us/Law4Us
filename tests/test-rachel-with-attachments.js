@@ -118,7 +118,6 @@ const testData = {
       bankAccounts: [{ bankName: 'בנק דיסקונט', accountNumber: '87654321' }],
       hasVehicle: 'yes',
       vehicleDetails: 'הונדה סיוויק 2021',
-      requestedAmount: 10000,
     },
     custody: {
       currentLivingArrangement: 'with_applicant',

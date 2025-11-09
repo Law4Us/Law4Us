@@ -86,10 +86,10 @@ export class ErrorBoundary extends React.Component<
             <p className="text-body-small text-neutral-dark mt-6">
               אם הבעיה נמשכת, אנא צרו קשר:{" "}
               <a
-                href="tel:0545882736"
+                href="tel:0507529938"
                 className="text-primary hover:underline font-medium"
               >
-                054-588-2736
+                050-7529938
               </a>
             </p>
           </div>

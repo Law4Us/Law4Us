@@ -262,12 +262,12 @@ export default function Step5FinalSubmission() {
       },
       {
         title: "יצירת קשר ראשונית",
-        description: "נציג מהמשרד יצור קשר בתוך 24 שעות לבירור פרטים נוספים",
+        description: "נציג מהמשרד יצור קשר בתוך 24 שעות לבירור פרטים נוספים (במידת הצורך)",
         status: "current" as const,
       },
       {
         title: "פגישת ייעוץ",
-        description: "תתואם פגישת זום או פגישה פרונטלית לדיון מפורט בתיק",
+        description: "תתואם פגישת זום או פגישה פרונטלית לדיון מפורט בתיק (במידת הצורך)",
         status: "upcoming" as const,
       },
       {
@@ -337,18 +337,18 @@ export default function Step5FinalSubmission() {
             </h3>
             <div className="flex flex-col sm:flex-row justify-center gap-4">
               <a
-                href="tel:0545882736"
+                href="tel:0507529938"
                 className="flex items-center justify-center gap-2 px-6 py-3 bg-white border-2 border-neutral-light rounded-lg hover:border-primary hover:bg-primary/5 transition-colors"
               >
                 <Phone className="w-5 h-5 text-primary" />
-                <span className="font-medium">054-588-2736</span>
+                <span className="font-medium">050-7529938</span>
               </a>
               <a
-                href={`mailto:${basicInfo.email}`}
+                href="mailto:info@law-4-us.co.il"
                 className="flex items-center justify-center gap-2 px-6 py-3 bg-white border-2 border-neutral-light rounded-lg hover:border-primary hover:bg-primary/5 transition-colors"
               >
                 <Mail className="w-5 h-5 text-primary" />
-                <span className="font-medium">שלחו מייל</span>
+                <span className="font-medium">info@law-4-us.co.il</span>
               </a>
             </div>
           </div>
@@ -407,8 +407,8 @@ export default function Step5FinalSubmission() {
         </div>
         <p className="text-body-small text-neutral-dark mt-6">
           אם הבעיה נמשכת, אנא צרו קשר עם התמיכה:{" "}
-          <a href="tel:0545882736" className="text-primary hover:underline">
-            054-588-2736
+          <a href="tel:0507529938" className="text-primary hover:underline">
+            050-7529938
           </a>
         </p>
       </div>

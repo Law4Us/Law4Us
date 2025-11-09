@@ -12,7 +12,6 @@ export default function WizardLayout({
 }) {
   const router = useRouter();
   const { currentStep, maxReachedStep, goToStep } = useWizardStore();
-  const [showExitDialog, setShowExitDialog] = React.useState(false);
 
   // Handle step navigation
   const handleStepClick = (step: number) => {
@@ -23,20 +22,6 @@ export default function WizardLayout({
     }
     goToStep(step);
   };
-
-  // Prevent accidental navigation away
-  React.useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      // Only show warning if user has entered data
-      if (currentStep > 0 || maxReachedStep > 0) {
-        e.preventDefault();
-        e.returnValue = "";
-      }
-    };
-
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, [currentStep, maxReachedStep]);
 
   return (
     <div className="min-h-screen bg-neutral-lightest">
@@ -49,7 +34,9 @@ export default function WizardLayout({
 
       {/* Content */}
       <div className="container-custom py-12">
-        {children}
+        <div className="max-w-5xl mx-auto w-full">
+          {children}
+        </div>
       </div>
 
       {/* Auto-save indicator could go here */}

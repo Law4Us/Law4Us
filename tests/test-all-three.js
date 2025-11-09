@@ -106,7 +106,6 @@ const testData = {
         { bankName: 'בנק לאומי', accountNumber: '12345678' },
       ],
       hasVehicle: 'no',
-      requestedAmount: 8000,
     },
     custody: {
       currentLivingArrangement: 'with_applicant',

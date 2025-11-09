@@ -119,6 +119,15 @@ function translateHousingType(type: string): string {
   return translations[type] || type;
 }
 
+function formatChildNamesList(children: any[]): string {
+  if (!children || children.length === 0) {
+    return '';
+  }
+  return children
+    .map((child: any) => `${child.firstName || ''} ${child.lastName || ''}`.trim() || 'הקטין/ה')
+    .join(children.length > 1 ? ', ' : '');
+}
+
 /**
  * Generate custody claim document
  */
@@ -501,6 +510,55 @@ async function createFactsSection(
     paragraphs.push(createBodyParagraph(
       `הקטינים מתגוררים חלק מהזמן אצל כל אחד מההורים. ${splitDetails}`
     ));
+  } else if (currentLiving === 'split_children') {
+    const applicantChildren = minorChildren.filter((child: any) => (child.residingWith || 'applicant') === 'applicant');
+    const respondentChildren = minorChildren.filter((child: any) => child.residingWith === 'respondent');
+    const sharedChildren = minorChildren.filter((child: any) => child.residingWith === 'both');
+
+    const summaryParts: string[] = [];
+    if (applicantChildren.length) {
+      const names = formatChildNamesList(applicantChildren) || 'חלק מהילדים';
+      summaryParts.push(
+        `${names} מתגורר${applicantChildren.length > 1 ? 'ים' : ''} אצל ${plaintiff.title}`
+      );
+    }
+    if (respondentChildren.length) {
+      const names = formatChildNamesList(respondentChildren) || 'חלק מהילדים';
+      summaryParts.push(
+        `${names} מתגורר${respondentChildren.length > 1 ? 'ים' : ''} אצל ${defendant.title}`
+      );
+    }
+    if (sharedChildren.length) {
+      const names = formatChildNamesList(sharedChildren) || 'ילדים נוספים';
+      summaryParts.push(
+        `${names} מחלק${sharedChildren.length > 1 ? 'ים' : ''} את זמנם באופן שווה בין שני ההורים`
+      );
+    }
+
+    const summaryText = summaryParts.length
+      ? `${summaryParts.join('. ')}.`
+      : 'הקטינים מחולקים בין ההורים באופן קבוע.';
+
+    paragraphs.push(createBodyParagraph(summaryText));
+
+    if (custodyData.splitChildrenDetails) {
+      console.log(`🤖 Transforming split-children details with Groq AI...`);
+      try {
+        const transformedSplitChildrenDetails = await transformToLegalLanguage(
+          custodyData.splitChildrenDetails,
+          {
+            claimType: 'תביעת משמורת',
+            applicantName: plaintiff.name,
+            respondentName: defendant.name,
+            fieldLabel: 'פירוט מגורי הילדים',
+          }
+        );
+        paragraphs.push(createBodyParagraph(transformedSplitChildrenDetails));
+      } catch (error) {
+        console.error('❌ Error transforming split-children details:', error);
+        paragraphs.push(createBodyParagraph(custodyData.splitChildrenDetails));
+      }
+    }
   }
 
   // Add "since when" if provided

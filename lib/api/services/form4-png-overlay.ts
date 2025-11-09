@@ -480,7 +480,6 @@ function mapDataToTextOverlays(data: Form4Data, pageIndex: number): TextElement[
     }
 
     // Field 15: Requested alimony amount
-    addField(overlays, 'field15_amount', `₪${data.requestedAmount.toLocaleString('he-IL')}`);
 
     // Section B: Spouse alimony details
     if (data.marriageDate) {

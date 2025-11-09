@@ -353,8 +353,8 @@ export default function Step5FinalSubmission() {
         </div>
         <p className="text-body-small text-neutral-dark mt-6">
           אם הבעיה נמשכת, אנא צרו קשר עם התמיכה:{" "}
-          <a href="tel:0545882736" className="text-primary hover:underline">
-            054-588-2736
+          <a href="tel:0507529938" className="text-primary hover:underline">
+            050-7529938
           </a>
         </p>
       </div>

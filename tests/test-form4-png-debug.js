@@ -48,7 +48,6 @@ async function testForm4PngGeneration() {
         householdNeeds: [],
         bankAccounts: [],
         hasVehicle: "no",
-        requestedAmount: 5000,
       },
     };
 

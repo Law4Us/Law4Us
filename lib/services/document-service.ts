@@ -169,6 +169,8 @@ export async function generateDocument(
   documentData: DocumentData,
   claimType: ClaimType
 ): Promise<Buffer> {
+  const { basicInfo } = documentData;
+
   // Check if template exists
   const templatePath = getTemplatePath(claimType);
 
@@ -190,10 +192,27 @@ export async function generateDocument(
     linebreaks: true,
     // Handle null/undefined values gracefully
     nullGetter: () => "",
+    delimiters: {
+      start: "{{",
+      end: "}}",
+    },
   });
 
   // Prepare data with AI transformations
   const preparedData = await prepareDocumentData(documentData, claimType);
+
+  const claimLabels = documentData.selectedClaims
+    .map((type) => getClaimTypeInHebrew(type))
+    .join(", ");
+
+  preparedData.typesOfClamis = claimLabels;
+  preparedData.form3ClaimType = claimType
+    ? getClaimTypeInHebrew(claimType)
+    : claimLabels;
+  preparedData.form3ApplicantTitle =
+    basicInfo.gender === "male" ? "התובע" : "התובעת";
+  preparedData.applicantRepresentedByAttorney = "כן";
+  preparedData.applicantRepresentativeType = "עו\"ד";
 
   // Fill the template with data
   doc.render(preparedData);

@@ -185,6 +185,19 @@ export default function Step1ClaimPicker() {
         </div>
       </SlideInView>
 
+      {selectedClaims.includes("divorce") && (
+        <SlideInView direction="up" delay={50}>
+          <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-6 py-4 text-right">
+            <p className="text-body font-semibold text-amber-900">
+              לתשומת לבכם: תביעת גירושין בבית הדין הרבני כרוכה בהגשת תביעות נלוות (רכוש, מזונות, משמורת).
+            </p>
+            <p className="text-caption text-amber-800 mt-1">
+              מומלץ לסמן גם את התביעות הרלוונטיות כדי שנוכל למלא את כלל הטפסים והנספחים עבורך.
+            </p>
+          </div>
+        </SlideInView>
+      )}
+
       <ProgressiveSections>
         {/* Section 1: Plaintiff Information */}
         <SlideInView direction="up" delay={100}>
@@ -535,7 +548,7 @@ export default function Step1ClaimPicker() {
       {/* Navigation */}
       <SlideInView direction="up" delay={500}>
         <div className="mt-8 flex justify-end">
-          <Button type="submit" size="lg" disabled={!canProceed}>
+          <Button type="submit" size="lg" disabled={!canProceed} className="text-white">
             המשך לשלב הבא
           </Button>
         </div>

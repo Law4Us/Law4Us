@@ -237,7 +237,6 @@ const comprehensiveAlimonyData = {
       vehicleDetails: "טויוטה יאריס 2016, מספר רישוי 12-345-67, שווי משוער 45,000 ש\"ח. הרכב נחוץ להסעות יומיומיות של הילדים לבית הספר, לגן ולחוגים.",
 
       // Requested alimony amount
-      requestedAmount: 12000, // Total amount requested per month for all children
     },
   },
 
@@ -308,7 +307,6 @@ async function testComprehensiveAlimony() {
   console.log(`   Children's needs: ${childrenNeedsTotal.toLocaleString()} ש"ח/חודש (${comprehensiveAlimonyData.formData.alimony.childrenNeeds.length} items)`);
   console.log(`   Household needs: ${householdNeedsTotal.toLocaleString()} ש"ח/חודש (${comprehensiveAlimonyData.formData.alimony.householdNeeds.length} items)`);
   console.log(`   Total monthly needs: ${(childrenNeedsTotal + householdNeedsTotal).toLocaleString()} ש"ח`);
-  console.log(`   Requested alimony: ${comprehensiveAlimonyData.formData.alimony.requestedAmount.toLocaleString()} ש"ח/חודש`);
   console.log('');
   console.log('🏦 Assets:');
   console.log(`   Bank accounts: ${comprehensiveAlimonyData.formData.alimony.bankAccounts.length}`);
