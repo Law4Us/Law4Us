@@ -74,13 +74,13 @@ export function ClaimTypesSection() {
                 <button
                   key={index}
                   onClick={() => setSelectedClaimTab(index)}
-                  className="flex-shrink-0 lg:flex-shrink snap-center px-4 lg:px-0 py-4 text-right lg:text-right transition-all relative group whitespace-nowrap lg:whitespace-normal"
+                  className="flex-shrink-0 lg:flex-shrink snap-center px-4 lg:px-0 py-4 text-right lg:text-right transition-all relative group whitespace-nowrap lg:whitespace-normal text-[18px] lg:text-[24px]"
                   style={{
                     ...TYPOGRAPHY.h3,
-                    fontSize: '18px',
+                    fontSize: undefined,
                     backgroundColor: 'transparent',
                     color: selectedClaimTab === index ? '#019fb7' : '#0C1719',
-                    borderBottom: selectedClaimTab === index ? 'none' : '1px solid rgba(12, 23, 25, 0.1)',
+                    borderBottom: '1px solid rgba(12, 23, 25, 0.1)',
                     paddingBottom: '16px',
                     position: 'relative',
                     minWidth: '140px',
