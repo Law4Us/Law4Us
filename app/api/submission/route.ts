@@ -65,6 +65,23 @@ export async function POST(request: NextRequest) {
 
     console.log('📥 Received submission from:', submissionData.basicInfo.fullName);
 
+    // VALIDATION: divorceAgreement must be mutually exclusive with other claims
+    const hasDivorceAgreement = submissionData.selectedClaims.includes('divorceAgreement');
+    const hasOtherClaims = submissionData.selectedClaims.some(
+      (claim) => claim !== 'divorceAgreement'
+    );
+
+    if (hasDivorceAgreement && hasOtherClaims) {
+      console.error('❌ Validation error: divorceAgreement cannot be combined with other claims');
+      return NextResponse.json(
+        {
+          error: 'הסכם גירושין לא יכול להיבחר יחד עם תביעות אחרות',
+          message: 'Divorce agreement must be selected alone',
+        },
+        { status: 400 }
+      );
+    }
+
     // HIERARCHICAL FOLDER STRUCTURE:
     // Parent folder: [Name] תביעות [date]
     // Subfolders: תביעה רכושית, תביעת מזונות, תביעת משמורת

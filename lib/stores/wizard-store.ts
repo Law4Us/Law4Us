@@ -126,10 +126,21 @@ export const useWizardStore = create<WizardStore>((set, get) => ({
 
   toggleClaim: (claim) => {
     set((state) => {
-      const claims = state.selectedClaims.includes(claim)
-        ? state.selectedClaims.filter((c) => c !== claim)
-        : [...state.selectedClaims, claim];
-      return { selectedClaims: claims };
+      const isCurrentlySelected = state.selectedClaims.includes(claim);
+
+      // If deselecting, just remove it
+      if (isCurrentlySelected) {
+        return { selectedClaims: state.selectedClaims.filter((c) => c !== claim) };
+      }
+
+      // If selecting divorceAgreement, clear all other claims (mutual exclusivity)
+      if (claim === 'divorceAgreement') {
+        return { selectedClaims: ['divorceAgreement'] };
+      }
+
+      // If selecting any other claim, remove divorceAgreement if it exists
+      const otherClaims = state.selectedClaims.filter((c) => c !== 'divorceAgreement');
+      return { selectedClaims: [...otherClaims, claim] };
     });
     scheduleAutoSave(get);
   },

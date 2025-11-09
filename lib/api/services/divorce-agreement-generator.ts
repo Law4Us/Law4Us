@@ -609,12 +609,7 @@ export async function generateDivorceAgreement(data: DivorceAgreementData): Prom
     );
   }
 
-  // ========== 9. FORM 3 - STATEMENT OF DETAILS ==========
-  paragraphs.push(createPageBreak());
-  const form3Paragraphs = generateForm3(basicInfo, formData, applicantSignature);
-  paragraphs.push(...form3Paragraphs);
-
-  // ========== 10. POWER OF ATTORNEY ==========
+  // ========== 9. POWER OF ATTORNEY ==========
   paragraphs.push(createPageBreak());
   const powerOfAttorneyParagraphs = generatePowerOfAttorney(
     basicInfo,
@@ -625,12 +620,12 @@ export async function generateDivorceAgreement(data: DivorceAgreementData): Prom
   );
   paragraphs.push(...powerOfAttorneyParagraphs);
 
-  // ========== 11. AFFIDAVIT ==========
+  // ========== 10. AFFIDAVIT ==========
   paragraphs.push(createPageBreak());
   const affidavitParagraphs = generateAffidavit(basicInfo, formData, lawyerSignature);
   paragraphs.push(...affidavitParagraphs);
 
-  // ========== 12. ATTACHMENTS ==========
+  // ========== 11. ATTACHMENTS ==========
   if (attachments && attachments.length > 0) {
     paragraphs.push(createPageBreak());
 
@@ -656,109 +651,4 @@ export async function generateDivorceAgreement(data: DivorceAgreementData): Prom
   console.log('✅ Compact divorce agreement document generated successfully');
 
   return await Packer.toBuffer(doc);
-}
-
-/**
- * Generate Form 3 (הרצאת פרטים) for Divorce Agreement
- */
-function generateForm3(
-  basicInfo: BasicInfo,
-  formData: FormData,
-  signature?: string | Buffer
-): Paragraph[] {
-  const paragraphs: Paragraph[] = [];
-
-  const propertyData = formData.property || {};
-  const children = propertyData.children || [];
-
-  const yesNo = (value: any) => {
-    if (value === 'כן' || value === 'yes' || value === true) return 'כן';
-    if (value === 'לא' || value === 'no' || value === false) return 'לא';
-    return 'לא צוין';
-  };
-
-  // Title
-  paragraphs.push(createMainTitle('טופס 3'));
-  paragraphs.push(createCenteredTitle('(תקנה 12)', FONT_SIZES.BODY));
-  paragraphs.push(createMainTitle('הרצאת פרטים בהסכם גירושין'));
-
-  paragraphs.push(
-    createBodyParagraph(`מהות ההסכם:\u200F הסכם גירושין בהסכמה`, { after: SPACING.PARAGRAPH })
-  );
-  paragraphs.push(
-    createBodyParagraph(`מעמדו של ממלא הטופס:\u200F מבקש/ת`, { after: SPACING.SECTION })
-  );
-
-  // Section 1: Personal Details
-  paragraphs.push(createSectionHeader('פרטים אישיים:'));
-  paragraphs.push(createSubsectionHeader(`1. המבקש/ת:`));
-  paragraphs.push(createInfoLine('שם מלא', basicInfo.fullName || ''));
-  paragraphs.push(createInfoLine('ת.ז', basicInfo.idNumber || ''));
-  paragraphs.push(createInfoLine('תאריך לידה', basicInfo.birthDate ? formatDate(basicInfo.birthDate) : ''));
-  paragraphs.push(createInfoLine('מען', basicInfo.address || ''));
-  paragraphs.push(createInfoLine('טלפון', basicInfo.phone || ''));
-
-  paragraphs.push(createSubsectionHeader(`2. המשיב/ה:`));
-  paragraphs.push(createInfoLine('שם מלא', basicInfo.fullName2 || ''));
-  paragraphs.push(createInfoLine('ת.ז', basicInfo.idNumber2 || ''));
-  paragraphs.push(createInfoLine('תאריך לידה', basicInfo.birthDate2 ? formatDate(basicInfo.birthDate2) : ''));
-  paragraphs.push(createInfoLine('מען', basicInfo.address2 || ''));
-  paragraphs.push(createInfoLine('טלפון', basicInfo.phone2 || ''));
-
-  // Section 2: Marital Status
-  paragraphs.push(createSectionHeader('מצב משפחתי:'));
-  paragraphs.push(createInfoLine('תאריך נישואין', basicInfo.weddingDay ? formatDate(basicInfo.weddingDay) : ''));
-  paragraphs.push(createInfoLine('נישואים קודמים (מבקש/ת)', yesNo(formData.marriedBefore)));
-  paragraphs.push(createInfoLine('נישואים קודמים (משיב/ה)', yesNo(formData.marriedBefore2)));
-
-  // Section 3: Children
-  if (children.length > 0) {
-    paragraphs.push(createSectionHeader('ילדים:'));
-    children.forEach((child: any, index: number) => {
-      paragraphs.push(createSubsectionHeader(`${index + 1}. ${child.name || ''}`));
-      paragraphs.push(createInfoLine('ת.ז', child.idNumber || ''));
-      paragraphs.push(createInfoLine('תאריך לידה', child.birthDate ? formatDate(child.birthDate) : ''));
-      paragraphs.push(createInfoLine('כתובת', child.address || ''));
-    });
-  }
-
-  // Section 4: Other Information
-  paragraphs.push(createSectionHeader('מידע נוסף:'));
-  paragraphs.push(createInfoLine('בקשת צו הגנה', yesNo(formData.protectionOrderRequested)));
-  paragraphs.push(createInfoLine('אלימות בעבר', yesNo(formData.pastViolenceReported)));
-  paragraphs.push(createInfoLine('פנייה לשירותי רווחה', yesNo(formData.contactedWelfare)));
-  paragraphs.push(createInfoLine('פנייה לייעוץ נישואין', yesNo(formData.contactedMarriageCounseling)));
-
-  // Signature
-  paragraphs.push(
-    createBodyParagraph(
-      'אני מצהיר/ה בזאת כי הפרטים לעיל נכונים ומלאים.',
-      { before: SPACING.SECTION, after: SPACING.SECTION }
-    )
-  );
-
-  const today = new Date().toLocaleDateString('he-IL');
-  paragraphs.push(createBodyParagraph(`תאריך: ${today}`, { after: SPACING.SECTION }));
-
-  if (signature) {
-    paragraphs.push(createSignatureImage(signature, 250, 125, AlignmentType.LEFT));
-  }
-
-  paragraphs.push(
-    new Paragraph({
-      children: [
-        new TextRun({
-          text: `חתימת המבקש/ת: ${basicInfo.fullName || ''}`,
-          size: FONT_SIZES.BODY,
-          font: 'David',
-          rightToLeft: true,
-        }),
-      ],
-      alignment: AlignmentType.START,
-      spacing: { after: SPACING.SECTION },
-      bidirectional: true,
-    })
-  );
-
-  return paragraphs;
 }
