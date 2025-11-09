@@ -20,6 +20,7 @@ interface WizardStore extends WizardState {
   setSignature: (signature: string) => void;
   setPaymentData: (data: { paid: boolean; date?: Date }) => void;
   setFilledDocuments: (docs: { [key: string]: string }) => void;
+  setSessionId: (sessionId: string) => void;
 
   // Storage actions
   saveToLocalStorage: () => void;
@@ -162,6 +163,11 @@ export const useWizardStore = create<WizardStore>((set, get) => ({
     scheduleAutoSave(get);
   },
 
+  setSessionId: (sessionId) => {
+    set({ sessionId });
+    scheduleAutoSave(get);
+  },
+
   // Storage
   saveToLocalStorage: () => {
     if (typeof window === "undefined") return;
@@ -177,6 +183,7 @@ export const useWizardStore = create<WizardStore>((set, get) => ({
         signature: state.signature,
         paymentData: state.paymentData,
         filledDocuments: state.filledDocuments,
+        sessionId: state.sessionId,
         timestamp: Date.now(),
       };
 
@@ -213,6 +220,7 @@ export const useWizardStore = create<WizardStore>((set, get) => ({
         signature: data.signature || "",
         paymentData: data.paymentData || { paid: false },
         filledDocuments: data.filledDocuments || {},
+        sessionId: data.sessionId,
       });
 
       console.log("✅ Wizard state loaded from localStorage");

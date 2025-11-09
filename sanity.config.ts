@@ -21,6 +21,10 @@ export default defineConfig({
               .title('Blog Posts')
               .schemaType('blogPost')
               .child(S.documentTypeList('blogPost').title('Blog Posts')),
+            S.listItem()
+              .title('Wizard Sessions')
+              .schemaType('wizardSession')
+              .child(S.documentTypeList('wizardSession').title('Wizard Sessions')),
           ]),
     }),
   ],

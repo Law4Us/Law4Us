@@ -19,13 +19,62 @@ export default function Step4Payment() {
     paymentData,
     setPaymentData,
     nextStep,
+    sessionId,
+    setSessionId,
   } = useWizardStore();
 
   const [isProcessing, setIsProcessing] = React.useState(false);
   const [isPaid, setIsPaid] = React.useState(!!paymentData?.paid);
+  const [sessionCreated, setSessionCreated] = React.useState(false);
 
   // Calculate total
   const totalAmount = selectedClaims.length * PRICE_PER_CLAIM;
+
+  // Create session when component mounts (if not already created)
+  React.useEffect(() => {
+    const createSession = async () => {
+      // Skip if already have a session or already paid
+      if (sessionId || paymentData?.paid || sessionCreated) {
+        return;
+      }
+
+      // Validate we have required data
+      if (!basicInfo?.email || selectedClaims.length === 0) {
+        console.warn('Cannot create session: missing email or claims');
+        return;
+      }
+
+      try {
+        console.log('📝 Creating wizard session...');
+
+        const wizardState = useWizardStore.getState();
+        const response = await fetch('/api/sessions/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            wizardState,
+            email: basicInfo.email,
+            phone: basicInfo.phone,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          setSessionId(data.sessionId);
+          setSessionCreated(true);
+          console.log('✅ Session created:', data.sessionId);
+          console.log('📧 Recovery email sent to:', basicInfo.email);
+        } else {
+          console.error('Failed to create session:', data.message);
+        }
+      } catch (error) {
+        console.error('Error creating session:', error);
+      }
+    };
+
+    createSession();
+  }, [sessionId, paymentData?.paid, basicInfo?.email, selectedClaims.length, sessionCreated, setSessionId, basicInfo.phone]);
 
   // Get selected claim details
   const selectedClaimDetails = selectedClaims

@@ -96,4 +96,5 @@ export interface WizardState {
   filledDocuments: {
     [key: string]: string;
   };
+  sessionId?: string; // Session ID for payment recovery
 }

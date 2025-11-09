@@ -21,7 +21,50 @@ export default function Step1ClaimPicker() {
     updateBasicInfo,
     toggleClaim,
     nextStep,
+    sessionId,
+    currentStep,
   } = useWizardStore();
+
+  // Check for existing session and offer to resume
+  React.useEffect(() => {
+    const checkForSession = async () => {
+      // Only check if we have a sessionId and we're at the beginning
+      if (!sessionId || currentStep > 0) {
+        return;
+      }
+
+      try {
+        console.log('🔍 Checking if session is still valid:', sessionId);
+
+        const response = await fetch(`/api/sessions/${sessionId}`);
+        const data = await response.json();
+
+        if (response.ok && data.success && data.session) {
+          // Session exists and is valid
+          const session = data.session;
+          const isPaid = session.paymentStatus === 'paid';
+          const isSubmitted = session.submissionStatus === 'submitted';
+
+          // Ask user if they want to resume
+          const shouldResume = window.confirm(
+            isPaid
+              ? 'מצאנו בקשה שכבר שילמת עבורה! האם תרצה להמשיך ולהשלים את השליחה?'
+              : 'מצאנו בקשה שמורה שלך. האם תרצה להמשיך מהמקום שבו עצרת?'
+          );
+
+          if (shouldResume) {
+            // Redirect to resume page
+            router.push(`/resume/${sessionId}`);
+          }
+        }
+      } catch (error) {
+        console.error('Error checking session:', error);
+        // Silently fail - don't interrupt user experience
+      }
+    };
+
+    checkForSession();
+  }, [sessionId, currentStep, router]);
 
   const {
     register,

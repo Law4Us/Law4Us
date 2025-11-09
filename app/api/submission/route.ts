@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateDocument } from '@/lib/api/services/document-generator';
 import { uploadToDrive, createFolder, searchFolders, downloadFile } from '@/lib/api/services/google-drive';
+import { sendSubmissionConfirmation } from '@/lib/services/email-service';
+import { CLAIMS } from '@/lib/constants/claims';
 
 interface SubmissionData {
   basicInfo: {
@@ -220,6 +222,32 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('🎉 Submission completed successfully!');
+
+    // Send confirmation email to user
+    try {
+      console.log('📧 Sending confirmation email...');
+
+      // Get claim labels in Hebrew
+      const claimLabels = submissionData.selectedClaims
+        .map(claimKey => CLAIMS.find(c => c.key === claimKey)?.label)
+        .filter(Boolean) as string[];
+
+      const emailSent = await sendSubmissionConfirmation(
+        submissionData.basicInfo.email,
+        submissionData.basicInfo.fullName,
+        parentFolderId, // Using folder ID as session ID for now
+        claimLabels
+      );
+
+      if (emailSent) {
+        console.log('✅ Confirmation email sent successfully');
+      } else {
+        console.warn('⚠️  Failed to send confirmation email (submission still successful)');
+      }
+    } catch (emailError) {
+      // Don't fail the entire submission if email fails
+      console.error('❌ Error sending confirmation email:', emailError);
+    }
 
     return NextResponse.json({
       success: true,

@@ -103,11 +103,25 @@ export default function ContactPage() {
   const onSubmit = useCallback(
     async (values: ContactFormValues) => {
       try {
-        await new Promise((resolve) => setTimeout(resolve, 1200));
-        success("ההודעה התקבלה! נחזור אליכם בהקדם.", 6000);
-        reset();
+        // Send contact form to API
+        const response = await fetch('/api/contact', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(values),
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          success(data.message || "ההודעה התקבלה! נחזור אליכם בהקדם.", 6000);
+          reset();
+        } else {
+          error(data.message || "אירעה שגיאה בשליחת הטופס. נסו שוב בעוד רגע.", 6000);
+        }
       } catch (err) {
-        console.error(err);
+        console.error('Contact form error:', err);
         error("אירעה שגיאה בשליחת הטופס. נסו שוב בעוד רגע.", 6000);
       }
     },
