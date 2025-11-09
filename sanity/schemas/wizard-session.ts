@@ -63,13 +63,12 @@ export const wizardSession = defineType({
             { name: 'spouseIdNumber', type: 'string', title: 'Spouse ID Number' },
           ],
         }),
-        {
+        defineField({
           name: 'formData',
           title: 'Form Data',
-          type: 'object',
+          type: 'json',
           description: 'Claim-specific answers (stored as JSON)',
-          fields: [],
-        },
+        }),
         defineField({
           name: 'signature',
           title: 'Signature (base64)',
