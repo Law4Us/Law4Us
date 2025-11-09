@@ -8,7 +8,8 @@ import { Button, FormField, Input, Textarea } from "@/components/ui";
 import { SlideInView } from "@/components/animations/slide-in-view";
 import { LazySectionFade } from "@/components/ui/lazy-section";
 import { useToast } from "@/lib/context/ToastContext";
-import { colors, spacing, typography, radius, shadows, componentTokens } from "@/lib/design-tokens";
+import { colors, spacing, typography, radius, shadows } from "@/lib/design-tokens";
+import { CARD_STYLES, TYPOGRAPHY } from "@/lib/constants/styles";
 
 type ContactFormValues = {
   name: string;
@@ -144,7 +145,7 @@ export default function ContactPage() {
             {/* Header */}
             <div style={{ textAlign: 'center', marginBottom: spacing[12] }}>
               <p style={{
-                ...componentTokens.eyebrow,
+                ...TYPOGRAPHY.eyebrow,
                 marginBottom: spacing[3],
               }}>
                 צור קשר
@@ -191,23 +192,21 @@ export default function ContactPage() {
                     <SlideInView key={method.label} direction="up" delay={index * 90}>
                       <div
                         style={{
-                          backgroundColor: colors.neutral.white,
-                          borderRadius: radius.semantic.card,
+                          ...CARD_STYLES.container,
+                          flexDirection: 'row',
+                          alignItems: 'start',
+                          justifyContent: 'space-between',
+                          gap: spacing[4],
                           padding: spacing.semantic.card.padding.medium,
-                          boxShadow: shadows.elevation.md,
-                          border: `1px solid ${colors.opacity.overlay.black[5]}`,
-                          transition: 'transform 200ms ease, box-shadow 200ms ease',
                         }}
-                        className="hover:scale-[1.02] hover:shadow-lg"
                       >
-                        <div style={{ display: 'flex', alignItems: 'start', justifyContent: 'space-between', gap: spacing[4] }}>
-                          <div style={{ display: 'flex', alignItems: 'start', gap: spacing[4], flex: 1 }}>
-                            <div style={{
-                              ...componentTokens.iconCircle,
-                              flexShrink: 0,
-                            }}>
-                              <Icon style={{ width: '20px', height: '20px', color: colors.brand.primary.DEFAULT }} />
-                            </div>
+                        <div style={{ display: 'flex', alignItems: 'start', gap: spacing[4], flex: 1 }}>
+                          <div style={{
+                            ...CARD_STYLES.iconCircle,
+                            flexShrink: 0,
+                          }}>
+                            <Icon style={{ width: '20px', height: '20px', color: colors.brand.primary.DEFAULT }} />
+                          </div>
                             <div style={{
                               display: 'flex',
                               flexDirection: 'column',
@@ -256,7 +255,6 @@ export default function ContactPage() {
                                 </p>
                               )}
                             </div>
-                          </div>
 
                           {copyValue && (
                             <button
@@ -290,10 +288,9 @@ export default function ContactPage() {
                 <SlideInView direction="up" delay={contactMethods.length * 90}>
                   <div
                     style={{
+                      ...CARD_STYLES.container,
                       backgroundColor: colors.opacity.overlay.brand[10],
-                      borderRadius: radius.semantic.card,
                       padding: spacing.semantic.card.padding.medium,
-                      border: `1px solid ${colors.opacity.overlay.brand[20]}`,
                     }}
                   >
                     <p style={{
