@@ -7,10 +7,8 @@ import type { LucideIcon } from "lucide-react";
 import { Button, FormField, Input, Textarea } from "@/components/ui";
 import { SlideInView } from "@/components/animations/slide-in-view";
 import { LazySectionFade } from "@/components/ui/lazy-section";
-import { TYPOGRAPHY, CARD_STYLES } from "@/lib/constants/styles";
-import { animations } from "@/lib/utils/animations";
 import { useToast } from "@/lib/context/ToastContext";
-import { colors, spacing } from "@/lib/design-tokens";
+import { colors, spacing, typography, radius, shadows, componentTokens } from "@/lib/design-tokens";
 
 type ContactFormValues = {
   name: string;
@@ -48,9 +46,9 @@ const contactMethods: ContactMethod[] = [
   {
     icon: Mail,
     label: "אימייל",
-    value: "info@law4us.co.il",
-    href: "mailto:info@law4us.co.il",
-    copyValue: "info@law4us.co.il",
+    value: "info@law-4-us.co.il",
+    href: "mailto:info@law-4-us.co.il",
+    copyValue: "info@law-4-us.co.il",
     helper: "נענה תוך 24 שעות עסקים",
   },
   {
@@ -103,7 +101,6 @@ export default function ContactPage() {
   const onSubmit = useCallback(
     async (values: ContactFormValues) => {
       try {
-        // Send contact form to API
         const response = await fetch('/api/contact', {
           method: 'POST',
           headers: {
@@ -131,36 +128,61 @@ export default function ContactPage() {
   return (
     <div>
       <LazySectionFade>
-        <section className="section-padding">
-          <div className="max-w-[1200px] mx-auto px-6 space-y-12">
-            <div className="text-center">
-              <p style={TYPOGRAPHY.eyebrow} className="text-primary">
+        <section
+          style={{
+            paddingTop: spacing.semantic.section.padding.y.desktop,
+            paddingBottom: spacing.semantic.section.padding.y.desktop,
+          }}
+        >
+          <div
+            style={{
+              maxWidth: spacing.semantic.container.maxWidth,
+              margin: '0 auto',
+              padding: `0 ${spacing[6]}`,
+            }}
+          >
+            {/* Header */}
+            <div style={{ textAlign: 'center', marginBottom: spacing[12] }}>
+              <p style={{
+                ...componentTokens.eyebrow,
+                marginBottom: spacing[3],
+              }}>
                 צור קשר
               </p>
-              <h1
-                className="text-[36px] sm:text-[48px] lg:text-[64px]"
-                style={{
-                  ...TYPOGRAPHY.heroH1,
-                  fontSize: undefined,
-                  margin: 0,
-                }}
-              >
+              <h1 style={{
+                fontSize: 'clamp(36px, 5vw, 64px)',
+                fontWeight: typography.fontWeight.bold,
+                lineHeight: typography.lineHeight.tight,
+                letterSpacing: typography.letterSpacing.tighter,
+                color: colors.semantic.text.primary,
+                margin: 0,
+                marginBottom: spacing[4],
+              }}>
                 נשמח לעזור לכם בכל שאלה
               </h1>
-              <p
-                className="mx-auto mt-4 max-w-3xl text-[18px] sm:text-[20px] lg:text-[22px]"
-                style={{
-                  ...TYPOGRAPHY.heroSubtitle,
-                  fontSize: undefined,
-                }}
-              >
+              <p style={{
+                fontSize: 'clamp(18px, 2vw, 22px)',
+                fontWeight: typography.fontWeight.medium,
+                lineHeight: typography.lineHeight.relaxed,
+                color: colors.semantic.text.secondary,
+                maxWidth: '48rem',
+                margin: '0 auto',
+              }}>
                 מלאו את הטופס או פנו אלינו ישירות – השירות של Law4Us זמין אונליין, בטלפון ובמייל
                 עם ליווי אישי ודיסקרטי לאורך כל הדרך.
               </p>
             </div>
 
-            <div className="grid gap-10 lg:grid-cols-[0.85fr,1.15fr]">
-              <div className="space-y-6 text-right">
+            {/* Content Grid */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr',
+              gap: spacing[10],
+            }}
+              className="lg:grid-cols-[0.85fr,1.15fr]"
+            >
+              {/* Contact Methods */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[6] }}>
                 {contactMethods.map((method, index) => {
                   const Icon = method.icon;
                   const copyValue = method.copyValue;
@@ -169,32 +191,69 @@ export default function ContactPage() {
                     <SlideInView key={method.label} direction="up" delay={index * 90}>
                       <div
                         style={{
-                          ...CARD_STYLES.container,
-                          backgroundColor: colors.opacity.overlay.white[90],
+                          backgroundColor: colors.neutral.white,
+                          borderRadius: radius.semantic.card,
                           padding: spacing.semantic.card.padding.medium,
+                          boxShadow: shadows.elevation.md,
+                          border: `1px solid ${colors.opacity.overlay.black[5]}`,
+                          transition: 'transform 200ms ease, box-shadow 200ms ease',
                         }}
-                        className={`${animations.cardHover}`}
+                        className="hover:scale-[1.02] hover:shadow-lg"
                       >
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex items-start gap-4">
-                            <div style={CARD_STYLES.iconCircle}>
-                              <Icon className="h-5 w-5 text-primary" />
+                        <div style={{ display: 'flex', alignItems: 'start', justifyContent: 'space-between', gap: spacing[4] }}>
+                          <div style={{ display: 'flex', alignItems: 'start', gap: spacing[4], flex: 1 }}>
+                            <div style={{
+                              ...componentTokens.iconCircle,
+                              flexShrink: 0,
+                            }}>
+                              <Icon style={{ width: '20px', height: '20px', color: colors.brand.primary.DEFAULT }} />
                             </div>
-                            <div className="space-y-2 text-right">
-                              <p style={{ ...TYPOGRAPHY.h3, margin: 0 }}>{method.label}</p>
+                            <div style={{
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: spacing[2],
+                              textAlign: 'right',
+                              flex: 1,
+                            }}>
+                              <p style={{
+                                fontSize: typography.fontSize.h4.size,
+                                fontWeight: typography.fontWeight.semibold,
+                                color: colors.semantic.text.primary,
+                                margin: 0,
+                              }}>
+                                {method.label}
+                              </p>
                               {method.href ? (
                                 <a
                                   href={method.href}
-                                  style={TYPOGRAPHY.bodyLarge}
-                                  className="text-primary underline-offset-4 hover:underline"
+                                  style={{
+                                    fontSize: typography.fontSize['body-lg'].size,
+                                    fontWeight: typography.fontWeight.medium,
+                                    color: colors.brand.primary.DEFAULT,
+                                    textDecoration: 'none',
+                                  }}
+                                  className="hover:underline"
                                 >
                                   {method.value}
                                 </a>
                               ) : (
-                                <p style={TYPOGRAPHY.bodyLarge}>{method.value}</p>
+                                <p style={{
+                                  fontSize: typography.fontSize['body-lg'].size,
+                                  fontWeight: typography.fontWeight.medium,
+                                  color: colors.semantic.text.primary,
+                                  margin: 0,
+                                }}>
+                                  {method.value}
+                                </p>
                               )}
                               {method.helper && (
-                                <p className="text-sm text-text-secondary">{method.helper}</p>
+                                <p style={{
+                                  fontSize: typography.fontSize['body-sm'].size,
+                                  color: colors.semantic.text.secondary,
+                                  margin: 0,
+                                }}>
+                                  {method.helper}
+                                </p>
                               )}
                             </div>
                           </div>
@@ -203,13 +262,22 @@ export default function ContactPage() {
                             <button
                               type="button"
                               onClick={() => handleCopy(copyValue, method.label)}
-                              className="rounded-full p-2 transition-colors hover:bg-neutral-100"
+                              style={{
+                                borderRadius: radius.full,
+                                padding: spacing[2],
+                                border: 'none',
+                                background: 'transparent',
+                                cursor: 'pointer',
+                                transition: 'background-color 200ms ease',
+                                flexShrink: 0,
+                              }}
+                              className="hover:bg-neutral-100"
                               aria-label={`העתיקו ${method.label}`}
                             >
                               {copiedField === method.label ? (
-                                <Check className="h-5 w-5 text-primary" />
+                                <Check style={{ width: '20px', height: '20px', color: colors.brand.primary.DEFAULT }} />
                               ) : (
-                                <Copy className="h-5 w-5 text-text-secondary" />
+                                <Copy style={{ width: '20px', height: '20px', color: colors.semantic.text.secondary }} />
                               )}
                             </button>
                           )}
@@ -222,13 +290,19 @@ export default function ContactPage() {
                 <SlideInView direction="up" delay={contactMethods.length * 90}>
                   <div
                     style={{
-                      ...CARD_STYLES.container,
-                      backgroundColor: colors.opacity.overlay.white[90],
+                      backgroundColor: colors.opacity.overlay.brand[10],
+                      borderRadius: radius.semantic.card,
                       padding: spacing.semantic.card.padding.medium,
+                      border: `1px solid ${colors.opacity.overlay.brand[20]}`,
                     }}
-                    className={`${animations.cardHover}`}
                   >
-                    <p style={TYPOGRAPHY.bodyLarge} className="text-text-secondary">
+                    <p style={{
+                      fontSize: typography.fontSize['body-lg'].size,
+                      fontWeight: typography.fontWeight.medium,
+                      color: colors.semantic.text.primary,
+                      margin: 0,
+                      textAlign: 'right',
+                    }}>
                       זמני מענה: ראשון-חמישי 09:00-18:00, שישי 09:00-13:00. פגישות מקוונות
                       זמינות גם בערב בתיאום מראש.
                     </p>
@@ -236,27 +310,43 @@ export default function ContactPage() {
                 </SlideInView>
               </div>
 
+              {/* Contact Form */}
               <SlideInView direction="left" delay={140}>
                 <div
                   id="contact-form"
                   style={{
-                    ...CARD_STYLES.container,
-                    backgroundColor: colors.opacity.overlay.white[90],
+                    backgroundColor: colors.neutral.white,
+                    borderRadius: radius.xl,
                     padding: spacing.semantic.card.padding.large,
+                    boxShadow: shadows.elevation.xl,
+                    border: `1px solid ${colors.opacity.overlay.black[5]}`,
                   }}
-                  className="rounded-3xl shadow-xl"
                 >
-                  <div className="text-right">
-                    <h2 style={TYPOGRAPHY.h3} className="mb-2">
+                  <div style={{ textAlign: 'right', marginBottom: spacing[8] }}>
+                    <h2 style={{
+                      fontSize: typography.fontSize.h2.size,
+                      fontWeight: typography.fontWeight.bold,
+                      color: colors.semantic.text.primary,
+                      margin: 0,
+                      marginBottom: spacing[2],
+                    }}>
                       טופס יצירת קשר
                     </h2>
-                    <p style={TYPOGRAPHY.bodyLarge} className="text-text-secondary">
+                    <p style={{
+                      fontSize: typography.fontSize['body-lg'].size,
+                      color: colors.semantic.text.secondary,
+                      margin: 0,
+                    }}>
                       מלאו את הפרטים ונחזור אליכם בהקדם האפשרי עם מענה מקצועי ומותאם עבורכם.
                     </p>
                   </div>
 
                   <form
-                    className="mt-8 space-y-4"
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: spacing.semantic.form.group.gap,
+                    }}
                     onSubmit={handleSubmit(onSubmit)}
                     noValidate
                   >
@@ -343,11 +433,26 @@ export default function ContactPage() {
                       />
                     </FormField>
 
-                    <div className="text-sm text-text-primary">
-                      <label className="flex cursor-pointer items-start gap-3">
+                    <div style={{
+                      fontSize: typography.fontSize['body-sm'].size,
+                      color: colors.semantic.text.primary,
+                    }}>
+                      <label style={{
+                        display: 'flex',
+                        alignItems: 'start',
+                        gap: spacing[3],
+                        cursor: 'pointer',
+                      }}>
                         <input
                           type="checkbox"
-                          className="mt-1 h-4 w-4 rounded-xs border-neutral-300 text-primary shadow-input focus:shadow-input-focus transition-smooth"
+                          style={{
+                            marginTop: spacing[1],
+                            width: '16px',
+                            height: '16px',
+                            borderRadius: radius.xs,
+                            border: `1px solid ${colors.neutral[300]}`,
+                            accentColor: colors.brand.primary.DEFAULT,
+                          }}
                           required
                         />
                         <span>
@@ -374,4 +479,3 @@ export default function ContactPage() {
     </div>
   );
 }
-
