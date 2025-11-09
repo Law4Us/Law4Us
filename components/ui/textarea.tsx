@@ -8,8 +8,22 @@ export interface TextareaProps
 }
 
 const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
-  ({ className, error, showCount, maxLength, value, ...props }, ref) => {
-    const currentLength = String(value || "").length;
+  ({ className, error, showCount, maxLength, value, onChange, ...props }, ref) => {
+    const [internalValue, setInternalValue] = React.useState(String(value || ""));
+
+    // Update internal value when controlled value changes
+    React.useEffect(() => {
+      if (value !== undefined) {
+        setInternalValue(String(value));
+      }
+    }, [value]);
+
+    const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      setInternalValue(e.target.value);
+      onChange?.(e);
+    };
+
+    const currentLength = internalValue.length;
 
     return (
       <div className="relative w-full">
@@ -33,6 +47,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
           ref={ref}
           maxLength={maxLength}
           value={value}
+          onChange={handleChange}
           {...props}
         />
         {showCount && maxLength && (

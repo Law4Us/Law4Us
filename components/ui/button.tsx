@@ -54,9 +54,9 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
             ),
 
           // Sizes
-          size === "sm" && "text-body-small px-4 py-2",
-          size === "md" && "text-body-large px-8 py-4",
-          size === "lg" && "text-body-large px-10 py-5",
+          size === "sm" && "text-button-sm px-4 py-2",
+          size === "md" && "text-button px-8 py-4",
+          size === "lg" && "text-button px-10 py-5",
 
           className
         )}

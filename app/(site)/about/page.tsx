@@ -39,7 +39,7 @@ const stats = [
   {
     icon: "award",
     label: "שנות ניסיון",
-    value: 15,
+    value: 24,
     suffix: "+",
     description: "פעילות רצופה בדיני משפחה וגישור",
   },
@@ -53,7 +53,7 @@ const stats = [
   {
     icon: "bookOpen",
     label: "פרסומים מקצועיים",
-    value: 25,
+    value: 50,
     suffix: "+",
     description: "מאמרים, הרצאות וקורסים מקצועיים",
   },
@@ -109,25 +109,25 @@ const expertiseHighlights = [
 
 const milestones = [
   {
-    year: "2010",
+    year: "2001",
     title: "הקמת המשרד",
     description:
       "עו\"ד אריאל דרור מקים משרד בוטיק לדיני משפחה בגישה חדישה המשלבת שירות אישי עם שקיפות מלאה.",
   },
   {
     year: "2015",
-    title: "חדשנות דיגיטלית",
-    description:
-      "פיתוח פלטפורמה אונליין ראשונה מסוגה בישראל שמאפשרת לנהל תיקי גירושין ומזונות מרחוק.",
-  },
-  {
-    year: "2019",
     title: "התרחבות ארצית",
     description:
       "צוות המומחים מתרחב, המשרד פותח שלוחות נוספות ומעמיק שירותים בתחומי רכוש, אפוטרופסות והסכמי ממון.",
   },
   {
-    year: "2023",
+    year: "2019",
+    title: "כתיבת הספר",
+    description:
+      "פרסום הספר 'חלוקת רכוש בהליך גירושין' המצוטט על ידי שופטים ומשמש כלי עבודה מרכזי בבתי המשפט ובתי הספר למשפטים.",
+  },
+  {
+    year: "2025",
     title: "השקת Law4Us",
     description:
       "השקת חוויית הלקוח החדשה: תהליך גירושין מקוון מנוהל, עם טכנולוגיה מתקדמת וחוויית משתמש מוקפדת.",
@@ -164,7 +164,7 @@ const founders = [
   },
   {
     name: "אלי שוורץ",
-    role: "מייסד שותף ומנהל התפעול הדיגיטלי",
+    role: "מייסד שותף ומנהל",
     bio: "דמות ראשית במטה האינטימי שלנו. בוגר ממר\"מ ואיש DBA עם 20 שנות ניסיון בעולם ה-MF. הקים את קומבלק לפני 13 שנים ועד היום מעורב בעשייה, בפרויקטים ובקשר הישיר מול לקוחות ועובדים.",
     image: "/eli-zoomed.png",
   },
@@ -286,7 +286,7 @@ export default function AboutPage() {
                     </div>
                     <div className="flex items-center justify-between border-t border-neutral-200 pt-4 text-sm text-neutral-700">
                       <span>חבר לשכת עורכי הדין</span>
-                      <span>משנת 2008</span>
+                      <span>משנת 2001</span>
                     </div>
                   </div>
                 </div>
@@ -569,7 +569,7 @@ export default function AboutPage() {
                               12,
                               "#D6E7EB",
                             )}
-                            className="h-[120px] w-[120px] self-start flex-shrink-0 rounded-3xl object-cover shadow-lg shadow-primary/20 ring-4 ring-white"
+                            className="h-[120px] w-[120px] self-start flex-shrink-0 rounded-3xl object-cover object-center shadow-lg shadow-primary/20 ring-4 ring-white"
                           />
                         </div>
                       </div>
