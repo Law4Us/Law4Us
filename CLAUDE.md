@@ -281,7 +281,7 @@ NEXT_PUBLIC_SANITY_DATASET=production
 SANITY_API_TOKEN=...
 
 # Next.js
-NEXT_PUBLIC_BASE_URL=https://law4us.vercel.app
+NEXT_PUBLIC_BASE_URL=https://law-4-us.co.il
 ```
 
 See [.env.local.example](.env.local.example) for full details.
@@ -425,7 +425,7 @@ export async function generateNewClaim(formData: WizardFormData) {
 6. Save and test generation
 
 ### Adding a New Blog Post (Sanity)
-1. Navigate to `/studio` (or https://law4us.vercel.app/studio)
+1. Navigate to `/studio` (or https://law-4-us.co.il/studio)
 2. Click "Blog Posts" → "Create new"
 3. Fill in:
    - Title (Hebrew)
@@ -553,7 +553,7 @@ npx tsx scripts/test-email.ts
 ## Contact & Support
 - **GitHub**: https://github.com/[username]/Law4Us
 - **Issues**: [GitHub Issues]
-- **Deployment**: https://law4us.vercel.app
+- **Deployment**: https://law-4-us.co.il
 
 ---
 
