@@ -17,9 +17,11 @@ interface SubmissionData {
   signature: string; // base64 - client signature
   lawyerSignature?: string; // base64 - lawyer signature with stamp
   attachments?: Array<{
+    file: string; // base64
+    name: string;
+    mimeType: string;
     label: string;
-    description: string;
-    images: Buffer[];
+    description?: string;
   }>;
   paymentData: any;
   filledDocuments: any;
@@ -215,6 +217,61 @@ export async function POST(request: NextRequest) {
       });
 
       console.log(`✅ ${fileName} uploaded to ${claimFolderName}`);
+    }
+
+    // ========== CREATE BACKUP FOLDER (גיבוי) ==========
+    console.log('📦 Creating backup folder (גיבוי)...');
+
+    const backupFolderName = 'גיבוי';
+    const existingBackupFolders = await searchFolders(backupFolderName, parentFolderId);
+    let backupFolderId: string;
+
+    if (existingBackupFolders.length > 0) {
+      backupFolderId = existingBackupFolders[0].id;
+      console.log(`♻️  Reusing existing backup folder: ${backupFolderName} (${backupFolderId})`);
+    } else {
+      backupFolderId = await createFolder(backupFolderName, parentFolderId);
+      console.log(`📂 Created backup folder: ${backupFolderName} (${backupFolderId})`);
+    }
+
+    // Generate backup Q&A document
+    console.log('📋 Generating backup Q&A document...');
+    const { generateBackupDocument } = await import('@/lib/api/services/backup-document-generator');
+
+    const backupDoc = await generateBackupDocument({
+      basicInfo: submissionData.basicInfo as any,
+      formData: submissionData.formData,
+      selectedClaims: submissionData.selectedClaims as any,
+      submittedAt: submissionData.submittedAt,
+    });
+
+    await uploadToDrive({
+      fileName: 'גיבוי-תשובות-מלאות.docx',
+      mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      buffer: backupDoc,
+      folderId: backupFolderId,
+    });
+
+    console.log('✅ Backup Q&A document uploaded to backup folder');
+
+    // Upload user's original files to backup folder
+    if (submissionData.attachments && submissionData.attachments.length > 0) {
+      console.log(`📎 Uploading ${submissionData.attachments.length} original user files to backup folder...`);
+
+      for (const attachment of submissionData.attachments) {
+        // Convert base64 back to buffer
+        const base64Data = attachment.file.split(',')[1] || attachment.file;
+        const buffer = Buffer.from(base64Data, 'base64');
+
+        await uploadToDrive({
+          fileName: attachment.name,
+          mimeType: attachment.mimeType || 'application/octet-stream',
+          buffer,
+          folderId: backupFolderId,
+        });
+      }
+
+      console.log('✅ User files uploaded to backup folder');
     }
 
     // Handle attachments if any - upload to parent folder
