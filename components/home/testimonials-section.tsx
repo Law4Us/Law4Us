@@ -7,7 +7,7 @@ import { testimonials } from '@/lib/data/home-data';
 
 export function TestimonialsSection() {
   return (
-    <section className="py-20" id="testimonials">
+    <section className="py-12 md:py-16 lg:py-20" id="testimonials">
       <div className="max-w-[1200px] mx-auto px-6">
         <div className="text-center mb-12">
           {/* Eyebrow */}
@@ -18,7 +18,13 @@ export function TestimonialsSection() {
             לקוחות מספרים
           </p>
           {/* H2 */}
-          <h2 style={TYPOGRAPHY.h2}>
+          <h2
+            className="text-[28px] sm:text-[36px] lg:text-[48px]"
+            style={{
+              ...TYPOGRAPHY.h2,
+              fontSize: undefined
+            }}
+          >
             סיפורי הצלחה ממי שכבר עברו את הדרך
           </h2>
           {/* Subheader */}

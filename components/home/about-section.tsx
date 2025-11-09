@@ -4,23 +4,29 @@ import { TYPOGRAPHY } from '@/lib/constants/styles';
 
 export function AboutSection() {
   return (
-    <section className="py-20">
+    <section className="py-12 md:py-16 lg:py-20">
       <div className="max-w-[1100px] mx-auto px-6">
-        <div className="flex gap-16 items-start">
-          {/* Right side (appears first in RTL) - Sticky Title */}
-          <div className="w-[35%] sticky top-24 text-start">
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-16 items-start">
+          {/* Right side (appears first in RTL) - Sticky Title on desktop only */}
+          <div className="w-full lg:w-[35%] lg:sticky lg:top-24 text-start">
             {/* Eyebrow */}
             <p className="text-eyebrow mb-6" style={{ color: '#019FB7' }}>
               מי אנחנו
             </p>
             {/* H2 */}
-            <h2 style={TYPOGRAPHY.h2}>
+            <h2
+              className="text-[28px] sm:text-[36px] lg:text-[48px]"
+              style={{
+                ...TYPOGRAPHY.h2,
+                fontSize: undefined
+              }}
+            >
               מי אנחנו? הסיפור מאחורי ההצלחה
             </h2>
           </div>
 
           {/* Left side (appears second in RTL) - Content */}
-          <div className="flex-1 text-start space-y-6 pt-10">
+          <div className="flex-1 text-start space-y-6 lg:pt-10">
             <p style={TYPOGRAPHY.bodyMedium}>
               אנחנו גוף, שבאמצע העשור השלישי, לאחר אלפי תיקים, רוצה להנגיש את היכולת לקבל את השירות המקצועי ברמה הכי גבוהה, במחיר שכל אחד יכול להרשות לעצמו, לרכוש את מיטב עורכי הדין בישראל.
             </p>

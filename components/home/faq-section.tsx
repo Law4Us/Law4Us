@@ -31,7 +31,7 @@ export function FAQSection({
     }));
 
   return (
-    <section className="py-20" id="faq">
+    <section className="py-12 md:py-16 lg:py-20" id="faq">
       <div className="max-w-[900px] mx-auto px-6">
         <div className="text-center mb-12">
           {/* Eyebrow */}
@@ -42,7 +42,13 @@ export function FAQSection({
             {eyebrow}
           </p>
           {/* H2 */}
-          <h2 style={TYPOGRAPHY.h2}>
+          <h2
+            className="text-[28px] sm:text-[36px] lg:text-[48px]"
+            style={{
+              ...TYPOGRAPHY.h2,
+              fontSize: undefined
+            }}
+          >
             {title}
           </h2>
           {/* Subheader */}

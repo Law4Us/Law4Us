@@ -15,6 +15,7 @@
   html,
   body {
     @apply bg-neutral-200;
+    overflow-x: hidden;
   }
 
   /* Subtle paper grain texture overlay for premium feel */
@@ -337,6 +338,16 @@
     @apply focus-visible:scale-[1.01];
   }
 
+  /* Hide scrollbar */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
   /* Badge border shimmer effect - creates animated gradient border */
   .badge-shimmer {
     position: relative;
@@ -385,6 +396,17 @@
   from {
     opacity: 0;
     transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
   }
   to {
     opacity: 1;

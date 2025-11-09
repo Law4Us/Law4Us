@@ -7,7 +7,7 @@ import { animations } from '@/lib/utils/animations';
 
 export function CTASection() {
   return (
-    <section className="py-20">
+    <section className="py-12 md:py-16 lg:py-20">
       <div className="max-w-[1200px] mx-auto px-6">
         <div
           className="rounded-3xl overflow-hidden flex flex-col md:flex-row items-stretch relative"
@@ -15,11 +15,10 @@ export function CTASection() {
             background: 'linear-gradient(90deg, #5AB9C9 0%, #A8D5DE 100%)',
             backgroundColor: 'rgba(1, 159, 183, 0.4)',
             border: '1px solid #019FB7',
-            minHeight: '500px',
           }}
         >
           {/* Content on the right (first in DOM for RTL) - 40% width */}
-          <div className="w-full md:w-2/5 px-8 md:px-12 py-12 flex flex-col justify-center items-start z-10">
+          <div className="w-full md:w-2/5 px-6 md:px-12 py-10 md:py-12 flex flex-col justify-center items-start z-10">
             {/* White badge */}
             <div
               className="inline-block mb-6 px-4 py-2 rounded-lg"
@@ -35,15 +34,17 @@ export function CTASection() {
             </div>
 
             {/* Main heading */}
-            <h2 style={{
-              fontSize: '48px',
-              fontWeight: 'bold',
-              lineHeight: '110%',
-              letterSpacing: '-0.04em',
-              color: '#0C1719',
-              marginBottom: '24px',
-              textAlign: 'right',
-            }}>
+            <h2
+              className="text-[28px] sm:text-[36px] lg:text-[48px]"
+              style={{
+                fontWeight: 'bold',
+                lineHeight: '110%',
+                letterSpacing: '-0.04em',
+                color: '#0C1719',
+                marginBottom: '24px',
+                textAlign: 'right',
+              }}
+            >
               מוכנים לקחת את<br />הצעד הבא?
             </h2>
 
@@ -78,8 +79,8 @@ export function CTASection() {
             </MagneticButton>
           </div>
 
-          {/* Image on the left (second in DOM for RTL) - 60% width */}
-          <div className="w-full md:w-3/5 relative overflow-hidden" style={{ minHeight: '500px', height: '100%' }}>
+          {/* Image on the left (second in DOM for RTL) - 60% width - hidden on mobile */}
+          <div className="hidden md:block md:w-3/5 relative overflow-hidden" style={{ minHeight: '500px', height: '100%' }}>
             {/* Decorative SVG boxes behind lawyer - positioned to appear cut off at top and bottom */}
             <svg
               className="absolute"

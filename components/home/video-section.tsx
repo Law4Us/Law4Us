@@ -16,7 +16,8 @@ export function VideoSection() {
           <div
             className="absolute top-1/2 left-1/2 rounded-xl"
             style={{
-              width: '930px',
+              width: '100%',
+              maxWidth: '930px',
               aspectRatio: '2.04237',
               border: '1px solid rgba(12, 23, 25, 0.1)',
               transform: 'translate(-50%, -50%)',

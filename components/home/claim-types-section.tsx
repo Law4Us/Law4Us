@@ -10,14 +10,26 @@ import { claimIcons } from './claim-icons';
 export function ClaimTypesSection() {
   const [selectedClaimTab, setSelectedClaimTab] = React.useState(0);
   const [fadeKey, setFadeKey] = React.useState(0);
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
 
   // Trigger fade animation when tab changes
   React.useEffect(() => {
     setFadeKey(prev => prev + 1);
   }, [selectedClaimTab]);
 
+  // Auto-scroll to selected tab on mobile
+  React.useEffect(() => {
+    if (scrollContainerRef.current) {
+      const buttons = scrollContainerRef.current.querySelectorAll('button');
+      const selectedButton = buttons[selectedClaimTab];
+      if (selectedButton) {
+        selectedButton.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      }
+    }
+  }, [selectedClaimTab]);
+
   return (
-    <section className="py-20" id="claim-types">
+    <section className="py-12 md:py-16 lg:py-20" id="claim-types">
       <div className="max-w-[1200px] mx-auto px-6">
         <div className="text-center mb-12">
           {/* Eyebrow */}
@@ -28,7 +40,13 @@ export function ClaimTypesSection() {
             סוגי תביעות
           </p>
           {/* H2 */}
-          <h2 style={TYPOGRAPHY.h2}>
+          <h2
+            className="text-[28px] sm:text-[36px] lg:text-[48px]"
+            style={{
+              ...TYPOGRAPHY.h2,
+              fontSize: undefined
+            }}
+          >
             בחרו את סוג התביעה ואנחנו נלווה אתכם עד הסוף
           </h2>
           {/* Subheader */}
@@ -37,22 +55,35 @@ export function ClaimTypesSection() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-20">
-          {/* Vertical Tabs - FIRST in DOM = RIGHT in RTL */}
+        {/* Horizontal Scrollable Tabs on Mobile, Grid Layout on Desktop */}
+        <div className="lg:grid lg:grid-cols-2 gap-8 lg:gap-20">
+          {/* Tabs - Horizontal scroll on mobile, vertical on desktop */}
           <div className="flex flex-col">
-            <div className="flex flex-col flex-1" style={{ gap: '16px' }}>
+            {/* Horizontal scroll container for mobile */}
+            <div
+              ref={scrollContainerRef}
+              className="flex lg:flex-col overflow-x-auto lg:overflow-x-visible scrollbar-hide snap-x snap-mandatory lg:snap-none lg:flex-1"
+              style={{
+                gap: '8px',
+                WebkitOverflowScrolling: 'touch',
+                scrollbarWidth: 'none',
+                msOverflowStyle: 'none',
+              }}
+            >
               {claimTabs.map((tab, index) => (
                 <button
                   key={index}
                   onClick={() => setSelectedClaimTab(index)}
-                  className="px-0 py-4 text-right transition-all relative group"
+                  className="flex-shrink-0 lg:flex-shrink snap-center px-4 lg:px-0 py-4 text-right lg:text-right transition-all relative group whitespace-nowrap lg:whitespace-normal"
                   style={{
                     ...TYPOGRAPHY.h3,
+                    fontSize: '18px',
                     backgroundColor: 'transparent',
-                    color: '#0C1719',
+                    color: selectedClaimTab === index ? '#019fb7' : '#0C1719',
                     borderBottom: selectedClaimTab === index ? 'none' : '1px solid rgba(12, 23, 25, 0.1)',
                     paddingBottom: '16px',
-                    position: 'relative'
+                    position: 'relative',
+                    minWidth: '140px',
                   }}
                 >
                   {tab.title}
@@ -63,17 +94,19 @@ export function ClaimTypesSection() {
                         position: 'absolute',
                         bottom: 0,
                         right: 0,
-                        height: '2px',
+                        left: 0,
+                        height: '3px',
                         width: '100%',
                         backgroundColor: '#019fb7',
-                        animation: 'growFromRight 0.3s ease-out'
+                        animation: 'growFromRight 0.3s ease-out',
+                        borderRadius: '2px 2px 0 0',
                       }}
                     />
                   )}
                   {/* Blue hover border */}
                   {selectedClaimTab !== index && (
                     <div
-                      className="absolute bottom-0 right-0 h-[2px] w-0 bg-[#019fb7] group-hover:w-full transition-all duration-300 origin-right"
+                      className="absolute bottom-0 right-0 left-0 h-[3px] w-0 bg-[#019fb7] group-hover:w-full transition-all duration-300 origin-right rounded-t-sm"
                       style={{
                         transitionProperty: 'width',
                         transitionTimingFunction: 'ease-out'
@@ -82,6 +115,22 @@ export function ClaimTypesSection() {
                   )}
                 </button>
               ))}
+            </div>
+
+            {/* Scroll indicators for mobile - subtle gradient hints */}
+            <div className="lg:hidden relative h-1 -mt-1">
+              <div
+                className="absolute left-0 top-0 w-8 h-full pointer-events-none"
+                style={{
+                  background: 'linear-gradient(to left, transparent, rgba(238, 242, 243, 0.9))',
+                }}
+              />
+              <div
+                className="absolute right-0 top-0 w-8 h-full pointer-events-none"
+                style={{
+                  background: 'linear-gradient(to right, transparent, rgba(238, 242, 243, 0.9))',
+                }}
+              />
             </div>
 
             {/* Button under tabs */}

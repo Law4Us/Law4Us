@@ -5,7 +5,7 @@ import { SlideInView } from '@/components/animations/slide-in-view';
 
 export function BenefitsSection() {
   return (
-    <section className="py-20">
+    <section className="py-12 md:py-16 lg:py-20">
       <div className="max-w-[1200px] mx-auto px-6">
         <div className="text-center mb-12">
           {/* Eyebrow */}
@@ -16,7 +16,13 @@ export function BenefitsSection() {
             למה לבחור בנו?
           </p>
           {/* H2 */}
-          <h2 style={TYPOGRAPHY.h2}>
+          <h2
+            className="text-[28px] sm:text-[36px] lg:text-[48px]"
+            style={{
+              ...TYPOGRAPHY.h2,
+              fontSize: undefined
+            }}
+          >
             כל היתרונות של שירות דיגיטלי, עם ליווי משפטי מהשורה הראשונה
           </h2>
           {/* Subheader */}

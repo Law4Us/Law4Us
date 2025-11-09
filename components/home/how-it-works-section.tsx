@@ -6,7 +6,7 @@ import { SlideInView } from '@/components/animations/slide-in-view';
 
 export function HowItWorksSection() {
   return (
-    <section className="py-20" id="how">
+    <section className="py-12 md:py-16 lg:py-20" id="how">
       <div className="max-w-[1200px] mx-auto px-6">
         <div className="text-center mb-12">
           {/* Eyebrow */}
@@ -17,7 +17,13 @@ export function HowItWorksSection() {
             שלושה שלבים פשוטים לקבלת תביעת גירושין
           </p>
           {/* H2 */}
-          <h2 style={TYPOGRAPHY.h2}>
+          <h2
+            className="text-[28px] sm:text-[36px] lg:text-[48px]"
+            style={{
+              ...TYPOGRAPHY.h2,
+              fontSize: undefined
+            }}
+          >
             איך פותחים איתנו תביעת גירושין אונליין
           </h2>
           {/* Subheader */}
