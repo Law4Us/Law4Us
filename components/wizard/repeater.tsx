@@ -77,15 +77,15 @@ export function Repeater({
   };
 
   return (
-    <div className={cn("space-y-4", className)}>
+    <div className={cn("space-y-6", className)}>
       {value.map((row, rowIndex) => (
         <div
           key={row.__id}
-          className="bg-neutral-lightest rounded-lg p-4 border border-neutral"
+          className="bg-neutral-lightest rounded-lg p-6 border border-neutral"
         >
           {/* Row number */}
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-body-small font-semibold text-neutral-dark">
+          <div className="flex items-center justify-between mb-5">
+            <span className="text-body font-semibold text-neutral-dark">
               שורה {rowIndex + 1}
             </span>
             <Button
@@ -102,12 +102,14 @@ export function Repeater({
           </div>
 
           {/* Fields in horizontal layout */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {fields.map((field) => (
-              <div key={field.id}>
+              <div key={field.id} className={cn(
+                field.type === "textarea" && "md:col-span-2"
+              )}>
                 <label
                   htmlFor={`${row.__id}-${field.name}`}
-                  className="block text-body-small font-medium mb-1 text-neutral-darkest"
+                  className="block text-body-small font-medium mb-2 text-neutral-darkest"
                 >
                   {field.label}
                   {field.required && (
@@ -124,13 +126,13 @@ export function Repeater({
                     placeholder={field.placeholder}
                     maxLength={field.maxLength}
                     className={cn(
-                      "w-full px-3 py-2 rounded bg-white",
+                      "w-full px-4 py-3 rounded-lg bg-white",
                       "border border-neutral transition-smooth",
                       "focus:border-primary focus:ring-2 focus:ring-primary/20",
                       "text-body text-neutral-darkest",
-                      "resize-none"
+                      "resize-none leading-relaxed"
                     )}
-                    rows={field.rows ?? 3}
+                    rows={field.rows ?? 4}
                   />
                 ) : field.type === "file" ? (
                   <div>
@@ -145,7 +147,7 @@ export function Repeater({
                         }
                       }}
                       className={cn(
-                        "w-full px-3 py-2 rounded bg-white",
+                        "w-full px-4 py-3 rounded-lg bg-white",
                         "border border-neutral transition-smooth",
                         "focus:border-primary focus:ring-2 focus:ring-primary/20",
                         "text-body-small text-neutral-darkest",
@@ -173,7 +175,7 @@ export function Repeater({
                       handleFieldChange(row.__id, field.name, e.target.value)
                     }
                     className={cn(
-                      "w-full px-3 py-2 rounded bg-white",
+                      "w-full px-4 py-3 rounded-lg bg-white",
                       "border border-neutral transition-smooth",
                       "focus:border-primary focus:ring-2 focus:ring-primary/20",
                       "text-body text-neutral-darkest"
@@ -197,7 +199,7 @@ export function Repeater({
                     placeholder={field.placeholder}
                     maxLength={field.maxLength}
                     className={cn(
-                      "w-full px-3 py-2 rounded bg-white",
+                      "w-full px-4 py-3 rounded-lg bg-white",
                       "border border-neutral transition-smooth",
                       "focus:border-primary focus:ring-2 focus:ring-primary/20",
                       "text-body text-neutral-darkest",
