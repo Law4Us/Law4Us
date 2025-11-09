@@ -15,7 +15,7 @@ import { sendRecoveryReminder } from '@/lib/services/email-service';
  * - Sends reminders to sessions 1+ days old
  *
  * WHEN UPGRADING TO PRO PLAN:
- * - Update vercel.json schedule to: "*/30 * * * *" (every 30 minutes)
+ * - Update vercel.json schedule to run every 30 minutes
  * - Update wizard-session-service.ts (see comments there)
  * - Benefits: Faster recovery, better user experience
  *
