@@ -86,6 +86,20 @@ export function Header() {
             ))}
           </div>
 
+          {/* Mobile Menu Button */}
+          <button
+            type="button"
+            className="lg:hidden touch-target p-2"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="פתח תפריט"
+          >
+            {mobileMenuOpen ? (
+              <X className="h-6 w-6" />
+            ) : (
+              <Menu className="h-6 w-6" />
+            )}
+          </button>
+
           {/* Logo - Mobile (centered) */}
           <Link href="/" className="lg:hidden flex items-center">
             <Image
@@ -124,20 +138,6 @@ export function Header() {
               התחילו בהליך גירושין
             </Link>
           </div>
-
-          {/* Mobile Menu Button */}
-          <button
-            type="button"
-            className="lg:hidden touch-target p-2"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label="פתח תפריט"
-          >
-            {mobileMenuOpen ? (
-              <X className="h-6 w-6" />
-            ) : (
-              <Menu className="h-6 w-6" />
-            )}
-          </button>
         </div>
       </nav>
 

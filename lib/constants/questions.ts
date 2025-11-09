@@ -688,6 +688,7 @@ export const DIVORCE_QUESTIONS: Question[] = [
     id: "heading-divorce-ketubah",
     type: "heading",
     label: "כתובה",
+    helper: "כתובה היא מסמך הנישואין היהודי, הכולל התחייבות כספית של הבעל כלפי האישה במקרה של גירושין או פטירה. יש למלא רק אם נישאתם בנישואין דתיים.",
   },
   {
     id: "divorce.ketubahAmount",

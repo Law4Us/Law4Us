@@ -581,5 +581,101 @@ export async function sendContactFormAutoReply(
   });
 }
 
+/**
+ * Send notification to office about new submission
+ */
+export async function sendSubmissionNotification(
+  clientName: string,
+  clientEmail: string,
+  clientPhone: string,
+  claimLabels: string[],
+  folderName: string,
+  folderId: string
+): Promise<boolean> {
+  const emailSubject = `🎯 תביעה חדשה התקבלה מ-${clientName}`;
+
+  const timestamp = new Date().toLocaleString('he-IL', {
+    dateStyle: 'long',
+    timeStyle: 'long'
+  });
+
+  // Create Google Drive folder link
+  const folderUrl = `https://drive.google.com/drive/folders/${folderId}`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html dir="rtl" lang="he">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body dir="rtl" style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; direction: rtl;">
+      <div style="max-width: 700px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 10px; direction: rtl;">
+        <div style="background-color: #10b981; color: white; padding: 20px; border-radius: 5px; margin-bottom: 20px; direction: rtl; text-align: right;">
+          <h2 style="direction: rtl; text-align: right;">🎯 תביעה חדשה התקבלה!</h2>
+        </div>
+
+        <div style="color: #333; line-height: 1.8; direction: rtl; text-align: right;">
+          <h3 style="direction: rtl; text-align: right;">פרטי הלקוח:</h3>
+
+          <div style="margin: 15px 0; padding: 10px; background-color: #f9fafb; border-right: 3px solid #10b981; direction: rtl; text-align: right;">
+            <span style="font-weight: bold; color: #10b981;">👤 שם:</span> ${clientName}
+          </div>
+
+          <div style="margin: 15px 0; padding: 10px; background-color: #f9fafb; border-right: 3px solid #10b981; direction: rtl; text-align: right;">
+            <span style="font-weight: bold; color: #10b981;">📧 אימייל:</span> <a href="mailto:${clientEmail}">${clientEmail}</a>
+          </div>
+
+          <div style="margin: 15px 0; padding: 10px; background-color: #f9fafb; border-right: 3px solid #10b981; direction: rtl; text-align: right;">
+            <span style="font-weight: bold; color: #10b981;">📞 טלפון:</span> <a href="tel:${clientPhone}">${clientPhone}</a>
+          </div>
+
+          <h3 style="direction: rtl; text-align: right;">התביעות שהתקבלו:</h3>
+          <ul style="background-color: #f0fdf4; padding: 20px; border-radius: 5px; margin: 20px 0; direction: rtl; text-align: right;">
+            ${claimLabels.map(label => `<li style="margin: 10px 0; font-weight: bold;">✓ ${label}</li>`).join('')}
+          </ul>
+
+          <div style="background-color: #dbeafe; padding: 20px; border-radius: 5px; margin: 30px 0; text-align: center;">
+            <p style="font-weight: bold; margin-bottom: 15px; font-size: 16px;">📂 תיקיית הלקוח ב-Google Drive:</p>
+            <a href="${folderUrl}" style="display: inline-block; background-color: #2563eb; color: #ffffff; padding: 15px 40px; text-decoration: none; border-radius: 5px; margin: 10px 0; font-weight: bold; font-size: 18px;">פתיחת תיקיית ${folderName}</a>
+            <p style="margin-top: 10px; font-size: 14px; color: #666;">או העתק את הקישור: <a href="${folderUrl}">${folderUrl}</a></p>
+          </div>
+        </div>
+
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #666; font-size: 14px; direction: rtl; text-align: right;">
+          <p style="direction: rtl; text-align: right;">📅 <strong>תאריך:</strong> ${timestamp}</p>
+          <p style="color: #999; font-size: 12px; direction: rtl; text-align: right;">מייל אוטומטי ממערכת Law4Us</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const text = `
+תביעה חדשה התקבלה!
+
+פרטי הלקוח:
+שם: ${clientName}
+אימייל: ${clientEmail}
+טלפון: ${clientPhone}
+
+התביעות שהתקבלו:
+${claimLabels.map(label => `- ${label}`).join('\n')}
+
+תיקיית הלקוח ב-Google Drive:
+${folderUrl}
+
+---
+תאריך: ${timestamp}
+  `;
+
+  return sendEmail({
+    to: EMAIL_TO,
+    subject: emailSubject,
+    html,
+    text,
+  });
+}
+
 // Export constants for use in other files
 export { EMAIL_FROM, EMAIL_TO };

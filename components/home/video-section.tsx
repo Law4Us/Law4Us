@@ -20,8 +20,9 @@ export function VideoSection() {
               maxWidth: '1028px',
               aspectRatio: '2.04237',
               border: '1px solid rgba(12, 23, 25, 0.1)',
-              transform: 'translate(-50%, -50%)',
-              zIndex: 0
+              transform: `translate(-50%, -50%) scale(${0.95 + (videoProgress * 0.05)})`,
+              zIndex: 0,
+              transition: 'transform 0.1s ease-out',
             }}
           />
 

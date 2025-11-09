@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateDocument } from '@/lib/api/services/document-generator';
 import { uploadToDrive, createFolder, searchFolders, downloadFile } from '@/lib/api/services/google-drive';
-import { sendSubmissionConfirmation } from '@/lib/services/email-service';
+import { sendSubmissionConfirmation, sendSubmissionNotification } from '@/lib/services/email-service';
 import { CLAIMS } from '@/lib/constants/claims';
 
 interface SubmissionData {
@@ -321,6 +321,34 @@ export async function POST(request: NextRequest) {
     } catch (emailError) {
       // Don't fail the entire submission if email fails
       console.error('❌ Error sending confirmation email:', emailError);
+    }
+
+    // Send notification email to office
+    try {
+      console.log('📧 Sending submission notification to office...');
+
+      // Get claim labels in Hebrew
+      const claimLabels = submissionData.selectedClaims
+        .map(claimKey => CLAIMS.find(c => c.key === claimKey)?.label)
+        .filter(Boolean) as string[];
+
+      const notificationSent = await sendSubmissionNotification(
+        submissionData.basicInfo.fullName,
+        submissionData.basicInfo.email,
+        submissionData.basicInfo.phone,
+        claimLabels,
+        parentFolderName,
+        parentFolderId
+      );
+
+      if (notificationSent) {
+        console.log('✅ Office notification sent successfully');
+      } else {
+        console.warn('⚠️  Failed to send office notification');
+      }
+    } catch (emailError) {
+      // Don't fail the entire submission if email fails
+      console.error('❌ Error sending office notification:', emailError);
     }
 
     return NextResponse.json({

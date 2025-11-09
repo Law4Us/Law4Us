@@ -448,6 +448,15 @@
   }
 }
 
+@keyframes growFromRight {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
+}
+
 /* Accessibility: Respect reduced motion preferences */
 @media (prefers-reduced-motion: reduce) {
   .hover-lift-sm,

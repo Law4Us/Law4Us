@@ -77,6 +77,11 @@ export function QuestionRenderer({
         <h3 className="text-h3 font-semibold text-neutral-darkest">
           {question.label}
         </h3>
+        {question.helper && (
+          <p className="text-body-small text-neutral-dark mt-2">
+            {question.helper}
+          </p>
+        )}
       </div>
     );
   }

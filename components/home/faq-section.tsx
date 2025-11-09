@@ -66,18 +66,18 @@ export function FAQSection({
                 ...CARD_STYLES.container,
                 gap: 0,
                 transition: 'all 0.3s ease-in-out',
-                borderLeft: '3px solid transparent',
+                borderRight: '3px solid transparent',
                 cursor: 'pointer',
               }}
               onClick={() => setOpenFaq(openFaq === index ? null : index)}
               onMouseEnter={(e) => {
                 e.currentTarget.style.backgroundColor = '#FFFFFF';
-                e.currentTarget.style.borderLeftColor = '#019FB7';
+                e.currentTarget.style.borderRightColor = '#019FB7';
                 e.currentTarget.style.transform = 'scale(1.005)';
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.backgroundColor = '#F9FAFB';
-                e.currentTarget.style.borderLeftColor = 'transparent';
+                e.currentTarget.style.borderRightColor = 'transparent';
                 e.currentTarget.style.transform = 'scale(1)';
               }}
             >

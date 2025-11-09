@@ -117,24 +117,30 @@ export function ClaimTypesSection() {
               ))}
             </div>
 
-            {/* Scroll indicators for mobile - subtle gradient hints */}
-            <div className="lg:hidden relative h-1 -mt-1">
+            {/* Scroll indicators for mobile - enhanced gradient hints */}
+            <div className="lg:hidden relative">
               <div
-                className="absolute left-0 top-0 w-8 h-full pointer-events-none"
+                className="absolute left-0 top-0 w-16 h-full pointer-events-none z-10"
                 style={{
-                  background: 'linear-gradient(to left, transparent, rgba(238, 242, 243, 0.9))',
+                  background: 'linear-gradient(to left, transparent, rgba(238, 242, 243, 1))',
+                  transform: 'translateY(-100%)',
                 }}
               />
               <div
-                className="absolute right-0 top-0 w-8 h-full pointer-events-none"
+                className="absolute right-0 top-0 w-16 h-full pointer-events-none z-10"
                 style={{
-                  background: 'linear-gradient(to right, transparent, rgba(238, 242, 243, 0.9))',
+                  background: 'linear-gradient(to right, transparent, rgba(238, 242, 243, 1))',
+                  transform: 'translateY(-100%)',
                 }}
               />
+              {/* Scroll hint text */}
+              <p className="text-center text-xs text-gray-500 mt-2 mb-4">
+                החליקו לעוד אפשרויות ←
+              </p>
             </div>
 
-            {/* Button under tabs */}
-            <div className="mt-8">
+            {/* Button under tabs - Desktop only */}
+            <div className="mt-8 hidden lg:block">
               <MagneticButton
                 href="/wizard"
                 style={CTA_STYLES.main}
@@ -149,12 +155,12 @@ export function ClaimTypesSection() {
           </div>
 
           {/* Content Area - SECOND in DOM = LEFT in RTL */}
-          <div>
+          <div className="flex flex-col">
             <div
               key={fadeKey}
-              className="text-right animate-fade-in"
+              className="text-right"
               style={{
-                animation: 'fadeIn 400ms ease-in-out'
+                animation: 'fadeIn 300ms ease-out'
               }}
             >
               <h3
@@ -180,7 +186,7 @@ export function ClaimTypesSection() {
                       key={index}
                       className="flex items-start gap-8"
                       style={{
-                        animation: `fadeIn 400ms ease-in-out ${index * 80}ms both`
+                        animation: `fadeIn 300ms ease-out ${index * 50}ms both`
                       }}
                     >
                       <div style={CARD_STYLES.iconCircle} className={`flex-shrink-0 mt-1 ${animations.iconCircleHover}`}>
@@ -198,6 +204,20 @@ export function ClaimTypesSection() {
                   );
                 })}
               </div>
+            </div>
+
+            {/* Button after content - Mobile only */}
+            <div className="mt-8 lg:hidden">
+              <MagneticButton
+                href="/wizard"
+                style={CTA_STYLES.main}
+                className={`inline-flex items-center justify-center ${animations.primaryCTAHover}`}
+                magneticStrength={0.2}
+                magneticDistance={100}
+                rippleColor="rgba(255, 255, 255, 0.3)"
+              >
+                התחילו בהליך גירושין
+              </MagneticButton>
             </div>
           </div>
         </div>

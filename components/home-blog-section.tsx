@@ -59,18 +59,18 @@ export function HomeBlogSection() {
           {/* Eyebrow */}
           <p
             className="mb-6"
-            style={{
-              color: '#019FB7',
-              fontSize: '16px',
-              fontWeight: 600,
-              lineHeight: '100%',
-              letterSpacing: '-0.02em',
-            }}
+            style={TYPOGRAPHY.eyebrow}
           >
             הבלוג שלנו
           </p>
           {/* H2 */}
-          <h2 style={TYPOGRAPHY.h2}>
+          <h2
+            className="text-[28px] sm:text-[36px] lg:text-[48px]"
+            style={{
+              ...TYPOGRAPHY.h2,
+              fontSize: undefined
+            }}
+          >
             הבלוג שלנו – ידע מקצועי, תובנות, וטיפים מעשיים
           </h2>
           {/* Subheader */}

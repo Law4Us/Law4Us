@@ -189,7 +189,7 @@ export default function Step1ClaimPicker() {
         <SlideInView direction="up" delay={50}>
           <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-6 py-4 text-right">
             <p className="text-body font-semibold text-amber-900">
-              לתשומת לבכם: תביעת גירושין בבית הדין הרבני כרוכה בהגשת תביעות נלוות (רכוש, מזונות, משמורת).
+              ⚠️ לתשומת לבכם: תביעת גירושין בבית הדין הרבני כרוכה בהגשת תביעות נלוות (רכוש, מזונות, משמורת).
             </p>
             <p className="text-caption text-amber-800 mt-1">
               מומלץ לסמן גם את התביעות הרלוונטיות כדי שנוכל למלא את כלל הטפסים והנספחים עבורך.

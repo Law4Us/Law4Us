@@ -201,24 +201,6 @@ export default function Step2DynamicForm() {
     };
   }, [sections, currentSectionIndex]);
 
-  const onSubmit = (data: any) => {
-    // Save before navigating
-    updateFormData(data);
-
-    nextStep();
-    router.push("/wizard/step-3");
-  };
-
-  const handleBack = () => {
-    prevStep();
-    router.push("/wizard");
-  };
-
-  // Get selected claim labels for display
-  const selectedClaimLabels = selectedClaims
-    .map((key) => CLAIMS.find((c) => c.key === key)?.label)
-    .filter(Boolean);
-
   // Check if section is complete (all required fields filled and no errors)
   const isSectionComplete = React.useCallback(
     (section: { title: string; questions: Question[] }): boolean => {
@@ -261,6 +243,47 @@ export default function Step2DynamicForm() {
     },
     [watchedValues, errors]
   );
+
+  // Check if all required sections are complete
+  const allRequiredSectionsComplete = React.useMemo(() => {
+    // Get all sections with at least one required field
+    const sectionsWithRequired = sections.filter((section) => {
+      const visibleQuestions = section.questions.filter((q) => {
+        if (q.conditional) {
+          const { dependsOn, showWhen } = q.conditional;
+          const dependentValue = getValueByPath<string | undefined>(watchedValues, dependsOn);
+          if (Array.isArray(showWhen)) {
+            if (!dependentValue || !showWhen.includes(dependentValue)) return false;
+          } else {
+            if (dependentValue !== showWhen) return false;
+          }
+        }
+        return true;
+      });
+      return visibleQuestions.some((q) => q.required);
+    });
+
+    // All sections with required fields must be complete
+    return sectionsWithRequired.every((section) => isSectionComplete(section));
+  }, [sections, isSectionComplete, watchedValues]);
+
+  const onSubmit = (data: any) => {
+    // Save before navigating
+    updateFormData(data);
+
+    nextStep();
+    router.push("/wizard/step-3");
+  };
+
+  const handleBack = () => {
+    prevStep();
+    router.push("/wizard");
+  };
+
+  // Get selected claim labels for display
+  const selectedClaimLabels = selectedClaims
+    .map((key) => CLAIMS.find((c) => c.key === key)?.label)
+    .filter(Boolean);
 
   // Calculate section completion data
   const sectionData = React.useMemo(() => {
@@ -375,7 +398,7 @@ export default function Step2DynamicForm() {
               <Button
                 type="submit"
                 size="lg"
-                disabled={!isValid}
+                disabled={!isValid || !allRequiredSectionsComplete}
                 className="text-white"
               >
                 המשך לשלב הבא
