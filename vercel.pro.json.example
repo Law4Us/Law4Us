@@ -1,0 +1,23 @@
+{
+  "comment": "VERCEL PRO CONFIGURATION - Rename to vercel.json when you upgrade to Pro plan",
+  "crons": [
+    {
+      "path": "/api/cron/send-reminders",
+      "schedule": "*/30 * * * *",
+      "description": "Send reminder emails every 30 minutes to users who paid but didn't submit"
+    }
+  ],
+  "notes": [
+    "Pro Plan Benefits:",
+    "- 40 cron jobs (vs 2 on Hobby)",
+    "- Unlimited invocations (vs once daily on Hobby)",
+    "- Can run as frequently as */5 * * * * (every 5 minutes)",
+    "",
+    "When upgrading to Pro:",
+    "1. Rename this file to vercel.json (replace existing)",
+    "2. Update lib/services/wizard-session-service.ts:",
+    "   - Change oneDayAgo to fifteenMinutesAgo",
+    "   - Change paidAt < $oneDayAgo to paidAt < $fifteenMinutesAgo",
+    "3. Deploy and reminders will run every 30 minutes!"
+  ]
+}

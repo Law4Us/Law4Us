@@ -189,11 +189,24 @@ export async function incrementSessionReminders(sessionId: string): Promise<void
  * Get all sessions that need reminders
  * (paid but not submitted, at least 1 day old, less than 3 reminders sent)
  *
- * Runs daily via Vercel Cron (Hobby plan limitation)
- * Sends reminder if session is 1+ days old and hasn't received max reminders
+ * CURRENT PLAN: Vercel Hobby
+ * - Runs daily via Vercel Cron at 10 AM UTC
+ * - Checks for sessions 1+ days old (24 hours)
+ * - Sends up to 3 reminders per session
+ *
+ * WHEN UPGRADING TO PRO PLAN:
+ * 1. Change oneDayAgo to fifteenMinutesAgo:
+ *    const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+ * 2. Update query parameter from $oneDayAgo to $fifteenMinutesAgo
+ * 3. Update vercel.json to run every 30 minutes (see vercel.pro.json.example)
+ * 4. This will send reminders much faster (within 30 min vs 24 hours)
  */
 export async function getSessionsNeedingReminders(): Promise<WizardSession[]> {
+  // HOBBY PLAN: Check sessions older than 1 day
   const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
+  // PRO PLAN: Uncomment this and use in query below
+  // const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
 
   const query = `*[
     _type == "wizardSession" &&
@@ -203,6 +216,7 @@ export async function getSessionsNeedingReminders(): Promise<WizardSession[]> {
     remindersSent < 3
   ] | order(paidAt asc)`;
 
+  // PRO PLAN: Change { oneDayAgo } to { fifteenMinutesAgo: fifteenMinutesAgo }
   const results = await client.fetch(query, { oneDayAgo });
 
   return results || [];

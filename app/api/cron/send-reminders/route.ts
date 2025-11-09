@@ -9,14 +9,17 @@ import { sendRecoveryReminder } from '@/lib/services/email-service';
  * GET /api/cron/send-reminders
  * Send reminder emails to users who paid but didn't submit
  *
- * This endpoint is called by Vercel Cron daily at 10:00 AM
+ * CURRENT PLAN: Vercel Hobby
+ * - Runs daily at 10:00 AM UTC
+ * - Schedule: "0 10 * * *"
+ * - Sends reminders to sessions 1+ days old
  *
- * Vercel Hobby Plan Limitations:
- * - Maximum 2 cron jobs
- * - Each runs once per day only (not more frequent)
- * - Current schedule: "0 10 * * *" (10 AM daily)
+ * WHEN UPGRADING TO PRO PLAN:
+ * - Update vercel.json schedule to: "*/30 * * * *" (every 30 minutes)
+ * - Update wizard-session-service.ts (see comments there)
+ * - Benefits: Faster recovery, better user experience
  *
- * Configured in vercel.json
+ * Configured in vercel.json (see vercel.pro.json.example for Pro config)
  *
  * For security, you can add an authorization header check
  */
