@@ -114,20 +114,18 @@ function StatCard({ stat, reducedMotion }: StatCardProps) {
       }}
       className={`h-full ${animations.cardHover}`}
     >
-      <div style={CARD_STYLES.iconCircle} className={`${animations.iconCircleHover} mb-1`}>
+      <div style={CARD_STYLES.iconCircle} className={`${animations.iconCircleHover} mb-4`}>
         <Icon className="w-6 h-6 text-primary" aria-hidden />
       </div>
-      <div className="w-full flex flex-col gap-4 text-right">
-        <div className="flex flex-col gap-4">
-          <div
-            className="text-[42px] font-bold leading-none text-primary mb-2"
-            aria-live="polite"
-            aria-label={`${label}: ${formattedValue}`}
-          >
-            {formattedValue}
-          </div>
-          <p style={{ ...TYPOGRAPHY.h3, margin: 0 }}>{label}</p>
+      <div className="w-full flex flex-col text-right">
+        <div
+          className="text-[42px] font-bold leading-none text-primary mb-2"
+          aria-live="polite"
+          aria-label={`${label}: ${formattedValue}`}
+        >
+          {formattedValue}
         </div>
+        <p style={{ ...TYPOGRAPHY.h3, margin: 0 }}>{label}</p>
         {description && (
           <p style={{ ...TYPOGRAPHY.bodyLarge, margin: 0 }} className="text-neutral-700">
             {description}
