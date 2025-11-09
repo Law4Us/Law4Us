@@ -9,6 +9,8 @@
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    scroll-behavior: smooth;
+    scroll-padding-top: 80px; /* Header height (h-20 = 80px) */
   }
 
   /* Set background for entire page - matches neutral-200 from design tokens */

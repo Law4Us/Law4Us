@@ -117,10 +117,10 @@ function StatCard({ stat, reducedMotion }: StatCardProps) {
       <div style={CARD_STYLES.iconCircle} className={`${animations.iconCircleHover} mb-1`}>
         <Icon className="w-6 h-6 text-primary" aria-hidden />
       </div>
-      <div className="w-full space-y-4 text-right">
-        <div className="space-y-5">
+      <div className="w-full flex flex-col gap-4 text-right">
+        <div className="flex flex-col gap-4">
           <div
-            className="text-[42px] font-bold leading-none text-primary"
+            className="text-[42px] font-bold leading-none text-primary mb-2"
             aria-live="polite"
             aria-label={`${label}: ${formattedValue}`}
           >

@@ -123,7 +123,7 @@ export function Footer() {
                   <a
                     key={social.name}
                     href={social.href}
-                    className={`touch-target p-2 rounded-full bg-white/10 ${animations.socialIconHover}`}
+                    className={`touch-target flex items-center justify-center p-2 rounded-full bg-white/10 ${animations.socialIconHover}`}
                     aria-label={social.name}
                   >
                     <Icon className="h-5 w-5" />
@@ -141,7 +141,6 @@ export function Footer() {
               © {currentYear} - eDivorce
             </p>
             <div className="flex items-center gap-2">
-              <span className="text-body-small text-white/60">Built and designed by</span>
               <a
                 href="https://pointline.agency"
                 target="_blank"
@@ -162,6 +161,8 @@ export function Footer() {
                   />
                 </svg>
               </a>
+              <span className="text-body-small text-white/60">|</span>
+              <span className="text-body-small text-white/60">Built and designed by</span>
             </div>
           </div>
         </div>
