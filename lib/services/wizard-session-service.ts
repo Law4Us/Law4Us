@@ -187,20 +187,23 @@ export async function incrementSessionReminders(sessionId: string): Promise<void
 
 /**
  * Get all sessions that need reminders
- * (paid but not submitted, created more than 15 minutes ago, less than 3 reminders sent)
+ * (paid but not submitted, at least 1 day old, less than 3 reminders sent)
+ *
+ * Runs daily via Vercel Cron (Hobby plan limitation)
+ * Sends reminder if session is 1+ days old and hasn't received max reminders
  */
 export async function getSessionsNeedingReminders(): Promise<WizardSession[]> {
-  const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+  const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
   const query = `*[
     _type == "wizardSession" &&
     paymentStatus == "paid" &&
     submissionStatus == "pending" &&
-    createdAt < $fifteenMinutesAgo &&
+    paidAt < $oneDayAgo &&
     remindersSent < 3
-  ] | order(createdAt asc)`;
+  ] | order(paidAt asc)`;
 
-  const results = await client.fetch(query, { fifteenMinutesAgo });
+  const results = await client.fetch(query, { oneDayAgo });
 
   return results || [];
 }
