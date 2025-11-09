@@ -2,8 +2,7 @@
   "crons": [
     {
       "path": "/api/cron/send-reminders",
-      "schedule": "0 10 * * *",
-      "comment": "Hobby plan: Once daily at 10 AM UTC. For Pro plan, change to: */30 * * * * (every 30 min)"
+      "schedule": "0 10 * * *"
     }
   ]
 }
