@@ -56,12 +56,21 @@ export const SPACING = {
 /**
  * Format currency in Hebrew locale
  */
-export function formatCurrency(amount: number): string {
-  // Handle undefined, null, or NaN values
-  if (amount === undefined || amount === null || isNaN(amount)) {
-    amount = 0;
+export function formatCurrency(amount: number | string): string {
+  let numericAmount: number;
+
+  if (typeof amount === 'string') {
+    const sanitized = amount.replace(/[^\d.-]/g, '');
+    numericAmount = Number(sanitized);
+  } else {
+    numericAmount = Number(amount);
   }
-  return `₪${amount.toLocaleString('he-IL')}`;
+
+  if (!Number.isFinite(numericAmount)) {
+    numericAmount = 0;
+  }
+
+  return `₪${numericAmount.toLocaleString('he-IL')}`;
 }
 
 /**
@@ -81,7 +90,10 @@ export function formatDate(dateString: string): string {
  * Example: "משה חיים (ת.ז 123456789, יליד 01/01/2010)"
  */
 export function formatChildNaturally(child: any): string {
-  const name = child.name || '';
+  const name =
+    (child.name && child.name.trim()) ||
+    [child.firstName, child.lastName].filter(Boolean).join(' ').trim() ||
+    'קטין/ה';
   const idNumber = child.idNumber || '';
   const birthDate = child.birthDate ? formatDate(child.birthDate) : '';
 
@@ -1121,7 +1133,7 @@ function fitImageDimensions(
 /**
  * Generate נספחים (Attachments) section with automatic table of contents and page ranges
  * @param attachments Array of attachments with labels, descriptions, and images
- * @param tocPage The page number where the table of contents starts (last page before attachments)
+ * @param tocPage Page count up to (and including) the last page before the attachments section
  */
 export function generateAttachmentsSection(
   attachments: Array<{ label: string; description: string; images: Buffer[] }>,
@@ -1140,8 +1152,8 @@ export function generateAttachmentsSection(
   // Table of Contents with page ranges
   paragraphs.push(createSubsectionHeader('תוכן עניינים'));
 
-  // First attachment starts after TOC. Add 3: +1 for נספחים title, +1 for TOC page, +1 to start first attachment
-  let currentPage = tocPage + 3;
+  // First attachment starts after TOC: +1 for the cover/TOC page, +1 for the page break before נספחים א
+  let currentPage = tocPage + 2;
 
   // Create TOC entries with page ranges
   attachments.forEach((attachment, index) => {

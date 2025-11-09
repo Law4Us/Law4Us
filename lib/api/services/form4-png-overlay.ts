@@ -61,6 +61,51 @@ const HOUSEHOLD_NEEDS_LAYOUT = {
   totalOffset: 30,
 };
 
+function resolveForm4TemplateFolder(): string {
+  const explicitDir = process.env.FORM4_TEMPLATE_DIR;
+  if (explicitDir && fs.existsSync(explicitDir)) {
+    return explicitDir;
+  }
+
+  const candidateSet = new Set<string>();
+  const visited = new Set<string>();
+  const rootsToCheck = [process.cwd(), __dirname];
+
+  const appendCandidatesForRoot = (root: string) => {
+    let current = root;
+    const { root: fsRoot } = path.parse(current);
+
+    while (!visited.has(current)) {
+      visited.add(current);
+      candidateSet.add(path.join(current, 'templates', 'form4-templates'));
+      candidateSet.add(path.join(current, 'public', 'form4-templates'));
+      candidateSet.add(path.join(current, '.next', 'standalone', 'public', 'form4-templates'));
+
+      if (current === fsRoot) {
+        break;
+      }
+
+      const parent = path.dirname(current);
+      if (parent === current) {
+        break;
+      }
+      current = parent;
+    }
+  };
+
+  rootsToCheck.forEach(appendCandidatesForRoot);
+
+  for (const candidate of candidateSet) {
+    if (candidate && fs.existsSync(candidate)) {
+      return candidate;
+    }
+  }
+
+  throw new Error(
+    `Form 4 PNG template folder not found. Checked: ${Array.from(candidateSet).join(', ')}`
+  );
+}
+
 /**
  * Form 4 field coordinate mappings
  * Measured for 150 DPI PNG templates (1654×2339 pixels per page)
@@ -230,7 +275,8 @@ async function loadForm4PngTemplates(): Promise<Buffer[]> {
   console.log(`🖼️  Loading pre-generated Form 4 PNG templates...`);
 
   // Path to pre-generated PNG folder (in public directory for Vercel deployment)
-  const pngFolderPath = path.join(process.cwd(), 'public', 'form4-templates');
+  const pngFolderPath = resolveForm4TemplateFolder();
+  console.log(`   תבניות: ${pngFolderPath}`);
 
   if (!fs.existsSync(pngFolderPath)) {
     throw new Error(`Form 4 PNG template folder not found at: ${pngFolderPath}`);

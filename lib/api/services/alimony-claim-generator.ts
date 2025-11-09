@@ -61,6 +61,73 @@ interface AlimonyClaimData {
   attachments?: Array<{ label: string; description: string; images: Buffer[] }>;
 }
 
+type GenderForm = 'male' | 'female';
+
+const getApplicantGender = (basicInfo: BasicInfo): GenderForm =>
+  basicInfo.gender === 'male' ? 'male' : 'female';
+
+const getRespondentGender = (basicInfo: BasicInfo): GenderForm =>
+  basicInfo.gender2 === 'female' ? 'female' : 'male';
+
+const getApplicantTitle = (basicInfo: BasicInfo): string =>
+  getApplicantGender(basicInfo) === 'male' ? 'התובע' : 'התובעת';
+
+const getRespondentTitle = (basicInfo: BasicInfo): string =>
+  getRespondentGender(basicInfo) === 'male' ? 'הנתבע' : 'הנתבעת';
+
+const getGenderedWord = (gender: GenderForm, maleForm: string, femaleForm: string): string =>
+  gender === 'male' ? maleForm : femaleForm;
+
+const getIncomePossessive = (gender: GenderForm): string =>
+  gender === 'male' ? 'הכנסתו' : 'הכנסתה';
+
+const normalizeAmount = (value: unknown): number => {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : 0;
+  }
+  if (typeof value === 'string') {
+    const sanitized = value.replace(/[^\d.-]/g, '');
+    const parsed = Number(sanitized);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  return 0;
+};
+
+const CHILD_NEED_CATEGORY_LABELS: Record<string, string> = {
+  food: 'מזון',
+  clothing: 'לבוש והנעלה',
+  education: 'חינוך (שכר לימוד, ספרים)',
+  medical: 'רפואה (ביטוחים, תרופות)',
+  activities: 'פעילויות חוץ (חוגים)',
+  transportation: 'הסעות ותחבורה',
+  other: 'אחר',
+};
+
+const HOUSEHOLD_NEED_CATEGORY_LABELS: Record<string, string> = {
+  rent: 'שכר דירה / משכנתא',
+  tax: 'ארנונה',
+  electricity: 'חשמל',
+  water: 'מים',
+  gas: 'גז',
+  building: 'ועד בית',
+  maintenance: 'תיקונים ותחזוקה',
+  internet: 'אינטרנט וטלפון',
+  insurance: 'ביטוחים (דירה, תכולה)',
+  other: 'אחר',
+};
+
+const formatNeedCategory = (
+  labels: Record<string, string>,
+  category?: string,
+  description?: string
+): string => {
+  const label = category ? labels[category] || description || category : (description || '');
+  if (!label) {
+    return '';
+  }
+  return description && label !== description ? `${label} – ${description}` : label;
+};
+
 /**
  * Local wrapper for court header - extracts data and calls shared function
  */
@@ -82,11 +149,15 @@ function localCreateCourtHeader(data: AlimonyClaimData): Paragraph[] {
 /**
  * Create claim title and fee information
  */
-function createClaimTitle(): Paragraph[] {
+function createClaimTitle(data: AlimonyClaimData): Paragraph[] {
+  const applicantGender = getApplicantGender(data.basicInfo);
+  const applicantTitle = getApplicantTitle(data.basicInfo);
+  const honorificVerb = getGenderedWord(applicantGender, 'מתכבד', 'מתכבדת');
+
   return [
     createMainTitle('כתב תביעה'),
     createBodyParagraph(
-      'התובעת מתכבדת להגיש לכבוד בית המשפט את כתב התביעה בעניין מזונות הקטינים.',
+      `${applicantTitle} ${honorificVerb} להגיש לכבוד בית המשפט את כתב התביעה בעניין מזונות הקטינים.`,
       { after: SPACING.PARAGRAPH }
     ),
     createBodyParagraph(
@@ -99,7 +170,13 @@ function createClaimTitle(): Paragraph[] {
 /**
  * Create summons section (הזמנה לדין)
  */
-function createSummons(): Paragraph[] {
+function createSummons(data: AlimonyClaimData): Paragraph[] {
+  const applicantGender = getApplicantGender(data.basicInfo);
+  const respondentGender = getRespondentGender(data.basicInfo);
+  const applicantTitle = getApplicantTitle(data.basicInfo);
+  const respondentTitle = getRespondentTitle(data.basicInfo);
+  const applicantFiledVerb = getGenderedWord(applicantGender, 'הגיש', 'הגישה');
+
   return [
     createSubsectionHeader('הליכים נוספים:'),
     new Paragraph({
@@ -118,19 +195,19 @@ function createSummons(): Paragraph[] {
       bidirectional: true,
     }),
     createBodyParagraph(
-      'הואיל והתובעת הגישה נגדך תביעה למזונות כמפורט בכתב התביעה המצורף בזה על נספחיו.',
+      `הואיל ו${applicantTitle} ${applicantFiledVerb} נגד ${respondentTitle} תביעה למזונות כמפורט בכתב התביעה המצורף בזה על נספחיו.`,
       { after: SPACING.PARAGRAPH }
     ),
     createBodyParagraph(
-      'אם יש בדעתך להתגונן, אתה מוזמן להגיש כתב הגנה לתובענה, יחד עם הרצאת פרטים לפי טופס 4 שבתוספת הראשונה לתקנות בית משפט לענייני משפחה (סדרי דין), התשפ"א-2020.',
+      `על ${respondentTitle} להגיש כתב הגנה לתובענה, יחד עם הרצאת פרטים לפי טופס 4 שבתוספת הראשונה לתקנות בית משפט לענייני משפחה (סדרי דין), התשפ"א-2020.`,
       { after: SPACING.PARAGRAPH }
     ),
     createBodyParagraph(
-      'כתב ההגנה על נספחיו, יאומת בתצהיר שלך ויוגש לבית המשפט תוך 30 ימים מהיום שהומצאה לך הזמנה זו, לפי תקנה 13(א) לתקנות בית משפט לענייני משפחה (סדרי דין), התשפ"א-2020.',
+      `כתב ההגנה על נספחיו יאומת בתצהיר ${respondentTitle} ויוגש לבית המשפט תוך 30 ימים מהיום שהומצאה הזמנה זו, לפי תקנה 13(א) לתקנות בית משפט לענייני משפחה (סדרי דין), התשפ"א-2020.`,
       { after: SPACING.PARAGRAPH }
     ),
     createBodyParagraph(
-      'אם לא תעשה כן, תהיה לתובעת הזכות לקבל פסק דין שלא בפניך, לפי תקנה 130 לתקנות סדר הדין האזרחי, התשע"ט-2018.',
+      `אי הגשת כתב הגנה במועד תאפשר ל${applicantTitle} לקבל פסק דין שלא בפני ${respondentTitle}, לפי תקנה 130 לתקנות סדר הדין האזרחי, התשע"ט-2018.`,
       { after: SPACING.SUBSECTION }
     ),
   ];
@@ -255,6 +332,133 @@ function createPartC(data: AlimonyClaimData): Paragraph[] {
   return paragraphs;
 }
 
+function createAlimonyDetailsSection(data: AlimonyClaimData): Paragraph[] {
+  const paragraphs: Paragraph[] = [];
+  const alimony = data.formData.alimony || {};
+  const applicantTitle = getApplicantTitle(data.basicInfo);
+
+  const relationshipDescription =
+    (alimony.relationshipDescription ||
+      data.formData.relationshipDescription ||
+      '').trim();
+
+  const hasPreviousAlimonyInfo =
+    alimony.wasPreviousAlimony ||
+    alimony.lastAlimonyAmount ||
+    alimony.lastAlimonyDate ||
+    alimony.previousAlimonyDetails;
+
+  const bankAccounts = Array.isArray(alimony.bankAccounts)
+    ? alimony.bankAccounts.filter(
+        (account: any) => account && (account.bankName || account.accountNumber)
+      )
+    : [];
+
+  const hasVehicleInfo = alimony.hasVehicle || alimony.vehicleDetails;
+
+  const hasAnyDetails =
+    relationshipDescription ||
+    hasPreviousAlimonyInfo ||
+    bankAccounts.length > 0 ||
+    hasVehicleInfo;
+
+  paragraphs.push(createSubsectionHeader('מזונות - פרטים ספציפיים'));
+
+  if (relationshipDescription) {
+    paragraphs.push(
+      createBodyParagraph(relationshipDescription, { after: SPACING.LINE })
+    );
+  }
+
+  if (alimony.wasPreviousAlimony === 'yes') {
+    const details: string[] = [];
+    if (alimony.lastAlimonyAmount) {
+      details.push(`סכום חודשי אחרון: ${formatCurrency(alimony.lastAlimonyAmount)}`);
+    }
+    if (alimony.lastAlimonyDate) {
+      details.push(`שולם לאחרונה ביום ${formatDate(alimony.lastAlimonyDate)}`);
+    }
+
+    const summary = details.length
+      ? `שולמו מזונות בעבר (${details.join(', ')}).`
+      : 'שולמו מזונות בעבר.';
+
+    paragraphs.push(createBodyParagraph(summary));
+
+    if (alimony.previousAlimonyDetails) {
+      paragraphs.push(
+        createBodyParagraph(alimony.previousAlimonyDetails, { after: SPACING.LINE })
+      );
+    }
+  } else if (alimony.wasPreviousAlimony === 'no') {
+    paragraphs.push(
+      createBodyParagraph('לא שולמו מזונות בעבר.', { after: SPACING.LINE })
+    );
+  }
+
+  if (bankAccounts.length > 0) {
+    paragraphs.push(
+      createBodyParagraph(
+        `${applicantTitle} מחזיק/ה בחשבונות הבנק הבאים:`,
+        { after: SPACING.LINE }
+      )
+    );
+
+    bankAccounts.forEach((account: any, index: number) => {
+      const labelParts = [
+        account.bankName ? `בנק ${account.bankName}` : null,
+        account.accountNumber ? `חשבון ${account.accountNumber}` : null,
+      ].filter(Boolean);
+
+      const balanceText =
+        account.balance !== undefined && account.balance !== null && account.balance !== ''
+          ? `יתרה משוערת: ${formatCurrency(account.balance)}`
+          : null;
+
+      const line = [labelParts.join(' - '), balanceText]
+        .filter(Boolean)
+        .join(', ');
+
+      paragraphs.push(createBulletPoint(line || `חשבון ${index + 1}`));
+    });
+
+    paragraphs.push(createBodyParagraph('', { after: SPACING.LINE }));
+  } else if (alimony.hasBankAccounts === 'no') {
+    paragraphs.push(
+      createBodyParagraph(`${applicantTitle} אינו/ה מחזיק/ה בחשבונות בנק נוספים.`, {
+        after: SPACING.LINE,
+      })
+    );
+  }
+
+  if (alimony.hasVehicle === 'yes' && alimony.vehicleDetails) {
+    paragraphs.push(
+      createBodyParagraph(
+        `בבעלות ${applicantTitle} רכב: ${alimony.vehicleDetails}.`,
+        { after: SPACING.LINE }
+      )
+    );
+  } else if (alimony.hasVehicle === 'no') {
+    paragraphs.push(
+      createBodyParagraph(`${applicantTitle} אינו/ה מחזיק/ה רכב בבעלות אישית.`, {
+        after: SPACING.LINE,
+      })
+    );
+  }
+
+  if (!hasAnyDetails) {
+    paragraphs.push(
+      createBodyParagraph(
+        'לא הוזנו פרטים נוספים במסגרת סעיף המזונות.',
+        { after: SPACING.LINE }
+      )
+    );
+  }
+
+  paragraphs.push(createBodyParagraph('', { after: SPACING.SUBSECTION }));
+  return paragraphs;
+}
+
 /**
  * Create employment sections for applicant and respondent
  * Now at SECTION level (same as "מערכת היחסים") per lawyer request
@@ -262,14 +466,22 @@ function createPartC(data: AlimonyClaimData): Paragraph[] {
 function createEmploymentSections(data: AlimonyClaimData): Paragraph[] {
   const paragraphs: Paragraph[] = [];
   const property = data.formData.property || {};
+  const applicantGender = getApplicantGender(data.basicInfo);
+  const respondentGender = getRespondentGender(data.basicInfo);
+  const applicantTitle = getApplicantTitle(data.basicInfo);
+  const respondentTitle = getRespondentTitle(data.basicInfo);
+  const applicantEmploymentVerb = getGenderedWord(applicantGender, 'מועסק', 'מועסקת');
+  const respondentEmploymentVerb = getGenderedWord(respondentGender, 'מועסק', 'מועסקת');
+  const applicantIncomeLabel = getIncomePossessive(applicantGender);
+  const respondentIncomeLabel = getIncomePossessive(respondentGender);
 
-  // Husband's (respondent's) employment - SECTION level
-  paragraphs.push(createSubsectionHeader('השתכרות הבעל'));
+  // Respondent employment - SECTION level
+  paragraphs.push(createSubsectionHeader(`השתכרות ${respondentTitle}`));
 
   if (property.respondentEmploymentStatus === 'employee' && property.respondentEmployer) {
     paragraphs.push(
       createBodyParagraph(
-        `הנתבע מועסק אצל ${property.respondentEmployer}.`,
+        `${respondentTitle} ${respondentEmploymentVerb} אצל ${property.respondentEmployer}.`,
         { after: SPACING.LINE }
       )
     );
@@ -280,7 +492,7 @@ function createEmploymentSections(data: AlimonyClaimData): Paragraph[] {
   if (respondentIncome) {
     paragraphs.push(
       createBodyParagraph(
-        `הכנסתו המשוערת: ${formatCurrency(respondentIncome)} לחודש.`,
+        `${respondentIncomeLabel} המשוערת: ${formatCurrency(respondentIncome)} לחודש.`,
         { after: SPACING.LINE }
       )
     );
@@ -297,13 +509,13 @@ function createEmploymentSections(data: AlimonyClaimData): Paragraph[] {
 
   paragraphs.push(createBodyParagraph('', { after: SPACING.SUBSECTION }));
 
-  // Wife's (applicant's) employment - SECTION level
-  paragraphs.push(createSubsectionHeader('השתכרות האישה'));
+  // Applicant employment - SECTION level
+  paragraphs.push(createSubsectionHeader(`השתכרות ${applicantTitle}`));
 
   if (property.applicantEmploymentStatus === 'employee' && property.applicantEmployer) {
     paragraphs.push(
       createBodyParagraph(
-        `התובעת מועסקת אצל ${property.applicantEmployer}.`,
+        `${applicantTitle} ${applicantEmploymentVerb} אצל ${property.applicantEmployer}.`,
         { after: SPACING.LINE }
       )
     );
@@ -314,7 +526,7 @@ function createEmploymentSections(data: AlimonyClaimData): Paragraph[] {
   if (applicantIncome) {
     paragraphs.push(
       createBodyParagraph(
-        `משכורת ברוטו: ${formatCurrency(applicantIncome)} לחודש.`,
+        `${applicantIncomeLabel} המשוערת: ${formatCurrency(applicantIncome)} לחודש.`,
         { after: SPACING.LINE }
       )
     );
@@ -453,17 +665,23 @@ function createChildrenNeedsTable(
   // Data rows - Same order as header (visuallyRightToLeft handles RTL display)
   expenses.forEach((expense) => {
     const dataCells: TableCell[] = [];
-    const amountPerChild = Math.round(expense.monthlyAmount / numChildren);
-    const rowTotal = amountPerChild * numChildren;
+    const monthlyAmount = normalizeAmount(expense.monthlyAmount);
+    const amountPerChild = monthlyAmount / numChildren;
 
     // First cell: Category (→ right side with visuallyRightToLeft)
+    const categoryText = formatNeedCategory(
+      CHILD_NEED_CATEGORY_LABELS,
+      expense.category,
+      expense.description
+    ) || expense.category || expense.description || '';
+
     dataCells.push(
       new TableCell({
         children: [
           new Paragraph({
             children: [
               new TextRun({
-                text: expense.category,
+                text: categoryText,
                 size: FONT_SIZES.BODY,
                 font: 'David',
                 rightToLeft: true,
@@ -507,7 +725,7 @@ function createChildrenNeedsTable(
           new Paragraph({
             children: [
               new TextRun({
-                text: formatCurrency(rowTotal),
+                text: formatCurrency(monthlyAmount),
                 size: FONT_SIZES.BODY,
                 font: 'David',
                 rightToLeft: true,
@@ -526,10 +744,9 @@ function createChildrenNeedsTable(
 
   // Total row - Same order as header
   const totalCells: TableCell[] = [];
-  const grandTotalPerChild = Math.round(
-    expenses.reduce((sum, exp) => sum + exp.monthlyAmount, 0) / numChildren
-  );
-  const grandTotal = grandTotalPerChild * numChildren;
+  const totalExpenses = expenses.reduce((sum, exp) => sum + normalizeAmount(exp.monthlyAmount), 0);
+  const grandTotalPerChild = totalExpenses / numChildren;
+  const grandTotal = totalExpenses;
 
   // First: "סה"כ" label (→ right side)
   totalCells.push(
@@ -644,7 +861,7 @@ function createHouseholdNeedsTable(
     return [];
   }
 
-  const total = expenses.reduce((sum, exp) => sum + exp.monthlyAmount, 0);
+  const total = expenses.reduce((sum, exp) => sum + normalizeAmount(exp.monthlyAmount), 0);
 
   const paragraphs: (Paragraph | Table)[] = [];
 
@@ -705,6 +922,12 @@ function createHouseholdNeedsTable(
 
   // Data rows - Normal order: Category first, Amount second
   expenses.forEach((expense) => {
+    const categoryText = formatNeedCategory(
+      HOUSEHOLD_NEED_CATEGORY_LABELS,
+      expense.category,
+      expense.description
+    ) || expense.category || expense.description || '';
+
     tableRows.push(
       new TableRow({
         children: [
@@ -713,7 +936,7 @@ function createHouseholdNeedsTable(
               new Paragraph({
                 children: [
                   new TextRun({
-                    text: expense.category,
+                    text: categoryText,
                     size: FONT_SIZES.BODY,
                     font: 'David',
                     rightToLeft: true,
@@ -730,7 +953,7 @@ function createHouseholdNeedsTable(
               new Paragraph({
                 children: [
                   new TextRun({
-                    text: formatCurrency(expense.monthlyAmount),
+                    text: formatCurrency(normalizeAmount(expense.monthlyAmount)),
                     size: FONT_SIZES.BODY,
                     font: 'David',
                     rightToLeft: true,
@@ -956,24 +1179,38 @@ function estimatePageCountForAlimony(formData: any): {
   affidavit: number;
   tocPage: number;
 } {
-  // Main claim: depends on children count and expenses
   const propertyData = formData.property || formData;
-  const childrenCount = propertyData.children?.length || 0;
   const alimonyData = formData.alimony || {};
+  const children = formData.children || propertyData.children || [];
+  const minorChildren = children.filter((child: any) => isMinor(child.birthDate));
+  const childrenNeedsCount = Array.isArray(alimonyData.childrenNeeds)
+    ? alimonyData.childrenNeeds.length
+    : 0;
+  const householdNeedsCount = Array.isArray(alimonyData.householdNeeds)
+    ? alimonyData.householdNeeds.length
+    : 0;
 
-  // Base pages + children needs table + household needs table
-  const mainClaim = 5 + Math.ceil(childrenCount / 3); // ~5-6 pages base + children columns
+  let mainClaim = 3; // Core narrative (header, summons, חלק ב/ג)
 
-  // Form 4: 6 PNG pages (fixed)
+  if (minorChildren.length > 2) {
+    mainClaim += Math.ceil((minorChildren.length - 2) / 2);
+  }
+
+  if (childrenNeedsCount > 4) {
+    mainClaim += Math.ceil((childrenNeedsCount - 4) / 4);
+  }
+
+  if (householdNeedsCount > 3) {
+    mainClaim += Math.ceil((householdNeedsCount - 3) / 3);
+  }
+
+  if (alimonyData.wasPreviousAlimony === 'yes' || alimonyData.previousAlimonyDetails) {
+    mainClaim += 1;
+  }
+
   const form4 = 6;
-
-  // Power of Attorney: 2 pages (15 powers)
   const powerOfAttorney = 2;
-
-  // Affidavit: 1 page (fixed)
   const affidavit = 1;
-
-  // Calculate last page before attachments (sum of all previous pages)
   const tocPage = mainClaim + form4 + powerOfAttorney + affidavit;
 
   return { mainClaim, form4, powerOfAttorney, affidavit, tocPage };
@@ -993,16 +1230,17 @@ export async function generateAlimonyClaim(data: AlimonyClaimData): Promise<Docu
   sections.push(...localCreateCourtHeader(data));
 
   // 2. Claim title and fees
-  sections.push(...createClaimTitle());
+  sections.push(...createClaimTitle(data));
 
   // 4. Summons
-  sections.push(...createSummons());
+  sections.push(...createSummons(data));
 
   // 5. Part B - Summary
   sections.push(...createPartB(data));
 
   // 6. Part C - Detailed facts
   sections.push(...createPartC(data));
+  sections.push(...createAlimonyDetailsSection(data));
 
   // 7. Employment sections
   sections.push(...createEmploymentSections(data));

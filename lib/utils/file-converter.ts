@@ -177,6 +177,51 @@ export function extractAttachmentsFromFormData(formData: any): Array<{
     const property = formData.property;
     console.log('📊 Property keys:', Object.keys(property));
 
+    const pushProofAttachments = (
+      collection: any[] | undefined,
+      options: { fallbackName: string; labelPrefix: string }
+    ) => {
+      if (!Array.isArray(collection)) {
+        return;
+      }
+
+      collection.forEach((item, index) => {
+        const proofSource = item?.proof || item?.attachment || item?.file;
+        if (!proofSource) {
+          return;
+        }
+
+        const meta = parseFileSource(
+          proofSource,
+          `${options.fallbackName}-${index + 1}`,
+          'application/pdf'
+        );
+
+        if (!meta) {
+          return;
+        }
+
+        const fallbackDescription = `${options.labelPrefix} ${index + 1}`;
+        const description =
+          typeof item?.description === 'string' && item.description.trim().length > 0
+            ? item.description.trim()
+            : fallbackDescription;
+
+        const label =
+          description === fallbackDescription
+            ? description
+            : `${options.labelPrefix} - ${description}`;
+
+        attachments.push({
+          label,
+          description,
+          file: meta.dataUrl,
+          name: meta.name,
+          mimeType: meta.mimeType,
+        });
+      });
+    };
+
     // Applicant pay slips
     if (property.applicantPaySlips && Array.isArray(property.applicantPaySlips)) {
       console.log(`📎 Found applicantPaySlips: ${property.applicantPaySlips.length} items`);
@@ -262,6 +307,36 @@ export function extractAttachmentsFromFormData(formData: any): Array<{
         });
       }
     }
+
+    pushProofAttachments(property.apartments, {
+      fallbackName: 'apartment',
+      labelPrefix: 'דירה',
+    });
+
+    pushProofAttachments(property.vehicles, {
+      fallbackName: 'vehicle',
+      labelPrefix: 'רכב',
+    });
+
+    pushProofAttachments(property.savings, {
+      fallbackName: 'savings',
+      labelPrefix: 'חיסכון',
+    });
+
+    pushProofAttachments(property.benefits, {
+      fallbackName: 'benefit',
+      labelPrefix: 'זכויות סוציאליות',
+    });
+
+    pushProofAttachments(property.properties, {
+      fallbackName: 'property-item',
+      labelPrefix: 'מיטלטלין',
+    });
+
+    pushProofAttachments(property.debts, {
+      fallbackName: 'debt',
+      labelPrefix: 'חוב',
+    });
   }
 
   // Divorce agreement

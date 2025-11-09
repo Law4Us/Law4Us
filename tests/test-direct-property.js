@@ -5,13 +5,14 @@
 
 const fs = require('fs');
 const path = require('path');
+const { getSignatureBuffer } = require('./utils/get-signature-buffer');
 
 // Import the generator (we'll use dynamic import since it's TypeScript)
 async function testDirectGeneration() {
   console.log('\n🧪 Testing Property Claim Generator DIRECTLY...\n');
 
   // Read the lawyer signature
-  const signatureBuffer = fs.readFileSync(path.join(__dirname, '..', 'Signature.png'));
+  const signatureBuffer = getSignatureBuffer();
   const signatureBase64 = `data:image/png;base64,${signatureBuffer.toString('base64')}`;
 
   console.log(`📷 Loaded signature: ${signatureBuffer.length} bytes`);

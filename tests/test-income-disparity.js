@@ -3,14 +3,13 @@
  * Tests that when one party's income is 2x the other, a special remedy is added
  */
 
-const fs = require('fs');
-const path = require('path');
+const { getSignatureBuffer } = require('./utils/get-signature-buffer');
 
 async function testIncomeDisparity() {
   console.log('\n💰 Testing Income Disparity Edge Case...\n');
 
   // Read the lawyer signature
-  const signatureBuffer = fs.readFileSync(path.join(__dirname, '..', 'Signature.png'));
+  const signatureBuffer = getSignatureBuffer();
   const signatureBase64 = `data:image/png;base64,${signatureBuffer.toString('base64')}`;
 
   const createMockImage = () => {

@@ -2,11 +2,10 @@
  * Test submission script - sends realistic test data to the backend
  */
 
-const fs = require('fs');
-const path = require('path');
+const { getSignatureBuffer } = require('./utils/get-signature-buffer');
 
 // Read the lawyer signature as a buffer and convert to proper base64
-const signatureBuffer = fs.readFileSync(path.join(__dirname, '..', 'Signature.png'));
+const signatureBuffer = getSignatureBuffer();
 const signatureBase64 = `data:image/png;base64,${signatureBuffer.toString('base64')}`;
 
 console.log(`📷 Loaded signature: ${signatureBuffer.length} bytes`);

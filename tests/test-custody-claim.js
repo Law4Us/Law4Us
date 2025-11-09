@@ -3,18 +3,13 @@
  * This test includes first-person text that should be transformed to legal third-person language
  */
 
-const fs = require('fs');
-const path = require('path');
+const { getSignatureBase64 } = require('./utils/get-signature-buffer');
 
-// Read signature image
-const signaturePath = path.join(__dirname, '..', 'Signature.png');
 let signatureBase64 = '';
-
-if (fs.existsSync(signaturePath)) {
-  const signatureBuffer = fs.readFileSync(signaturePath);
-  signatureBase64 = `data:image/png;base64,${signatureBuffer.toString('base64')}`;
+try {
+  signatureBase64 = getSignatureBase64();
   console.log('✅ Signature loaded successfully');
-} else {
+} catch (error) {
   console.log('⚠️  Signature not found, will use placeholder');
 }
 

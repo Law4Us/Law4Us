@@ -335,19 +335,17 @@ export default function Step2DynamicForm() {
         </div>
 
         {/* Desktop: Sidebar + Content Layout */}
-        <div className="lg:grid lg:grid-cols-12 lg:gap-8 mb-8">
+        <div className="lg:grid lg:grid-cols-12 lg:gap-8 lg:items-start mb-8">
           {/* Sidebar Navigation (Desktop only) */}
           <aside className="hidden lg:block lg:col-span-3">
             <div className="sticky top-24">
-              <SlideInView direction="right" delay={100}>
-                <div className="bg-white rounded-xl border-2 border-neutral-light p-4">
-                  <SectionsNav
-                    sections={sectionData}
-                    currentIndex={currentSectionIndex}
-                    onNavigate={handleSectionNavigate}
-                  />
-                </div>
-              </SlideInView>
+              <div className="bg-white rounded-xl border-2 border-neutral-light p-4 shadow-sm">
+                <SectionsNav
+                  sections={sectionData}
+                  currentIndex={currentSectionIndex}
+                  onNavigate={handleSectionNavigate}
+                />
+              </div>
             </div>
           </aside>
 

@@ -338,6 +338,22 @@ export const GLOBAL_QUESTIONS: Question[] = [
     },
   },
 
+  // Section 4.7: Relationship Description
+  {
+    id: "heading-relationship",
+    type: "heading",
+    label: "מערכת היחסים",
+  },
+  {
+    id: "relationshipDescription",
+    type: "textarea",
+    label: "תארו בקצרה את מערכת היחסים בינכם:",
+    placeholder: "תארו את מערכת היחסים שלכם...",
+    maxLength: 500,
+    required: true,
+    helper: "כתבו בחופשיות במילים שלכם - אין צורך בשפה משפטית",
+  },
+
   // Section 5: Children
   {
     id: "heading-children",
@@ -530,14 +546,6 @@ export const DIVORCE_QUESTIONS: Question[] = [
     id: "heading-divorce",
     type: "heading",
     label: "גירושין",
-  },
-  {
-    id: "divorce.relationshipDescription",
-    type: "textarea",
-    label: "אנא רשום עד 5 שורות על מערכת היחסים שלכם",
-    placeholder: "תארו את מערכת היחסים בינכם...",
-    maxLength: 500,
-    required: true,
   },
   {
     id: "divorce.whoWantsDivorceAndWhy",
@@ -1206,16 +1214,6 @@ export const ALIMONY_QUESTIONS: Question[] = [
     id: "heading-alimony",
     type: "heading",
     label: "מזונות - פרטים ספציפיים",
-  },
-
-  // Relationship description
-  {
-    id: "alimony.relationshipDescription",
-    type: "textarea",
-    label: "תארו בקצרה את מערכת היחסים:",
-    placeholder: "תארו את מערכת היחסים בינכם...",
-    maxLength: 500,
-    helper: "כתבו בחופשיות במילים שלכם - אין צורך בשפה משפטית",
   },
 
   // Previous alimony payments

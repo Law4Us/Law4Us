@@ -372,12 +372,12 @@ async function createFactsSection(
   paragraphs.push(createSubsectionHeader('מערכת היחסים'));
   paragraphs.push(createRelationshipSection(basicInfo, formData, minorChildren));
 
-  // Add general relationship description if provided (from alimony.relationshipDescription)
-  if (formData.alimony?.relationshipDescription) {
+  // Add general relationship description if provided
+  if (formData.relationshipDescription) {
     console.log(`🤖 Transforming relationship description with Groq AI...`);
     try {
       const transformedRelationship = await transformToLegalLanguage(
-        formData.alimony.relationshipDescription,
+        formData.relationshipDescription,
         {
           claimType: 'תביעת משמורת',
           applicantName: plaintiff.name,
@@ -389,7 +389,7 @@ async function createFactsSection(
     } catch (error) {
       console.error('❌ Error transforming relationship description:', error);
       // Fallback to original text if transformation fails
-      paragraphs.push(createBodyParagraph(formData.alimony.relationshipDescription));
+      paragraphs.push(createBodyParagraph(formData.relationshipDescription));
     }
   }
 

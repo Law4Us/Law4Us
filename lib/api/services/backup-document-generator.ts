@@ -515,7 +515,7 @@ export async function generateBackupDocument(data: BackupDocumentData): Promise<
     paragraphs.push(createSectionHeader('תביעת מזונות'));
 
     const alimonyRows = [
-      createQARow('תיאור מערכת יחסים', formatValue(formData.alimony.relationshipDescription)),
+      createQARow('תיאור מערכת יחסים', formatValue(formData.relationshipDescription)),
       createQARow('מזונות קודמים', formatValue(formData.alimony.wasPreviousAlimony)),
       createQARow('יש חשבונות בנק', formatValue(formData.alimony.hasBankAccounts)),
       createQARow('יש רכב', formatValue(formData.alimony.hasVehicle)),
@@ -533,7 +533,7 @@ export async function generateBackupDocument(data: BackupDocumentData): Promise<
     paragraphs.push(createSectionHeader('תביעת גירושין'));
 
     const divorceRows = [
-      createQARow('תיאור מערכת יחסים', formatValue(formData.divorce.relationshipDescription)),
+      createQARow('תיאור מערכת יחסים', formatValue(formData.relationshipDescription)),
       createQARow('מי רוצה גירושין ולמה', formatValue(formData.divorce.whoWantsDivorceAndWhy)),
       createQARow('עיר נישואין', formatValue(formData.divorce.weddingCity)),
       createQARow('נישואין דתיים', formatValue(formData.divorce.religiousMarriage)),
