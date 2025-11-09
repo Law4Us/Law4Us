@@ -134,7 +134,9 @@ export async function sendSubmissionConfirmation(
         <div class="footer">
           <p><strong>בהצלחה!</strong><br>
           צוות Law4Us</p>
-          <p>📧 ${EMAIL_TO}<br>
+          <p>📞 טלפון: <a href="tel:+97236951408">03-6951408</a><br>
+          📱 נייד: <a href="tel:+972507529938">050-7529938</a><br>
+          📧 ${EMAIL_TO}<br>
           🌐 <a href="https://law-4-us.co.il">law-4-us.co.il</a></p>
         </div>
       </div>
@@ -234,7 +236,9 @@ export async function sendSessionSavedEmail(
         <div class="footer">
           <p><strong>בברכה,</strong><br>
           צוות Law4Us</p>
-          <p>📧 ${EMAIL_TO}</p>
+          <p>📞 טלפון: <a href="tel:+97236951408">03-6951408</a><br>
+          📱 נייד: <a href="tel:+972507529938">050-7529938</a><br>
+          📧 ${EMAIL_TO}</p>
         </div>
       </div>
     </body>
@@ -333,7 +337,9 @@ export async function sendPaymentConfirmation(
         <div class="footer">
           <p><strong>בברכה,</strong><br>
           צוות Law4Us</p>
-          <p>📧 ${EMAIL_TO}</p>
+          <p>📞 טלפון: <a href="tel:+97236951408">03-6951408</a><br>
+          📱 נייד: <a href="tel:+972507529938">050-7529938</a><br>
+          📧 ${EMAIL_TO}</p>
         </div>
       </div>
     </body>
@@ -418,7 +424,9 @@ export async function sendRecoveryReminder(
         <div class="footer">
           <p><strong>בברכה,</strong><br>
           צוות Law4Us</p>
-          <p>📧 ${EMAIL_TO}</p>
+          <p>📞 טלפון: <a href="tel:+97236951408">03-6951408</a><br>
+          📱 נייד: <a href="tel:+972507529938">050-7529938</a><br>
+          📧 ${EMAIL_TO}</p>
         </div>
       </div>
     </body>
@@ -591,7 +599,8 @@ export async function sendContactFormAutoReply(
         <div class="footer">
           <p><strong>בברכה,</strong><br>
           צוות Law4Us</p>
-          <p>📞 <a href="tel:+972-XX-XXX-XXXX">+972-XX-XXX-XXXX</a><br>
+          <p>📞 טלפון: <a href="tel:+97236951408">03-6951408</a><br>
+          📱 נייד: <a href="tel:+972507529938">050-7529938</a><br>
           📧 <a href="mailto:${EMAIL_TO}">${EMAIL_TO}</a><br>
           🌐 <a href="https://law-4-us.co.il">law-4-us.co.il</a></p>
         </div>
@@ -614,7 +623,8 @@ export async function sendContactFormAutoReply(
 בברכה,
 צוות Law4Us
 
-📞 +972-XX-XXX-XXXX
+📞 טלפון: 03-6951408
+📱 נייד: 050-7529938
 📧 ${EMAIL_TO}
 🌐 law-4-us.co.il
   `;
