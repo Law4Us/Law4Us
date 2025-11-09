@@ -84,28 +84,29 @@ export function SlideInView({
   const getTransformOrigin = () => {
     switch (direction) {
       case 'up':
-        return 'translateY(30px)';
+        return 'translateY(15px)';
       case 'down':
-        return 'translateY(-30px)';
+        return 'translateY(-15px)';
       case 'left':
-        return 'translateX(30px)';
+        return 'translateX(15px)';
       case 'right':
-        return 'translateX(-30px)';
+        return 'translateX(-15px)';
       default:
-        return 'translateY(30px)';
+        return 'translateY(15px)';
     }
   };
 
   return (
     <div
       ref={ref}
-      className={cn('transition-transform ease-out', className)}
+      className={cn('transition-all ease-out', className)}
       style={{
+        opacity: isVisible ? 1 : 0,
         transform: isVisible ? 'translate(0, 0)' : getTransformOrigin(),
         transitionDuration: `${duration}ms`,
         transitionDelay: `${delay}ms`,
-        contain: 'layout',
-        willChange: isVisible ? 'auto' : 'transform',
+        contain: 'layout style paint',
+        willChange: isVisible ? 'auto' : 'opacity, transform',
       }}
     >
       {children}

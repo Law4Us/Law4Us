@@ -155,11 +155,12 @@ export function LazySectionFade({
       ? 'none'
       : shouldAnimate
         ? 'translateY(0)'
-        : 'translateY(20px)',
+        : 'translateY(10px)',
     transition: reducedMotion
       ? 'none'
       : `opacity ${fadeDuration}ms cubic-bezier(0.4, 0, 0.2, 1), transform ${fadeDuration}ms cubic-bezier(0.4, 0, 0.2, 1)`,
-    willChange: reducedMotion ? 'auto' : 'opacity, transform',
+    willChange: reducedMotion ? 'auto' : shouldAnimate ? 'auto' : 'opacity, transform',
+    contain: 'layout style paint',
   };
 
   return (
