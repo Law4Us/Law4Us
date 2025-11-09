@@ -87,54 +87,43 @@ export async function sendSubmissionConfirmation(
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; }
-        .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 10px; }
-        .header { text-align: center; color: #2563eb; margin-bottom: 30px; }
-        .content { color: #333; line-height: 1.8; }
-        .highlight { background-color: #dbeafe; padding: 15px; border-radius: 5px; margin: 20px 0; }
-        .claim-list { list-style-type: none; padding: 0; }
-        .claim-item { padding: 8px; margin: 5px 0; background-color: #f9fafb; border-right: 4px solid #2563eb; }
-        .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #666; font-size: 14px; }
-        .reference { font-family: monospace; background-color: #f3f4f6; padding: 5px 10px; border-radius: 3px; }
-      </style>
     </head>
-    <body>
-      <div class="container">
-        <div class="header">
-          <h1>✅ התביעה נשלחה בהצלחה!</h1>
+    <body dir="rtl" style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; direction: rtl;">
+      <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 10px; direction: rtl;">
+        <div style="text-align: center; color: #2563eb; margin-bottom: 30px;">
+          <h1 style="direction: rtl;">✅ התביעה נשלחה בהצלחה!</h1>
         </div>
 
-        <div class="content">
-          <p>שלום ${name},</p>
+        <div style="color: #333; line-height: 1.8; direction: rtl; text-align: right;">
+          <p style="direction: rtl; text-align: right;">שלום ${name},</p>
 
-          <p><strong>מעולה! התביעה שלך נשלחה בהצלחה.</strong></p>
+          <p style="direction: rtl; text-align: right;"><strong>מעולה! התביעה שלך נשלחה בהצלחה.</strong></p>
 
-          <div class="highlight">
-            <p><strong>התביעות שנשלחו:</strong></p>
-            <ul class="claim-list">
-              ${claimLabels.map(label => `<li class="claim-item">📋 ${label}</li>`).join('')}
+          <div style="background-color: #dbeafe; padding: 15px; border-radius: 5px; margin: 20px 0; direction: rtl; text-align: right;">
+            <p style="direction: rtl; text-align: right;"><strong>התביעות שנשלחו:</strong></p>
+            <ul style="list-style-type: none; padding: 0; direction: rtl; text-align: right;">
+              ${claimLabels.map(label => `<li style="padding: 8px; margin: 5px 0; background-color: #f9fafb; border-right: 4px solid #2563eb; direction: rtl; text-align: right;">📋 ${label}</li>`).join('')}
             </ul>
           </div>
 
-          <p><strong>מספר אסמכתא:</strong> <span class="reference">${sessionId}</span></p>
+          <p style="direction: rtl; text-align: right;"><strong>מספר אסמכתא:</strong> <span style="font-family: monospace; background-color: #f3f4f6; padding: 5px 10px; border-radius: 3px;">${sessionId}</span></p>
 
-          <p><strong>המסמכים המשפטיים מצורפים למייל זה.</strong></p>
+          <p style="direction: rtl; text-align: right;"><strong>המסמכים המשפטיים מצורפים למייל זה.</strong></p>
 
-          <h3>השלבים הבאים:</h3>
-          <ol>
-            <li>עבור על המסמכים המצורפים ווודא שכל הפרטים נכונים</li>
-            <li>נציג מטעמנו ייצור איתך קשר תוך 24 שעות עבודה</li>
-            <li>נדריך אותך לגבי המשך התהליך המשפטי</li>
+          <h3 style="direction: rtl; text-align: right;">השלבים הבאים:</h3>
+          <ol style="direction: rtl; text-align: right;">
+            <li style="direction: rtl; text-align: right;">עבור על המסמכים המצורפים ווודא שכל הפרטים נכונים</li>
+            <li style="direction: rtl; text-align: right;">נציג מטעמנו ייצור איתך קשר תוך 24 שעות עבודה</li>
+            <li style="direction: rtl; text-align: right;">נדריך אותך לגבי המשך התהליך המשפטי</li>
           </ol>
 
-          <p>יש שאלות? פשוט תשיב למייל הזה ונשמח לעזור!</p>
+          <p style="direction: rtl; text-align: right;">יש שאלות? פשוט תשיב למייל הזה ונשמח לעזור!</p>
         </div>
 
-        <div class="footer">
-          <p><strong>בהצלחה!</strong><br>
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #666; font-size: 14px; direction: rtl; text-align: right;">
+          <p style="direction: rtl; text-align: right;"><strong>בהצלחה!</strong><br>
           צוות Law4Us</p>
-          <p>📞 טלפון: <a href="tel:+97236951408">03-6951408</a><br>
+          <p style="direction: rtl; text-align: right;">📞 טלפון: <a href="tel:+97236951408">03-6951408</a><br>
           📱 נייד: <a href="tel:+972507529938">050-7529938</a><br>
           📧 ${EMAIL_TO}<br>
           🌐 <a href="https://law-4-us.co.il">law-4-us.co.il</a></p>
@@ -194,49 +183,40 @@ export async function sendSessionSavedEmail(
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; }
-        .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 10px; }
-        .header { text-align: center; color: #2563eb; margin-bottom: 30px; }
-        .content { color: #333; line-height: 1.8; }
-        .button { display: inline-block; background-color: #2563eb; color: #ffffff; padding: 15px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; font-weight: bold; }
-        .highlight { background-color: #dbeafe; padding: 15px; border-radius: 5px; margin: 20px 0; }
-        .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #666; font-size: 14px; }
-      </style>
     </head>
-    <body>
-      <div class="container">
-        <div class="header">
-          <h1>✅ הבקשה שלך נשמרה!</h1>
+    <body dir="rtl" style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; direction: rtl;">
+      <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 10px; direction: rtl;">
+        <div style="text-align: center; color: #2563eb; margin-bottom: 30px;">
+          <h1 style="direction: rtl;">✅ הבקשה שלך נשמרה!</h1>
         </div>
 
-        <div class="content">
-          <p>שלום ${name},</p>
+        <div style="color: #333; line-height: 1.8; direction: rtl; text-align: right;">
+          <p style="direction: rtl; text-align: right;">שלום ${name},</p>
 
-          <p>הבקשה שלך לטיפול בתביעה נשמרה אצלנו בהצלחה.</p>
+          <p style="direction: rtl; text-align: right;">הבקשה שלך לטיפול בתביעה נשמרה אצלנו בהצלחה.</p>
 
-          <p><strong>תוכל לחזור ולהשלים את התהליך בכל רגע דרך הקישור הזה:</strong></p>
+          <p style="direction: rtl; text-align: right;"><strong>תוכל לחזור ולהשלים את התהליך בכל רגע דרך הקישור הזה:</strong></p>
 
           <center>
-            <a href="${recoveryUrl}" class="button">המשך לתהליך</a>
+            <a href="${recoveryUrl}" style="display: inline-block; background-color: #2563eb; color: #ffffff; padding: 15px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; font-weight: bold;">המשך לתהליך</a>
           </center>
 
-          <div class="highlight">
-            <p><strong>💡 חשוב לדעת:</strong></p>
-            <ul>
-              <li>הקישור תקף ל-30 יום</li>
-              <li>כל המידע שהזנת נשמר בצורה מאובטחת</li>
-              <li>תוכל להמשיך מכל מכשיר</li>
+          <div style="background-color: #dbeafe; padding: 15px; border-radius: 5px; margin: 20px 0; direction: rtl; text-align: right;">
+            <p style="direction: rtl; text-align: right;"><strong>💡 חשוב לדעת:</strong></p>
+            <ul style="direction: rtl; text-align: right;">
+              <li style="direction: rtl; text-align: right;">הקישור תקף ל-30 יום</li>
+              <li style="direction: rtl; text-align: right;">כל המידע שהזנת נשמר בצורה מאובטחת</li>
+              <li style="direction: rtl; text-align: right;">תוכל להמשיך מכל מכשיר</li>
             </ul>
           </div>
 
-          <p>אל תדאג - לא תצטרך להזין את הפרטים מחדש!</p>
+          <p style="direction: rtl; text-align: right;">אל תדאג - לא תצטרך להזין את הפרטים מחדש!</p>
         </div>
 
-        <div class="footer">
-          <p><strong>בברכה,</strong><br>
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #666; font-size: 14px; direction: rtl; text-align: right;">
+          <p style="direction: rtl; text-align: right;"><strong>בברכה,</strong><br>
           צוות Law4Us</p>
-          <p>📞 טלפון: <a href="tel:+97236951408">03-6951408</a><br>
+          <p style="direction: rtl; text-align: right;">📞 טלפון: <a href="tel:+97236951408">03-6951408</a><br>
           📱 נייד: <a href="tel:+972507529938">050-7529938</a><br>
           📧 ${EMAIL_TO}</p>
         </div>
@@ -297,47 +277,38 @@ export async function sendPaymentConfirmation(
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; }
-        .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 10px; }
-        .header { text-align: center; color: #10b981; margin-bottom: 30px; }
-        .content { color: #333; line-height: 1.8; }
-        .button { display: inline-block; background-color: #10b981; color: #ffffff; padding: 15px 40px; text-decoration: none; border-radius: 5px; margin: 20px 0; font-weight: bold; font-size: 18px; }
-        .payment-details { background-color: #f0fdf4; padding: 20px; border-radius: 5px; margin: 20px 0; border-right: 4px solid #10b981; }
-        .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #666; font-size: 14px; }
-      </style>
     </head>
-    <body>
-      <div class="container">
-        <div class="header">
-          <h1>🎉 התשלום התקבל בהצלחה!</h1>
+    <body dir="rtl" style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; direction: rtl;">
+      <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 10px; direction: rtl;">
+        <div style="text-align: center; color: #10b981; margin-bottom: 30px;">
+          <h1 style="direction: rtl;">🎉 התשלום התקבל בהצלחה!</h1>
         </div>
 
-        <div class="content">
-          <p>שלום ${name},</p>
+        <div style="color: #333; line-height: 1.8; direction: rtl; text-align: right;">
+          <p style="direction: rtl; text-align: right;">שלום ${name},</p>
 
-          <p><strong>התשלום שלך התקבל בהצלחה!</strong></p>
+          <p style="direction: rtl; text-align: right;"><strong>התשלום שלך התקבל בהצלחה!</strong></p>
 
-          <div class="payment-details">
-            <h3>פרטי התשלום:</h3>
-            <ul style="list-style-type: none; padding: 0;">
-              <li>💰 <strong>סכום:</strong> ₪${formattedAmount}</li>
-              <li>📅 <strong>תאריך:</strong> ${formattedDate}</li>
-              <li>🔖 <strong>אסמכתא:</strong> ${transactionId}</li>
+          <div style="background-color: #f0fdf4; padding: 20px; border-radius: 5px; margin: 20px 0; border-right: 4px solid #10b981; direction: rtl; text-align: right;">
+            <h3 style="direction: rtl; text-align: right;">פרטי התשלום:</h3>
+            <ul style="list-style-type: none; padding: 0; direction: rtl; text-align: right;">
+              <li style="direction: rtl; text-align: right;">💰 <strong>סכום:</strong> ₪${formattedAmount}</li>
+              <li style="direction: rtl; text-align: right;">📅 <strong>תאריך:</strong> ${formattedDate}</li>
+              <li style="direction: rtl; text-align: right;">🔖 <strong>אסמכתא:</strong> ${transactionId}</li>
             </ul>
           </div>
 
-          <p><strong>נשאר לך רק צעד אחד להשלמת התהליך:</strong></p>
+          <p style="direction: rtl; text-align: right;"><strong>נשאר לך רק צעד אחד להשלמת התהליך:</strong></p>
 
           <center>
-            <a href="${resumeUrl}" class="button">להשלמת השליחה - קליק אחד!</a>
+            <a href="${resumeUrl}" style="display: inline-block; background-color: #10b981; color: #ffffff; padding: 15px 40px; text-decoration: none; border-radius: 5px; margin: 20px 0; font-weight: bold; font-size: 18px;">להשלמת השליחה - קליק אחד!</a>
           </center>
         </div>
 
-        <div class="footer">
-          <p><strong>בברכה,</strong><br>
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #666; font-size: 14px; direction: rtl; text-align: right;">
+          <p style="direction: rtl; text-align: right;"><strong>בברכה,</strong><br>
           צוות Law4Us</p>
-          <p>📞 טלפון: <a href="tel:+97236951408">03-6951408</a><br>
+          <p style="direction: rtl; text-align: right;">📞 טלפון: <a href="tel:+97236951408">03-6951408</a><br>
           📱 נייד: <a href="tel:+972507529938">050-7529938</a><br>
           📧 ${EMAIL_TO}</p>
         </div>
@@ -389,42 +360,33 @@ export async function sendRecoveryReminder(
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; }
-        .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 10px; }
-        .header { text-align: center; color: #f59e0b; margin-bottom: 30px; }
-        .content { color: #333; line-height: 1.8; }
-        .button { display: inline-block; background-color: #f59e0b; color: #ffffff; padding: 15px 40px; text-decoration: none; border-radius: 5px; margin: 20px 0; font-weight: bold; font-size: 18px; }
-        .highlight { background-color: #fef3c7; padding: 15px; border-radius: 5px; margin: 20px 0; }
-        .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #666; font-size: 14px; }
-      </style>
     </head>
-    <body>
-      <div class="container">
-        <div class="header">
-          <h1>⏰ רגע! נשאר לך רק צעד אחד</h1>
+    <body dir="rtl" style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; direction: rtl;">
+      <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 10px; direction: rtl;">
+        <div style="text-align: center; color: #f59e0b; margin-bottom: 30px;">
+          <h1 style="direction: rtl;">⏰ רגע! נשאר לך רק צעד אחד</h1>
         </div>
 
-        <div class="content">
-          <p>שלום ${name},</p>
+        <div style="color: #333; line-height: 1.8; direction: rtl; text-align: right;">
+          <p style="direction: rtl; text-align: right;">שלום ${name},</p>
 
-          <p>שמנו לב שהתשלום שלך התקבל בהצלחה, אבל התהליך עדיין לא הושלם.</p>
+          <p style="direction: rtl; text-align: right;">שמנו לב שהתשלום שלך התקבל בהצלחה, אבל התהליך עדיין לא הושלם.</p>
 
-          <div class="highlight">
-            <p><strong>כדי שנוכל להתחיל לטפל בתיק שלך, נשאר רק לסיים את השליחה:</strong></p>
+          <div style="background-color: #fef3c7; padding: 15px; border-radius: 5px; margin: 20px 0; direction: rtl; text-align: right;">
+            <p style="direction: rtl; text-align: right;"><strong>כדי שנוכל להתחיל לטפל בתיק שלך, נשאר רק לסיים את השליחה:</strong></p>
           </div>
 
           <center>
-            <a href="${resumeUrl}" class="button">לחץ כאן לסיום התהליך - 30 שניות</a>
+            <a href="${resumeUrl}" style="display: inline-block; background-color: #f59e0b; color: #ffffff; padding: 15px 40px; text-decoration: none; border-radius: 5px; margin: 20px 0; font-weight: bold; font-size: 18px;">לחץ כאן לסיום התהליך - 30 שניות</a>
           </center>
 
-          <p>יש בעיה? פשוט תשיב למייל הזה ונעזור!</p>
+          <p style="direction: rtl; text-align: right;">יש בעיה? פשוט תשיב למייל הזה ונעזור!</p>
         </div>
 
-        <div class="footer">
-          <p><strong>בברכה,</strong><br>
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #666; font-size: 14px; direction: rtl; text-align: right;">
+          <p style="direction: rtl; text-align: right;"><strong>בברכה,</strong><br>
           צוות Law4Us</p>
-          <p>📞 טלפון: <a href="tel:+97236951408">03-6951408</a><br>
+          <p style="direction: rtl; text-align: right;">📞 טלפון: <a href="tel:+97236951408">03-6951408</a><br>
           📱 נייד: <a href="tel:+972507529938">050-7529938</a><br>
           📧 ${EMAIL_TO}</p>
         </div>
@@ -481,47 +443,37 @@ export async function sendContactFormNotification(
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; }
-        .container { max-width: 700px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 10px; }
-        .header { background-color: #2563eb; color: white; padding: 20px; border-radius: 5px; margin-bottom: 20px; }
-        .content { color: #333; line-height: 1.8; }
-        .field { margin: 15px 0; padding: 10px; background-color: #f9fafb; border-right: 3px solid #2563eb; }
-        .field-label { font-weight: bold; color: #2563eb; }
-        .message-box { background-color: #f3f4f6; padding: 20px; border-radius: 5px; margin: 20px 0; white-space: pre-wrap; }
-        .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #666; font-size: 14px; }
-      </style>
     </head>
-    <body>
-      <div class="container">
-        <div class="header">
-          <h2>📬 פנייה חדשה מטופס יצירת קשר</h2>
+    <body dir="rtl" style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; direction: rtl;">
+      <div style="max-width: 700px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 10px; direction: rtl;">
+        <div style="background-color: #2563eb; color: white; padding: 20px; border-radius: 5px; margin-bottom: 20px; direction: rtl; text-align: right;">
+          <h2 style="direction: rtl; text-align: right;">📬 פנייה חדשה מטופס יצירת קשר</h2>
         </div>
 
-        <div class="content">
-          <div class="field">
-            <span class="field-label">👤 שם:</span> ${name}
+        <div style="color: #333; line-height: 1.8; direction: rtl; text-align: right;">
+          <div style="margin: 15px 0; padding: 10px; background-color: #f9fafb; border-right: 3px solid #2563eb; direction: rtl; text-align: right;">
+            <span style="font-weight: bold; color: #2563eb;">👤 שם:</span> ${name}
           </div>
 
-          <div class="field">
-            <span class="field-label">📧 אימייל:</span> <a href="mailto:${email}">${email}</a>
+          <div style="margin: 15px 0; padding: 10px; background-color: #f9fafb; border-right: 3px solid #2563eb; direction: rtl; text-align: right;">
+            <span style="font-weight: bold; color: #2563eb;">📧 אימייל:</span> <a href="mailto:${email}">${email}</a>
           </div>
 
-          <div class="field">
-            <span class="field-label">📞 טלפון:</span> <a href="tel:${phone}">${phone}</a>
+          <div style="margin: 15px 0; padding: 10px; background-color: #f9fafb; border-right: 3px solid #2563eb; direction: rtl; text-align: right;">
+            <span style="font-weight: bold; color: #2563eb;">📞 טלפון:</span> <a href="tel:${phone}">${phone}</a>
           </div>
 
-          <div class="field">
-            <span class="field-label">📋 נושא:</span> ${subject}
+          <div style="margin: 15px 0; padding: 10px; background-color: #f9fafb; border-right: 3px solid #2563eb; direction: rtl; text-align: right;">
+            <span style="font-weight: bold; color: #2563eb;">📋 נושא:</span> ${subject}
           </div>
 
-          <h3>הודעה:</h3>
-          <div class="message-box">${message}</div>
+          <h3 style="direction: rtl; text-align: right;">הודעה:</h3>
+          <div style="background-color: #f3f4f6; padding: 20px; border-radius: 5px; margin: 20px 0; white-space: pre-wrap; direction: rtl; text-align: right;">${message}</div>
         </div>
 
-        <div class="footer">
-          <p>📅 <strong>תאריך:</strong> ${timestamp}</p>
-          <p style="color: #999; font-size: 12px;">מייל אוטומטי מאתר Law4Us</p>
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #666; font-size: 14px; direction: rtl; text-align: right;">
+          <p style="direction: rtl; text-align: right;">📅 <strong>תאריך:</strong> ${timestamp}</p>
+          <p style="color: #999; font-size: 12px; direction: rtl; text-align: right;">מייל אוטומטי מאתר Law4Us</p>
         </div>
       </div>
     </body>
@@ -567,39 +519,31 @@ export async function sendContactFormAutoReply(
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; }
-        .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 10px; }
-        .header { text-align: center; color: #2563eb; margin-bottom: 30px; }
-        .content { color: #333; line-height: 1.8; }
-        .highlight { background-color: #dbeafe; padding: 15px; border-radius: 5px; margin: 20px 0; }
-        .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #666; font-size: 14px; }
-      </style>
     </head>
-    <body>
-      <div class="container">
-        <div class="header">
-          <h1>✅ קיבלנו את הפנייה שלך!</h1>
+    <body dir="rtl" style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; direction: rtl;">
+      <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 10px; direction: rtl;">
+        <div style="text-align: center; color: #2563eb; margin-bottom: 30px;">
+          <h1 style="direction: rtl;">✅ קיבלנו את הפנייה שלך!</h1>
         </div>
 
-        <div class="content">
-          <p>שלום ${name},</p>
+        <div style="color: #333; line-height: 1.8; direction: rtl; text-align: right;">
+          <p style="direction: rtl; text-align: right;">שלום ${name},</p>
 
-          <p><strong>תודה שפנית אלינו!</strong></p>
+          <p style="direction: rtl; text-align: right;"><strong>תודה שפנית אלינו!</strong></p>
 
-          <div class="highlight">
-            <p><strong>נושא הפנייה:</strong> ${subject}</p>
+          <div style="background-color: #dbeafe; padding: 15px; border-radius: 5px; margin: 20px 0; direction: rtl; text-align: right;">
+            <p style="direction: rtl; text-align: right;"><strong>נושא הפנייה:</strong> ${subject}</p>
           </div>
 
-          <p>קיבלנו את ההודעה שלך ונחזור אליך בהקדם האפשרי (בדרך כלל תוך 24 שעות עבודה).</p>
+          <p style="direction: rtl; text-align: right;">קיבלנו את ההודעה שלך ונחזור אליך בהקדם האפשרי (בדרך כלל תוך 24 שעות עבודה).</p>
 
-          <p>אם הנושא דחוף, אתה מוזמן ליצור איתנו קשר טלפוני.</p>
+          <p style="direction: rtl; text-align: right;">אם הנושא דחוף, אתה מוזמן ליצור איתנו קשר טלפוני.</p>
         </div>
 
-        <div class="footer">
-          <p><strong>בברכה,</strong><br>
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #666; font-size: 14px; direction: rtl; text-align: right;">
+          <p style="direction: rtl; text-align: right;"><strong>בברכה,</strong><br>
           צוות Law4Us</p>
-          <p>📞 טלפון: <a href="tel:+97236951408">03-6951408</a><br>
+          <p style="direction: rtl; text-align: right;">📞 טלפון: <a href="tel:+97236951408">03-6951408</a><br>
           📱 נייד: <a href="tel:+972507529938">050-7529938</a><br>
           📧 <a href="mailto:${EMAIL_TO}">${EMAIL_TO}</a><br>
           🌐 <a href="https://law-4-us.co.il">law-4-us.co.il</a></p>
