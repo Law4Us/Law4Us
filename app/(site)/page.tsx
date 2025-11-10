@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { HomeBlogSection } from "@/components/home-blog-section";
 import { LazySectionFade } from "@/components/ui/lazy-section";
 import {
@@ -15,6 +16,14 @@ import {
 } from "@/components/home";
 
 export default function Home() {
+  // Disable browser scroll restoration and ensure page starts at top
+  useEffect(() => {
+    if ('scrollRestoration' in history) {
+      history.scrollRestoration = 'manual';
+    }
+    window.scrollTo(0, 0);
+  }, []);
+
   return (
     <>
       {/* Hero Section */}
