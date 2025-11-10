@@ -313,9 +313,10 @@ export async function generateDivorceClaim(data: DivorceClaimData): Promise<Buff
             bidirectional: true,
           }),
 
-          ...(getRelatedClaimsNotice(selectedClaims)
-            ? [createBodyParagraph(getRelatedClaimsNotice(selectedClaims))]
-            : []),
+          ...(() => {
+            const relatedClaimsNotice = getRelatedClaimsNotice(selectedClaims);
+            return relatedClaimsNotice ? [createBodyParagraph(relatedClaimsNotice)] : [];
+          })(),
 
           // ===== SUMMONS (MAJOR SECTION) =====
           createSectionHeader('הזמנה לדין:\u200F'),

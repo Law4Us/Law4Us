@@ -532,7 +532,7 @@ export function mapFormDataToForm4Data(
         bankName: account?.bankName || '',
         accountNumber: account?.accountNumber || '',
         balance: sanitizeNumber(account?.balance),
-      })).filter((account) => account.bankName || account.accountNumber)
+      })).filter((account: { bankName: string; accountNumber: string; balance: number }) => account.bankName || account.accountNumber)
     : [];
 
   // Map employment status
