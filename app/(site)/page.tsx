@@ -3,6 +3,7 @@
 import { useLayoutEffect } from "react";
 import { HomeBlogSection } from "@/components/home-blog-section";
 import { LazySectionFade } from "@/components/ui/lazy-section";
+import { StructuredData } from "@/components/seo/structured-data";
 import {
   HeroSection,
   VideoSection,
@@ -39,6 +40,9 @@ export default function Home() {
 
   return (
     <>
+      {/* SEO Structured Data */}
+      <StructuredData />
+
       {/* Hero Section */}
       <HeroSection />
 

@@ -23,9 +23,25 @@ import { colors } from "@/lib/design-tokens/colors";
 import { animations } from "@/lib/utils/animations";
 
 export const metadata: Metadata = {
-  title: "אודות - Law4Us",
+  title: "אודות - Law4Us | עו\"ד אריאל דרור - משרד עורכי דין לדיני משפחה",
   description:
-    "הסיפור מאחורי ההצלחה. משרד עורכי דין מוביל בתחום דיני המשפחה בישראל.",
+    "הסיפור מאחורי ההצלחה. עו\"ד אריאל דרור מוביל את Law4Us, פלטפורמה דיגיטלית חדשנית לטיפול בתיקי דיני משפחה. 24+ שנות ניסיון, 5000+ תיקים מטופלים, 98% שביעות רצון.",
+  keywords: [
+    "עו\"ד אריאל דרור",
+    "משרד עורכי דין Law4Us",
+    "עורך דין דיני משפחה",
+    "עורך דין גירושין מומלץ",
+    "משרד עורכי דין תל אביב",
+  ],
+  openGraph: {
+    title: "אודות Law4Us | עו\"ד אריאל דרור - מובילים בדיני משפחה",
+    description: "24+ שנות ניסיון בדיני משפחה, 5000+ תיקים מטופלים. הכירו את הצוות והחזון של Law4Us.",
+    url: "https://law-4-us.co.il/about",
+    images: ["/og-image.png"],
+  },
+  alternates: {
+    canonical: "https://law-4-us.co.il/about",
+  },
 };
 
 const stats = [
