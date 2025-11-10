@@ -32,7 +32,7 @@ export function BenefitsSection() {
         </div>
 
         <div className="flex flex-col md:flex-row gap-6">
-          <SlideInView delay={0} direction="up" duration={600} threshold={0.2} rootMargin='0px'>
+          <SlideInView delay={0} direction="up" duration={600}>
             <div style={CARD_STYLES.container}>
               <div style={CARD_STYLES.iconCircle}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -52,7 +52,7 @@ export function BenefitsSection() {
             </div>
           </SlideInView>
 
-          <SlideInView delay={100} direction="up" duration={600} threshold={0.2} rootMargin='0px'>
+          <SlideInView delay={100} direction="up" duration={600}>
             <div style={CARD_STYLES.container}>
               <div style={CARD_STYLES.iconCircle}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -73,7 +73,7 @@ export function BenefitsSection() {
             </div>
           </SlideInView>
 
-          <SlideInView delay={200} direction="up" duration={600} threshold={0.2} rootMargin='0px'>
+          <SlideInView delay={200} direction="up" duration={600}>
             <div style={CARD_STYLES.container}>
               <div style={CARD_STYLES.iconCircle}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -92,7 +92,7 @@ export function BenefitsSection() {
             </div>
           </SlideInView>
 
-          <SlideInView delay={300} direction="up" duration={600} threshold={0.2} rootMargin='0px'>
+          <SlideInView delay={300} direction="up" duration={600}>
             <div style={CARD_STYLES.container}>
               <div style={CARD_STYLES.iconCircle}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
