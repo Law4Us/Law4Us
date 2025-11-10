@@ -22,6 +22,22 @@ import type { Form4Data } from './form4-filler';
 // Cache for the Hebrew font
 let hebrewFontBytes: Uint8Array | null = null;
 
+function resolveHebrewFontPath(): string | null {
+  const candidates = [
+    path.join(process.cwd(), 'public', 'fonts', 'NotoSansHebrew-Regular.ttf'),
+    path.join(process.cwd(), 'NotoSansHebrew-Regular.ttf'),
+    path.join(__dirname, 'NotoSansHebrew-Regular.ttf'),
+  ];
+
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
+  }
+
+  return null;
+}
+
 const numericAmount = (value: unknown): number => {
   if (typeof value === 'number' && Number.isFinite(value)) {
     return value;
@@ -41,10 +57,10 @@ async function loadHebrewFont(): Promise<Uint8Array> {
     return hebrewFontBytes;
   }
 
-  const fontPath = path.join(process.cwd(), 'NotoSansHebrew-Regular.ttf');
+  const fontPath = resolveHebrewFontPath();
 
-  if (!fs.existsSync(fontPath)) {
-    throw new Error(`Hebrew font not found at: ${fontPath}`);
+  if (!fontPath) {
+    throw new Error('Hebrew font not found (expected NotoSansHebrew-Regular.ttf)');
   }
 
   const fontBuffer = fs.readFileSync(fontPath);
