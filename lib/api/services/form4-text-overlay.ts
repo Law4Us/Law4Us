@@ -35,7 +35,7 @@ const numericAmount = (value: unknown): number => {
 };
 
 /**
- * Load Assistant font from local file (supports Hebrew characters and numerals)
+ * Load Noto Sans Hebrew font from local file (supports Hebrew characters)
  */
 async function loadHebrewFont(): Promise<Uint8Array> {
   if (hebrewFontBytes) {

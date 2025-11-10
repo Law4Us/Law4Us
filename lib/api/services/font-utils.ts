@@ -2,8 +2,8 @@ import fs from 'fs';
 import path from 'path';
 import https from 'https';
 
-const FONT_FILE_NAME = 'Assistant-Regular.ttf';
-const FALLBACK_FONT_URL = 'https://github.com/google/fonts/raw/main/ofl/assistant/Assistant-Regular.ttf';
+const FONT_FILE_NAME = 'NotoSansHebrew-Regular.ttf';
+const FALLBACK_FONT_URL = 'https://raw.githubusercontent.com/googlefonts/noto-fonts/main/hinted/ttf/NotoSansHebrew/NotoSansHebrew-Regular.ttf';
 
 const candidateFolders = [
   path.join(process.cwd(), 'public', 'fonts'),

@@ -28,7 +28,7 @@ async function ensureCanvasFontRegistered() {
 
   try {
     const fontPath = await ensureHebrewFontPath();
-    registerFont(fontPath, { family: 'Assistant' });
+    registerFont(fontPath, { family: 'Noto Sans Hebrew' });
     hebrewFontRegistered = true;
     console.log(`✅ Hebrew font registered for Form 4 overlay (${fontPath})`);
   } catch (error) {
@@ -365,7 +365,7 @@ async function addTextOverlayToPng(
   // Add text overlays
   textElements.forEach((element, index) => {
     const fontWeight = element.bold ? 'bold' : 'normal';
-    ctx.font = `${fontWeight} ${element.fontSize}px "Assistant", Arial, sans-serif`;
+    ctx.font = `${fontWeight} ${element.fontSize}px "Noto Sans Hebrew", Arial, sans-serif`;
     ctx.textAlign = element.align || 'right'; // Default to right for Hebrew
 
     if (element.maxWidth) {
