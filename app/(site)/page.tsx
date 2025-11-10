@@ -30,9 +30,7 @@ export default function Home() {
       <BenefitsSection />
 
       {/* Claim Types Section */}
-      <LazySectionFade rootMargin="300px" fadeDuration={600}>
-        <ClaimTypesSection />
-      </LazySectionFade>
+      <ClaimTypesSection />
 
       {/* Testimonials Section */}
       <TestimonialsSection />
