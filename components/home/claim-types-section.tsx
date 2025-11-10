@@ -11,17 +11,17 @@ export function ClaimTypesSection() {
   const [selectedClaimTab, setSelectedClaimTab] = React.useState(0);
   const [fadeKey, setFadeKey] = React.useState(0);
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
-  const isInitialMount = React.useRef(true);
+  const hasUserInteracted = React.useRef(false);
 
   // Trigger fade animation when tab changes
   React.useEffect(() => {
     setFadeKey(prev => prev + 1);
   }, [selectedClaimTab]);
 
-  // Auto-scroll to selected tab on mobile (skip on initial mount)
+  // Auto-scroll to selected tab on mobile (only after user interaction)
   React.useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
+    // Only scroll if user has clicked a tab (not on initial render/mount)
+    if (!hasUserInteracted.current) {
       return;
     }
 
@@ -29,10 +29,23 @@ export function ClaimTypesSection() {
       const buttons = scrollContainerRef.current.querySelectorAll('button');
       const selectedButton = buttons[selectedClaimTab];
       if (selectedButton) {
-        selectedButton.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        // Use requestAnimationFrame for smoother scrolling
+        requestAnimationFrame(() => {
+          selectedButton.scrollIntoView({
+            behavior: 'smooth',
+            block: 'nearest',
+            inline: 'center'
+          });
+        });
       }
     }
   }, [selectedClaimTab]);
+
+  // Handle tab selection with interaction tracking
+  const handleTabClick = React.useCallback((index: number) => {
+    hasUserInteracted.current = true;
+    setSelectedClaimTab(index);
+  }, []);
 
   return (
     <section className="py-12 md:py-16 lg:py-20" id="claim-types">
@@ -79,7 +92,7 @@ export function ClaimTypesSection() {
               {claimTabs.map((tab, index) => (
                 <button
                   key={index}
-                  onClick={() => setSelectedClaimTab(index)}
+                  onClick={() => handleTabClick(index)}
                   className="flex-shrink-0 lg:flex-shrink snap-center px-4 lg:px-0 py-4 text-right lg:text-right transition-all relative group whitespace-nowrap lg:whitespace-normal text-[18px] lg:text-[24px]"
                   style={{
                     ...TYPOGRAPHY.h3,

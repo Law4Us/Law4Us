@@ -1,9 +1,10 @@
 'use client';
 
+import { memo } from 'react';
 import { TYPOGRAPHY, CARD_STYLES } from '@/lib/constants/styles';
 import { SlideInView } from '@/components/animations/slide-in-view';
 
-export function BenefitsSection() {
+export const BenefitsSection = memo(function BenefitsSection() {
   return (
     <section className="py-12 md:py-16 lg:py-20">
       <div className="max-w-[1200px] mx-auto px-6">
@@ -114,4 +115,4 @@ export function BenefitsSection() {
       </div>
     </section>
   );
-}
+});

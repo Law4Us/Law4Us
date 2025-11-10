@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useLayoutEffect } from "react";
 import { HomeBlogSection } from "@/components/home-blog-section";
 import { LazySectionFade } from "@/components/ui/lazy-section";
 import {
@@ -16,12 +16,25 @@ import {
 } from "@/components/home";
 
 export default function Home() {
-  // Disable browser scroll restoration and ensure page starts at top
-  useEffect(() => {
+  // Use layoutEffect to prevent scroll flash before paint
+  useLayoutEffect(() => {
+    // Store original scroll restoration setting
+    const originalScrollRestoration = history.scrollRestoration;
+
+    // Disable automatic scroll restoration for this page
     if ('scrollRestoration' in history) {
       history.scrollRestoration = 'manual';
     }
-    window.scrollTo(0, 0);
+
+    // Scroll to top without smooth behavior (instant, no animation conflicts)
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+
+    // Cleanup: restore original behavior when component unmounts
+    return () => {
+      if ('scrollRestoration' in history) {
+        history.scrollRestoration = originalScrollRestoration;
+      }
+    };
   }, []);
 
   return (

@@ -55,6 +55,7 @@ export function SlideInView({
 }: SlideInViewProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
+  const [hasAnimated, setHasAnimated] = useState(false);
 
   useEffect(() => {
     const element = ref.current;
@@ -65,13 +66,21 @@ export function SlideInView({
 
     if (prefersReducedMotion) {
       setIsVisible(true);
+      setHasAnimated(true);
       return;
     }
 
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          setIsVisible(true);
+          // Use requestAnimationFrame for smoother animation trigger
+          requestAnimationFrame(() => {
+            setIsVisible(true);
+            // Mark animation as complete after duration + delay
+            setTimeout(() => {
+              setHasAnimated(true);
+            }, duration + delay);
+          });
           // Once visible, stop observing
           observer.unobserve(element);
         }
@@ -89,7 +98,7 @@ export function SlideInView({
         observer.unobserve(element);
       }
     };
-  }, [threshold, rootMargin]);
+  }, [threshold, rootMargin, duration, delay]);
 
   const getTransformOrigin = () => {
     switch (direction) {
@@ -116,7 +125,10 @@ export function SlideInView({
         transitionDuration: `${duration}ms`,
         transitionDelay: `${delay}ms`,
         ...(disableContainment ? {} : { contain: 'layout style paint' }),
-        willChange: isVisible ? 'auto' : 'opacity, transform',
+        // Remove willChange after animation completes for better performance
+        willChange: hasAnimated ? 'auto' : 'opacity, transform',
+        // Add content-visibility for rendering performance
+        contentVisibility: 'auto',
       }}
     >
       {children}
