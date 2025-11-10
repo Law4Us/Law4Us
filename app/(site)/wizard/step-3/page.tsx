@@ -209,7 +209,7 @@ export default function Step3SignDocuments() {
         <div
           className={cn(
             "bg-white rounded-xl border-2 p-8 transition-all duration-300",
-            doc1Reviewed && doc2Reviewed
+            doc1Reviewed && (!shouldShowForm3 || doc2Reviewed)
               ? "border-primary shadow-lg"
               : "border-neutral-light opacity-60"
           )}
