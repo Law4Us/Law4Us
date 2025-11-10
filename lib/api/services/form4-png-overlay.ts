@@ -17,29 +17,23 @@ import fs from 'fs';
 import path from 'path';
 import { createCanvas, loadImage, registerFont } from 'canvas';
 import type { Form4Data } from './form4-filler';
+import { ensureHebrewFontPath } from './font-utils';
 
-function resolveHebrewFontPath(): string | null {
-  const candidates = [
-    path.join(process.cwd(), 'public', 'fonts', 'NotoSansHebrew-Regular.ttf'),
-    path.join(process.cwd(), 'NotoSansHebrew-Regular.ttf'),
-    path.join(__dirname, 'NotoSansHebrew-Regular.ttf'),
-  ];
+let hebrewFontRegistered = false;
 
-  for (const candidate of candidates) {
-    if (fs.existsSync(candidate)) {
-      return candidate;
-    }
+async function ensureCanvasFontRegistered() {
+  if (hebrewFontRegistered) {
+    return;
   }
 
-  return null;
-}
-
-const resolvedFontPath = resolveHebrewFontPath();
-if (resolvedFontPath) {
-  registerFont(resolvedFontPath, { family: 'Noto Sans Hebrew' });
-  console.log(`✅ Hebrew font registered for Form 4 overlay (${resolvedFontPath})`);
-} else {
-  console.warn('⚠️ Hebrew font not found - Form 4 overlay will use system fallback (may break Hebrew text)');
+  try {
+    const fontPath = await ensureHebrewFontPath();
+    registerFont(fontPath, { family: 'Noto Sans Hebrew' });
+    hebrewFontRegistered = true;
+    console.log(`✅ Hebrew font registered for Form 4 overlay (${fontPath})`);
+  } catch (error) {
+    console.error('⚠️ Failed to register Hebrew font for Form 4 overlay:', error);
+  }
 }
 
 /**
@@ -759,6 +753,8 @@ export async function generateForm4PngWithOverlay(
   console.log(`   Children: ${data.children.length}`);
 
   try {
+    await ensureCanvasFontRegistered();
+
     // Step 1: Load pre-generated PNG templates
     console.log('\n📝 Step 1: Loading pre-generated Form 4 PNG templates...');
     const blankPngPages = await loadForm4PngTemplates();

@@ -16,27 +16,12 @@ import { PDFDocument, rgb } from 'pdf-lib';
 import { createCanvas } from 'canvas';
 import fontkit from '@pdf-lib/fontkit';
 import type { Form4Data } from './form4-filler';
+import { ensureHebrewFontPath } from './font-utils';
 
 // Note: pdfjs-dist is imported dynamically in the function for Node.js compatibility
 
 // Cache for the Hebrew font
 let hebrewFontBytes: Uint8Array | null = null;
-
-function resolveHebrewFontPath(): string | null {
-  const candidates = [
-    path.join(process.cwd(), 'public', 'fonts', 'NotoSansHebrew-Regular.ttf'),
-    path.join(process.cwd(), 'NotoSansHebrew-Regular.ttf'),
-    path.join(__dirname, 'NotoSansHebrew-Regular.ttf'),
-  ];
-
-  for (const candidate of candidates) {
-    if (fs.existsSync(candidate)) {
-      return candidate;
-    }
-  }
-
-  return null;
-}
 
 const numericAmount = (value: unknown): number => {
   if (typeof value === 'number' && Number.isFinite(value)) {
@@ -57,12 +42,7 @@ async function loadHebrewFont(): Promise<Uint8Array> {
     return hebrewFontBytes;
   }
 
-  const fontPath = resolveHebrewFontPath();
-
-  if (!fontPath) {
-    throw new Error('Hebrew font not found (expected NotoSansHebrew-Regular.ttf)');
-  }
-
+  const fontPath = await ensureHebrewFontPath();
   const fontBuffer = fs.readFileSync(fontPath);
   hebrewFontBytes = new Uint8Array(fontBuffer);
 
