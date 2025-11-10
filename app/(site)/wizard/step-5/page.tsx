@@ -272,13 +272,8 @@ export default function Step5FinalSubmission() {
         status: "upcoming" as const,
       },
       {
-        title: "הגשת התביעה",
-        description: "התביעה תוגש לבית המשפט המשפחה תוך 3-5 ימי עסקים",
-        status: "upcoming" as const,
-      },
-      {
-        title: "מעקב שוטף",
-        description: "תקבלו עדכונים באופן שוטף לגבי התקדמות התיק",
+        title: "קבלת טפסים",
+        description: "תקבלו את כל המסמכים והטפסים המוכנים להגשה בדוא\"ל",
         status: "upcoming" as const,
       },
     ];
