@@ -127,8 +127,6 @@ export function SlideInView({
         ...(disableContainment ? {} : { contain: 'layout style paint' }),
         // Remove willChange after animation completes for better performance
         willChange: hasAnimated ? 'auto' : 'opacity, transform',
-        // Add content-visibility for rendering performance
-        contentVisibility: 'auto',
       }}
     >
       {children}
