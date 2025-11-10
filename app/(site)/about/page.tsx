@@ -247,7 +247,7 @@ export default function AboutPage() {
               </div>
             </SlideInView>
 
-            <SlideInView direction="left" delay={120}>
+            <SlideInView direction="left" delay={120} disableContainment={true}>
               <div className="relative">
                 <div className="rounded-[32px] border border-neutral-200 bg-white/80 p-2 shadow-xl backdrop-blur">
                   <ProgressiveImage

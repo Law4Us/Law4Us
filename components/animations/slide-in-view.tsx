@@ -22,6 +22,10 @@ interface SlideInViewProps {
    * Animation duration in milliseconds
    */
   duration?: number;
+  /**
+   * Disable CSS containment to allow overflow content (shadows, badges, etc.)
+   */
+  disableContainment?: boolean;
 }
 
 /**
@@ -42,6 +46,7 @@ export function SlideInView({
   direction = 'up',
   threshold = 0.1,
   duration = 600,
+  disableContainment = false,
 }: SlideInViewProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
@@ -105,7 +110,7 @@ export function SlideInView({
         transform: isVisible ? 'translate(0, 0)' : getTransformOrigin(),
         transitionDuration: `${duration}ms`,
         transitionDelay: `${delay}ms`,
-        contain: 'layout style paint',
+        ...(disableContainment ? {} : { contain: 'layout style paint' }),
         willChange: isVisible ? 'auto' : 'opacity, transform',
       }}
     >

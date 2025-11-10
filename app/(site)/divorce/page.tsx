@@ -204,7 +204,7 @@ const preparationTips = [
 export default function DivorcePage() {
   return (
     <div>
-      <section className="relative py-12 overflow-hidden">
+      <section className="relative py-12">
         <div className="mx-auto max-w-[1200px] px-4 sm:px-6 lg:px-8">
           <div className="grid gap-12 lg:grid-cols-[1.1fr,0.9fr] lg:items-center">
             <SlideInView direction="up">
@@ -271,7 +271,7 @@ export default function DivorcePage() {
               </div>
             </SlideInView>
 
-            <SlideInView direction="left" delay={140}>
+            <SlideInView direction="left" delay={140} disableContainment={true}>
               <div className="relative">
                 <div className="rounded-[32px] border border-neutral-200 bg-white/85 p-2 shadow-xl backdrop-blur">
                   <ProgressiveImage
