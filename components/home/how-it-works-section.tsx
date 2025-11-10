@@ -34,7 +34,7 @@ export function HowItWorksSection() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-16">
           {/* Step 01 */}
-          <SlideInView delay={0} direction="up">
+          <SlideInView delay={0} direction="up" disableContainment={true}>
             <div style={STEP_BOX_STYLES.container}>
               <div style={STEP_BOX_STYLES.headerSection}>
                 <div style={STEP_BOX_STYLES.contentArea}>
@@ -58,7 +58,7 @@ export function HowItWorksSection() {
           </SlideInView>
 
           {/* Step 02 */}
-          <SlideInView delay={150} direction="up">
+          <SlideInView delay={150} direction="up" disableContainment={true}>
             <div style={STEP_BOX_STYLES.container}>
               <div style={STEP_BOX_STYLES.headerSection}>
                 <div style={STEP_BOX_STYLES.contentArea}>
@@ -82,7 +82,7 @@ export function HowItWorksSection() {
           </SlideInView>
 
           {/* Step 03 */}
-          <SlideInView delay={300} direction="up">
+          <SlideInView delay={300} direction="up" disableContainment={true}>
             <div style={STEP_BOX_STYLES.container}>
               <div style={STEP_BOX_STYLES.headerSection}>
                 <div style={STEP_BOX_STYLES.contentArea}>

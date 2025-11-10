@@ -26,6 +26,10 @@ interface SlideInViewProps {
    * Disable CSS containment to allow overflow content (shadows, badges, etc.)
    */
   disableContainment?: boolean;
+  /**
+   * IntersectionObserver rootMargin (default: '0px 0px -50px 0px')
+   */
+  rootMargin?: string;
 }
 
 /**
@@ -46,7 +50,8 @@ export function SlideInView({
   direction = 'up',
   threshold = 0.1,
   duration = 600,
-  disableContainment = false,
+  disableContainment = true,
+  rootMargin = '0px 0px -50px 0px',
 }: SlideInViewProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
@@ -73,7 +78,7 @@ export function SlideInView({
       },
       {
         threshold,
-        rootMargin: '0px 0px -50px 0px', // Trigger slightly before element is fully in view
+        rootMargin,
       }
     );
 
@@ -84,7 +89,7 @@ export function SlideInView({
         observer.unobserve(element);
       }
     };
-  }, [threshold]);
+  }, [threshold, rootMargin]);
 
   const getTransformOrigin = () => {
     switch (direction) {
