@@ -130,6 +130,7 @@ export default function ContactPage() {
     <div>
       <LazySectionFade>
         <section
+          className="pt-8 md:pt-0"
           style={{
             paddingTop: spacing.semantic.section.padding.y.desktop,
             paddingBottom: spacing.semantic.section.padding.y.desktop,

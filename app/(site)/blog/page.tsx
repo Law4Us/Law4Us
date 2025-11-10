@@ -75,7 +75,7 @@ export default async function BlogPage() {
       />
 
       <LazySectionFade rootMargin="300px" fadeDuration={600}>
-        <section className="py-20">
+        <section className="pt-8 md:pt-20 pb-20">
           <div className="max-w-[1200px] mx-auto px-6">
             <div className="grid gap-12 lg:grid-cols-[1.1fr,0.9fr] lg:items-center">
               <SlideInView direction="up">

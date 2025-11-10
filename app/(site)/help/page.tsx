@@ -134,7 +134,7 @@ export default function HelpPage() {
   return (
     <div>
       <LazySectionFade>
-        <section className="py-20">
+        <section className="pt-8 md:pt-20 pb-20">
           <div className="max-w-[1200px] mx-auto px-6">
             <div className="grid items-center gap-12 lg:grid-cols-[1.1fr,0.9fr]">
               {/* Left Side - Content */}

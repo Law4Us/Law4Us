@@ -10,7 +10,7 @@ import { spacing } from '@/lib/design-tokens/spacing';
 
 export function HeroSection() {
   return (
-    <section className="relative pt-24 pb-12 md:pt-32 md:pb-16 lg:pb-20">
+    <section className="relative pt-8 md:pt-32 pb-12 md:pb-16 lg:pb-20">
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 text-center">
         {/* Badge/Tag with animated shimmer */}
         <div
