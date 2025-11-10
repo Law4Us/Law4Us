@@ -131,7 +131,6 @@ export default function ContactPage() {
       <LazySectionFade>
         <section
           style={{
-            paddingTop: spacing.semantic.section.padding.y.desktop,
             paddingBottom: spacing.semantic.section.padding.y.desktop,
           }}
         >
