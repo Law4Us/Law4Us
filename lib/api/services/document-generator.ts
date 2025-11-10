@@ -267,6 +267,7 @@ export async function generateDocument(
         signature: options.signature,
         lawyerSignature: options.lawyerSignature,
         attachments: options.attachments,
+        selectedClaims: options.selectedClaims,
       });
     } else if (claimType === 'divorceAgreement') {
       console.log('📝 Using compact programmatic generator for divorce agreement...');

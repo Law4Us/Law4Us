@@ -17,7 +17,7 @@ import {
   ImageRun,
   convertInchesToTwip,
 } from 'docx';
-import { BasicInfo, FormData, Child } from '@/lib/api/types';
+import { BasicInfo, FormData, Child, ClaimType } from '@/lib/api/types';
 import { transformToLegalLanguage } from './groq-service';
 import {
   FONT_SIZES,
@@ -50,6 +50,41 @@ interface DivorceClaimData {
     description: string;
     images: Buffer[];
   }>;
+  selectedClaims?: ClaimType[];
+}
+
+const RELATED_CLAIM_LABELS: Partial<Record<ClaimType, string>> = {
+  property: 'תביעה רכושית',
+  alimony: 'תביעת מזונות',
+  custody: 'תביעת משמורת',
+};
+
+function formatHebrewList(items: string[]): string {
+  if (items.length <= 1) {
+    return items[0] || '';
+  }
+  const head = items.slice(0, -1).join(', ');
+  const tail = items[items.length - 1];
+  return `${head} ו${tail}`;
+}
+
+function getRelatedClaimsNotice(selectedClaims?: ClaimType[]): string | null {
+  if (!selectedClaims || selectedClaims.length === 0) {
+    return null;
+  }
+
+  const related = selectedClaims
+    .filter((claim) => claim !== 'divorce' && claim !== 'divorceAgreement')
+    .map((claim) => RELATED_CLAIM_LABELS[claim])
+    .filter((label): label is string => Boolean(label));
+
+  if (related.length === 0) {
+    return null;
+  }
+
+  const isPlural = related.length > 1;
+  const list = formatHebrewList(related);
+  return `בנוסף לכתב תביעה זה ${isPlural ? 'הוגשו' : 'הוגשה'} במקביל ${isPlural ? 'התביעות' : 'תביעה'} ${list} בכתבי תביעה נפרדים, המתנהלים במקביל להליך זה.`;
 }
 
 /**
@@ -94,7 +129,7 @@ function formatChildBullet(child: any): string {
  * Main export function - generates complete divorce claim document
  */
 export async function generateDivorceClaim(data: DivorceClaimData): Promise<Buffer> {
-  const { basicInfo, formData, signature, lawyerSignature, attachments } = data;
+  const { basicInfo, formData, signature, lawyerSignature, attachments, selectedClaims } = data;
 
   // Log attachments for debugging
   if (attachments && attachments.length > 0) {
@@ -277,6 +312,10 @@ export async function generateDivorceClaim(data: DivorceClaimData): Promise<Buff
             spacing: { after: SPACING.PARAGRAPH, line: 360 },
             bidirectional: true,
           }),
+
+          ...(getRelatedClaimsNotice(selectedClaims)
+            ? [createBodyParagraph(getRelatedClaimsNotice(selectedClaims))]
+            : []),
 
           // ===== SUMMONS (MAJOR SECTION) =====
           createSectionHeader('הזמנה לדין:\u200F'),

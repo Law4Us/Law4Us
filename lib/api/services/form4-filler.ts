@@ -123,6 +123,27 @@ export interface Form4Data {
   }>;
 }
 
+const NON_NUMERIC_CHARS = /[^\d.-]/g;
+
+function sanitizeNumber(value: unknown): number | undefined {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : undefined;
+  }
+
+  if (typeof value === 'string') {
+    const sanitized = value.replace(NON_NUMERIC_CHARS, '').trim();
+    if (!sanitized) return undefined;
+    const parsed = Number(sanitized);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+
+  return undefined;
+}
+
+function sanitizeCurrency(value: unknown): number {
+  return sanitizeNumber(value) ?? 0;
+}
+
 /**
  * Maps relationship types to Hebrew labels for PDF form
  */
@@ -487,6 +508,33 @@ export function mapFormDataToForm4Data(
   const property = formData.property || {};
   const alimony = formData.alimony || {};
 
+  const applicantMonthlyIncome = sanitizeNumber(property.applicantGrossSalary) ?? sanitizeNumber(property.applicantGrossIncome);
+  const respondentEstimatedIncome = sanitizeNumber(property.respondentGrossSalary) ?? sanitizeNumber(property.respondentGrossIncome);
+  const applicantHousingExpense = sanitizeNumber(property.applicantHousingExpense);
+  const respondentHousingExpense = sanitizeNumber(property.respondentHousingExpense);
+
+  const sanitizedChildrenNeeds = Array.isArray(alimony.childrenNeeds)
+    ? alimony.childrenNeeds.map((need: any) => ({
+        ...need,
+        monthlyAmount: sanitizeCurrency(need?.monthlyAmount ?? need?.amount ?? need?.value),
+      }))
+    : [];
+
+  const sanitizedHouseholdNeeds = Array.isArray(alimony.householdNeeds)
+    ? alimony.householdNeeds.map((need: any) => ({
+        ...need,
+        monthlyAmount: sanitizeCurrency(need?.monthlyAmount ?? need?.amount ?? need?.value),
+      }))
+    : [];
+
+  const sanitizedBankAccounts = Array.isArray(alimony.bankAccounts)
+    ? alimony.bankAccounts.map((account: any) => ({
+        bankName: account?.bankName || '',
+        accountNumber: account?.accountNumber || '',
+        balance: sanitizeNumber(account?.balance),
+      })).filter((account) => account.bankName || account.accountNumber)
+    : [];
+
   // Map employment status
   const applicantEmploymentStatus =
     property.applicantEmploymentStatus === 'employee' ? 'שכיר/ה' :
@@ -563,15 +611,15 @@ export function mapFormDataToForm4Data(
     applicantEmployment: {
       status: applicantEmploymentStatus,
       employer: property.applicantEmployer,
-      monthlyIncome: property.applicantGrossSalary || property.applicantGrossIncome,
-      annualIncome: (property.applicantGrossSalary || property.applicantGrossIncome) ? (property.applicantGrossSalary || property.applicantGrossIncome) * 12 : undefined,
+      monthlyIncome: applicantMonthlyIncome,
+      annualIncome: applicantMonthlyIncome ? applicantMonthlyIncome * 12 : undefined,
       additionalIncome: property.applicantAdditionalIncome,
     },
 
     respondentEmployment: {
       status: respondentEmploymentStatus,
       employer: property.respondentEmployer,
-      estimatedIncome: property.respondentGrossSalary || property.respondentGrossIncome,
+      estimatedIncome: respondentEstimatedIncome,
       additionalIncome: property.respondentAdditionalIncome,
     },
 
@@ -595,16 +643,16 @@ export function mapFormDataToForm4Data(
     // Housing
     applicantHousing: {
       type: property.applicantHousingType || 'other',
-      monthlyExpense: property.applicantHousingExpense,
+      monthlyExpense: applicantHousingExpense,
     },
 
     respondentHousing: {
       type: property.respondentHousingType || 'other',
-      monthlyExpense: property.respondentHousingExpense,
+      monthlyExpense: respondentHousingExpense,
     },
 
     // Bank accounts
-    bankAccounts: alimony.bankAccounts || [],
+    bankAccounts: sanitizedBankAccounts,
 
     // Vehicle
     hasVehicle,
@@ -623,7 +671,7 @@ export function mapFormDataToForm4Data(
     children,
 
     // Expenses
-    childrenNeeds: alimony.childrenNeeds || [],
-    householdNeeds: alimony.householdNeeds || [],
+    childrenNeeds: sanitizedChildrenNeeds,
+    householdNeeds: sanitizedHouseholdNeeds,
   };
 }

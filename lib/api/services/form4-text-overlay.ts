@@ -22,6 +22,17 @@ import type { Form4Data } from './form4-filler';
 // Cache for the Hebrew font
 let hebrewFontBytes: Uint8Array | null = null;
 
+const numericAmount = (value: unknown): number => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  return 0;
+};
+
 /**
  * Load Noto Sans Hebrew font from local file (supports Hebrew characters)
  */
@@ -321,12 +332,13 @@ export async function fillForm4WithTextOverlay(
         const description = need.description.substring(0, 35);
         drawText(description, 250, expenseY, 8);
         // Amount column
-        drawText(`₪${need.monthlyAmount.toLocaleString('he-IL')}`, 100, expenseY, 8);
+        const amount = numericAmount(need.monthlyAmount);
+        drawText(`₪${amount.toLocaleString('he-IL')}`, 100, expenseY, 8);
         expenseY += ROW_HEIGHT;
       });
 
       // Total row
-      const childrenTotal = data.childrenNeeds.reduce((sum, n) => sum + n.monthlyAmount, 0);
+      const childrenTotal = data.childrenNeeds.reduce((sum, n) => sum + numericAmount(n.monthlyAmount), 0);
       drawText('סה"כ:', 450, expenseY + 10, 10);
       drawText(`₪${childrenTotal.toLocaleString('he-IL')}`, 100, expenseY + 10, 10);
     }
@@ -366,12 +378,13 @@ export async function fillForm4WithTextOverlay(
         const description = need.description.substring(0, 35);
         drawText(description, 250, expenseY, 8);
         // Amount column
-        drawText(`₪${need.monthlyAmount.toLocaleString('he-IL')}`, 100, expenseY, 8);
+        const amount = numericAmount(need.monthlyAmount);
+        drawText(`₪${amount.toLocaleString('he-IL')}`, 100, expenseY, 8);
         expenseY += ROW_HEIGHT;
       });
 
       // Total row
-      const householdTotal = data.householdNeeds.reduce((sum, n) => sum + n.monthlyAmount, 0);
+      const householdTotal = data.householdNeeds.reduce((sum, n) => sum + numericAmount(n.monthlyAmount), 0);
       drawText('סה"כ:', 450, expenseY + 10, 10);
       drawText(`₪${householdTotal.toLocaleString('he-IL')}`, 100, expenseY + 10, 10);
     }

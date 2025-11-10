@@ -358,6 +358,38 @@ export function extractAttachmentsFromFormData(formData: any): Array<{
     }
   }
 
+  if (Array.isArray(formData.attachments)) {
+    formData.attachments.forEach((attachment: any, index: number) => {
+      const meta = parseFileSource(
+        attachment?.data || attachment?.file || attachment?.content || attachment?.base64,
+        attachment?.name || `attachment-${index + 1}`,
+        attachment?.mimeType || 'application/pdf'
+      );
+
+      if (!meta) {
+        return;
+      }
+
+      const label =
+        attachment?.label && attachment.label.trim().length > 0
+          ? attachment.label.trim()
+          : `מסמך ${index + 1}`;
+
+      const description =
+        attachment?.description && attachment.description.trim().length > 0
+          ? attachment.description.trim()
+          : label;
+
+      attachments.push({
+        label,
+        description,
+        file: meta.dataUrl,
+        name: meta.name,
+        mimeType: meta.mimeType,
+      });
+    });
+  }
+
   console.log(`📋 Extraction complete: Found ${attachments.length} attachment(s)`);
   if (attachments.length > 0) {
     console.log('📎 Attachments:', attachments.map(a => a.label).join(', '));

@@ -61,6 +61,17 @@ const HOUSEHOLD_NEEDS_LAYOUT = {
   totalOffset: 30,
 };
 
+const toCurrencyNumber = (value: unknown): number => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  return 0;
+};
+
 function resolveForm4TemplateFolder(): string {
   const explicitDir = process.env.FORM4_TEMPLATE_DIR;
   if (explicitDir && fs.existsSync(explicitDir)) {
@@ -545,6 +556,7 @@ function mapDataToTextOverlays(data: Form4Data, pageIndex: number): TextElement[
     const rows = Math.min(needs.length, layout.maxRows);
     for (let i = 0; i < rows; i++) {
       const need = needs[i];
+      const amount = toCurrencyNumber(need?.monthlyAmount);
       const rowY = layout.startY + i * layout.rowSpacing;
       overlays.push({
         text: need.category,
@@ -561,7 +573,7 @@ function mapDataToTextOverlays(data: Form4Data, pageIndex: number): TextElement[
         align: 'center',
       });
       overlays.push({
-        text: `₪${need.monthlyAmount.toLocaleString('he-IL')}`,
+        text: `₪${amount.toLocaleString('he-IL')}`,
         x: layout.amountX,
         y: rowY,
         fontSize: layout.fontSize,
@@ -570,7 +582,7 @@ function mapDataToTextOverlays(data: Form4Data, pageIndex: number): TextElement[
     }
 
     if (needs.length > 0) {
-      const total = needs.reduce((sum, item) => sum + item.monthlyAmount, 0);
+      const total = needs.reduce((sum, item) => sum + toCurrencyNumber(item?.monthlyAmount), 0);
       const totalY = layout.startY + rows * layout.rowSpacing + layout.totalOffset;
       overlays.push({
         text: 'סה"כ',
@@ -594,6 +606,7 @@ function mapDataToTextOverlays(data: Form4Data, pageIndex: number): TextElement[
     const rows = Math.min(needs.length, layout.maxRows);
     for (let i = 0; i < rows; i++) {
       const need = needs[i];
+      const amount = toCurrencyNumber(need?.monthlyAmount);
       const rowY = layout.startY + i * layout.rowSpacing;
       overlays.push({
         text: need.category,
@@ -610,7 +623,7 @@ function mapDataToTextOverlays(data: Form4Data, pageIndex: number): TextElement[
         align: 'center',
       });
       overlays.push({
-        text: `₪${need.monthlyAmount.toLocaleString('he-IL')}`,
+        text: `₪${amount.toLocaleString('he-IL')}`,
         x: layout.amountX,
         y: rowY,
         fontSize: layout.fontSize,
@@ -619,7 +632,7 @@ function mapDataToTextOverlays(data: Form4Data, pageIndex: number): TextElement[
     }
 
     if (needs.length > 0) {
-      const total = needs.reduce((sum, item) => sum + item.monthlyAmount, 0);
+      const total = needs.reduce((sum, item) => sum + toCurrencyNumber(item?.monthlyAmount), 0);
       const totalY = layout.startY + rows * layout.rowSpacing + layout.totalOffset;
       overlays.push({
         text: 'סה"כ',
