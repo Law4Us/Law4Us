@@ -11,14 +11,20 @@ export function ClaimTypesSection() {
   const [selectedClaimTab, setSelectedClaimTab] = React.useState(0);
   const [fadeKey, setFadeKey] = React.useState(0);
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
+  const isInitialMount = React.useRef(true);
 
   // Trigger fade animation when tab changes
   React.useEffect(() => {
     setFadeKey(prev => prev + 1);
   }, [selectedClaimTab]);
 
-  // Auto-scroll to selected tab on mobile
+  // Auto-scroll to selected tab on mobile (skip on initial mount)
   React.useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
     if (scrollContainerRef.current) {
       const buttons = scrollContainerRef.current.querySelectorAll('button');
       const selectedButton = buttons[selectedClaimTab];
