@@ -173,7 +173,7 @@ const founders = [
 export default function AboutPage() {
   return (
     <div>
-      <section className="pb-12">
+      <section className="py-12">
         <div className="max-w-[1200px] mx-auto px-6">
           <div className="grid items-center gap-8 lg:grid-cols-[1.1fr,0.9fr]">
             <SlideInView direction="up">

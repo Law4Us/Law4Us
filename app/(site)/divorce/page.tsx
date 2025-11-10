@@ -204,7 +204,7 @@ const preparationTips = [
 export default function DivorcePage() {
   return (
     <div>
-      <section className="relative pb-12">
+      <section className="relative py-12">
         <div className="mx-auto max-w-[1200px] px-4 sm:px-6 lg:px-8">
           <div className="grid gap-12 lg:grid-cols-[1.1fr,0.9fr] lg:items-center">
             <SlideInView direction="up">
