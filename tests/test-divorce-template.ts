@@ -83,6 +83,15 @@ async function run() {
     remedies:
       "לאזן את כלל הזכויות, להורות על חלוקת הדירה לטובת המבקשת, ולהבטיח מזונות בהתאם לצרכי הקטינים.",
     divorce: {
+      reconcileNow: "לא",
+      wantDivorceNow: "כן",
+      childrenDispute: "כן",
+      needSupport: "כן",
+      propertyDispute: "כן",
+      urgentRelief: "לא",
+      urgentReliefDetails: "",
+      parallelCases: "לא",
+      parallelCasesDetails: "",
       relationshipDescription:
         "הנישואין התאפיינו בחוסר יציבות והיעדר שיתוף פעולה פיננסי מצד המשיב.",
       whoWantsDivorceAndWhy:

@@ -347,6 +347,11 @@ function createPartiesDescription(
     minors.forEach((child: any) => {
       paragraphs.push(createBulletPoint(formatChildBullet(child)));
     });
+
+    // If there's exactly ONE minor, define them as "הקטין" for later references
+    if (minors.length === 1) {
+      paragraphs.push(createBodyParagraph('להלן: "הקטין".'));
+    }
   }
 
   return paragraphs;
@@ -369,6 +374,10 @@ async function createFactsSection(
   // Relationship description (מערכת היחסים) - standardized format
   // Already includes all children information, so no separate children section needed
   const minorChildren = children.filter((child: any) => isMinor(child.birthDate || ''));
+
+  // Determine term for minor(s): "הקטין" for one child, "הקטינים" for multiple
+  const minorTerm = minorChildren.length === 1 ? 'הקטין' : 'הקטינים';
+
   paragraphs.push(createSubsectionHeader('מערכת היחסים'));
   paragraphs.push(createRelationshipSection(basicInfo, formData, minorChildren));
 
@@ -438,7 +447,7 @@ async function createFactsSection(
   const currentLiving = custodyData.currentLivingArrangement;
 
   if (currentLiving === 'together') {
-    paragraphs.push(createBodyParagraph('הקטינים מתגוררים תחת קורת גג אחת, עם הוריהם.'));
+    paragraphs.push(createBodyParagraph(`${minorTerm} מתגורר${minorChildren.length === 1 ? '' : 'ים'} תחת קורת גג אחת, עם הוריהם.`));
   } else if (currentLiving === 'with_applicant') {
     let visitationText = '';
     if (custodyData.currentVisitationArrangement) {
@@ -461,7 +470,7 @@ async function createFactsSection(
       }
     }
     paragraphs.push(createBodyParagraph(
-      `הקטינים מתגוררים אצל ${plaintiff.title}.${visitationText}`
+      `${minorTerm} מתגורר${minorChildren.length === 1 ? '' : 'ים'} אצל ${plaintiff.title}.${visitationText}`
     ));
   } else if (currentLiving === 'with_respondent') {
     let visitationText = '';
@@ -485,7 +494,7 @@ async function createFactsSection(
       }
     }
     paragraphs.push(createBodyParagraph(
-      `הקטינים מתגוררים אצל ${defendant.title}.${visitationText}`
+      `${minorTerm} מתגורר${minorChildren.length === 1 ? '' : 'ים'} אצל ${defendant.title}.${visitationText}`
     ));
   } else if (currentLiving === 'split') {
     let splitDetails = 'הזמן מתחלק בין שני ההורים';
@@ -508,7 +517,7 @@ async function createFactsSection(
       }
     }
     paragraphs.push(createBodyParagraph(
-      `הקטינים מתגוררים חלק מהזמן אצל כל אחד מההורים. ${splitDetails}`
+      `${minorTerm} מתגורר${minorChildren.length === 1 ? '' : 'ים'} חלק מהזמן אצל כל אחד מההורים. ${splitDetails}`
     ));
   } else if (currentLiving === 'split_children') {
     const applicantChildren = minorChildren.filter((child: any) => (child.residingWith || 'applicant') === 'applicant');

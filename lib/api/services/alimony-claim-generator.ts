@@ -25,7 +25,7 @@ import {
   Packer,
   TableLayoutType,
 } from 'docx';
-import { transformWithGroq } from './groq-service';
+import { transformToLegalLanguage } from '../../../lib/services/groq-service';
 import { mapFormDataToForm4Data } from './form4-filler';
 import { BasicInfo, FormData } from '@/lib/api/types';
 import {
@@ -332,7 +332,7 @@ function createPartC(data: AlimonyClaimData): Paragraph[] {
   return paragraphs;
 }
 
-function createAlimonyDetailsSection(data: AlimonyClaimData): Paragraph[] {
+async function createAlimonyDetailsSection(data: AlimonyClaimData): Promise<Paragraph[]> {
   const paragraphs: Paragraph[] = [];
   const alimony = data.formData.alimony || {};
   const applicantTitle = getApplicantTitle(data.basicInfo);
@@ -362,12 +362,31 @@ function createAlimonyDetailsSection(data: AlimonyClaimData): Paragraph[] {
     bankAccounts.length > 0 ||
     hasVehicleInfo;
 
-  paragraphs.push(createSubsectionHeader('מזונות - פרטים ספציפיים'));
+  paragraphs.push(createSubsectionHeader('רקע'));
 
   if (relationshipDescription) {
-    paragraphs.push(
-      createBodyParagraph(relationshipDescription, { after: SPACING.LINE })
-    );
+    console.log(`🤖 Transforming relationship description with Groq AI...`);
+    try {
+      const transformedRelationship = await transformToLegalLanguage(
+        relationshipDescription,
+        {
+          claimType: 'תביעת מזונות',
+          applicantName: data.basicInfo.fullName,
+          respondentName: data.basicInfo.fullName2,
+          fieldLabel: 'רקע - תיאור מערכת היחסים',
+        }
+      );
+      paragraphs.push(
+        createBodyParagraph(transformedRelationship, { after: SPACING.LINE })
+      );
+      console.log(`✅ Relationship description transformed successfully`);
+    } catch (error) {
+      console.error('❌ Error transforming relationship description:', error);
+      // Fallback to original text if transformation fails
+      paragraphs.push(
+        createBodyParagraph(relationshipDescription, { after: SPACING.LINE })
+      );
+    }
   }
 
   if (alimony.wasPreviousAlimony === 'yes') {
@@ -1240,7 +1259,7 @@ export async function generateAlimonyClaim(data: AlimonyClaimData): Promise<Docu
 
   // 6. Part C - Detailed facts
   sections.push(...createPartC(data));
-  sections.push(...createAlimonyDetailsSection(data));
+  sections.push(...(await createAlimonyDetailsSection(data)));
 
   // 7. Employment sections
   sections.push(...createEmploymentSections(data));

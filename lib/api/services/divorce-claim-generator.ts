@@ -38,6 +38,7 @@ import {
   generatePowerOfAttorney,
   generateAffidavit,
   generateAttachmentsSection,
+  createLetteredHeader,
 } from './shared-document-generators';
 
 interface DivorceClaimData {
@@ -125,6 +126,106 @@ function formatChildBullet(child: any): string {
   return `שם:\u200F ${child.firstName} ${child.lastName} ת״ז:\u200F ${child.idNumber} ת״ל:\u200F ${child.birthDate} כתובת:\u200F ${address}`;
 }
 
+function ensureRabbinicalCourt(text: string): string {
+  if (!text) return text;
+  return text.replace(/בית המשפט/gu, 'בית הדין הרבני');
+}
+
+function formatPropertyItem(item: any, fallbackOwner: string = ''): string {
+  const desc = item.description || item.address || 'פריט רכוש';
+  const owner = item.owner || fallbackOwner || 'לא צוין';
+  const value = item.value || item.amount || '';
+  const extra = item.purchaseDate ? `, נרכש בשנת ${item.purchaseDate}` : '';
+  const suffix = value ? `, שווי מוערך: ${value}` : '';
+  return `${desc} (בבעלות ${owner}${extra}${suffix})`;
+}
+
+function buildAnnexList(attachments?: Array<{ label: string; description: string }>): string[] {
+  if (!attachments || attachments.length === 0) return [];
+  return attachments.map((att, idx) => `${att.label || `נספח ${idx + 1}`}: ${att.description || 'מסמך מצורף'}`);
+}
+
+type DivorceTrack = 'divorce_only' | 'divorce_with_reliefs' | 'shalom_bayit_alt';
+
+function resolveDivorceTrack(
+  divorceData: any,
+  formData: FormData,
+  selectedClaims?: ClaimType[]
+): DivorceTrack {
+  const wantsReconciliation = divorceData?.reconcileNow === 'כן';
+  const wantsDivorce = divorceData?.wantDivorceNow !== 'לא';
+
+  const flaggedChildren = divorceData?.childrenDispute === 'כן';
+  const flaggedSupport = divorceData?.needSupport === 'כן';
+  const flaggedProperty = divorceData?.propertyDispute === 'כן';
+  const flaggedUrgent = divorceData?.urgentRelief === 'כן';
+
+  const relatedClaimsSelected = Array.isArray(selectedClaims)
+    ? selectedClaims.some((claim) => claim === 'property' || claim === 'alimony' || claim === 'custody')
+    : false;
+
+  const hasChildren = Array.isArray(formData.children) && formData.children.length > 0;
+  const hasAssets =
+    (formData.property && formData.property.hasAssets === 'yes') ||
+    (Array.isArray(formData.apartments) && formData.apartments.length > 0) ||
+    (Array.isArray(formData.vehicles) && formData.vehicles.length > 0) ||
+    (Array.isArray(formData.savings) && formData.savings.length > 0) ||
+    (Array.isArray(formData.benefits) && formData.benefits.length > 0) ||
+    (Array.isArray(formData.debts) && formData.debts.length > 0);
+
+  const needsReliefs = flaggedChildren || flaggedSupport || flaggedProperty || flaggedUrgent || relatedClaimsSelected || hasChildren || hasAssets;
+
+  if (wantsReconciliation) {
+    return 'shalom_bayit_alt';
+  }
+
+  if (wantsDivorce && needsReliefs) {
+    return 'divorce_with_reliefs';
+  }
+
+  if (wantsDivorce) {
+    return 'divorce_only';
+  }
+
+  return needsReliefs ? 'divorce_with_reliefs' : 'divorce_only';
+}
+
+function getRequestedReliefs(
+  track: DivorceTrack,
+  divorceData: any,
+  formData: FormData
+): string[] {
+  const reliefs: string[] = [];
+
+  if (track === 'shalom_bayit_alt') {
+    reliefs.push('להורות על ניסיון שלום בית ולחילופין להורות על גירושין ולתאם סידור גט במועד קרוב.');
+  } else {
+    reliefs.push('להורות על פירוק הנישואין בין הצדדים ולתאם מועד לסידור גט.');
+  }
+
+  if (divorceData?.childrenDispute === 'כן' || (Array.isArray(formData.children) && formData.children.length > 0 && track !== 'divorce_only')) {
+    reliefs.push('לקבוע משמורת, הסדרי שהות וסמכויות חינוך ובריאות לפי טובת הילדים.');
+  }
+
+  if (divorceData?.needSupport === 'כן') {
+    reliefs.push('לקבוע מזונות ילדים ו/או מזונות אישה בהתאם לנתוני ההכנסה וההוצאות שיוצגו.');
+  }
+
+  if (divorceData?.propertyDispute === 'כן') {
+    reliefs.push('לדון בחלוקת רכוש, זכויות וחובות, ולתת צווים לשמירת נכסים במידת הצורך.');
+  }
+
+  if (divorceData?.urgentRelief === 'כן') {
+    reliefs.push(
+      `לתת סעדים זמניים ודחופים (${divorceData.urgentReliefDetails || 'כגון צווי מניעה/עיקול, מזונות זמניים או משמורת זמנית לפי הצורך'}).`
+    );
+  }
+
+  reliefs.push('לחייב את הנתבע/ת בהוצאות ההליך ושכ"ט עו"ד וליתן כל סעד נוסף שבית הדין ימצא לנכון.');
+
+  return reliefs;
+}
+
 /**
  * Main export function - generates complete divorce claim document
  */
@@ -147,6 +248,20 @@ export async function generateDivorceClaim(data: DivorceClaimData): Promise<Buff
   const children = formData.children || [];
   const weddingDate = basicInfo.weddingDay || '';
   const marriageStatus = basicInfo.relationshipType === 'married' ? 'נשואים' : 'לא נשואים';
+  const track = resolveDivorceTrack(divorceData, formData, selectedClaims);
+  const requestedReliefs = getRequestedReliefs(track, divorceData, formData);
+  const attachmentsList = buildAnnexList(
+    attachments?.map((att) => ({
+      label: att.label,
+      description: att.description,
+    }))
+  );
+  const claimNatureText =
+    track === 'shalom_bayit_alt'
+      ? 'מהות התביעה:\u200F שלום בית ולחילופין גירושין (כולל סעדים נלווים לפי הצורך)'
+      : track === 'divorce_with_reliefs'
+      ? 'מהות התביעה:\u200F גירושין וסעדים נלווים (מזונות/משמורת/רכוש לפי הצורך)'
+      : 'מהות התביעה:\u200F גירושין';
 
   // Transform free-text fields to legal language using GROQ AI
   console.log('🤖 Transforming divorce grounds to legal language...');
@@ -161,6 +276,7 @@ export async function generateDivorceClaim(data: DivorceClaimData): Promise<Buff
         fieldLabel: 'הרקע לבקשת הגירושין',
         additionalContext: 'סיבות ורקע לבקשת הגירושין',
       });
+      groundsForDivorce = ensureRabbinicalCourt(groundsForDivorce);
     } catch (error) {
       console.error('Error transforming grounds for divorce:', error);
       groundsForDivorce = divorceData.whoWantsDivorceAndWhy;
@@ -177,6 +293,7 @@ export async function generateDivorceClaim(data: DivorceClaimData): Promise<Buff
         fieldLabel: 'עילות הגירושין',
         additionalContext: 'סיבות משפטיות לגירושין',
       });
+      divorceReasons = ensureRabbinicalCourt(divorceReasons);
     } catch (error) {
       console.error('Error transforming divorce reasons:', error);
       divorceReasons = divorceData.divorceReasons;
@@ -227,19 +344,23 @@ export async function generateDivorceClaim(data: DivorceClaimData): Promise<Buff
           // ===== COURT HEADER WITH PARTY INFO =====
           ...createCourtHeader({
             city: 'בתל אביב',
-            judgeName: 'שופט',
+            judgeName: 'דיין',
             basicInfo: basicInfo,
             showChildrenList: false, // Divorce claims don't show children list in header
+            forum: 'בבית הדין הרבני',
+            docketNumberPlaceholder: 'תיק ____________',
+            showDateLine: false,
+            showJudgeLine: false,
           }),
 
           // ===== TITLE =====
-          createMainTitle('כתב תביעה'),
+          createMainTitle('תביעת גירושין'),
 
           // ===== NATURE OF CLAIM =====
           new Paragraph({
             children: [
               new TextRun({
-                text: 'מהות התביעה:\u200F גירושין',
+                text: claimNatureText,
                 bold: true,
                 size: FONT_SIZES.BODY,
                 font: 'David',
@@ -261,7 +382,7 @@ export async function generateDivorceClaim(data: DivorceClaimData): Promise<Buff
                 font: 'David',
               }),
               new TextRun({
-                text: ' לא קצוב.\u200F',
+                text: ' לא קצוב (הליך בבית הדין הרבני).\u200F',
                 size: FONT_SIZES.BODY,
                 font: 'David',
               }),
@@ -275,14 +396,14 @@ export async function generateDivorceClaim(data: DivorceClaimData): Promise<Buff
           new Paragraph({
             children: [
               new TextRun({
-                text: 'סכום אגרת בית משפט:\u200F',
+                text: 'סכום אגרת בית דין (ככל שקיימת):\u200F',
                 bold: true,
                 underline: { type: UnderlineType.SINGLE },
                 size: FONT_SIZES.BODY,
                 font: 'David',
               }),
               new TextRun({
-                text: ' 590₪. לפי תקנה א2 לתוספת הראשונה לתקנות בית המשפט לענייני משפחה (אגרות), תשנ"ו-1995.\u200F',
+                text: ' בהתאם לתקנות ולנהלי בית הדין הרבני.\u200F',
                 size: FONT_SIZES.BODY,
                 font: 'David',
               }),
@@ -303,7 +424,12 @@ export async function generateDivorceClaim(data: DivorceClaimData): Promise<Buff
                 font: 'David',
               }),
               new TextRun({
-                text: ' בית המשפט הנכבד מתבקש להורות על פירוק הנישואין בין הצדדים וליתן כל סעד כמבוקש בסיפא של תביעה זאת.\u200F',
+                text:
+                  track === 'shalom_bayit_alt'
+                    ? ' בית הדין הרבני הנכבד מתבקש להורות על ניסיון שלום בית, ולחילופין להורות על גירושין ולדון בסעדים הנלווים כמפורט להלן.\u200F'
+                    : track === 'divorce_with_reliefs'
+                    ? ' בית הדין הרבני הנכבד מתבקש להורות על פירוק הנישואין ולדון במזונות, משמורת ורכוש לפי הצורך כמפורט בהמשך.\u200F'
+                    : ' בית הדין הרבני הנכבד מתבקש להורות על פירוק הנישואין בין הצדדים ולתאם מועד לסידור גט.\u200F',
                 size: FONT_SIZES.BODY,
                 font: 'David',
               }),
@@ -321,93 +447,18 @@ export async function generateDivorceClaim(data: DivorceClaimData): Promise<Buff
           // ===== SUMMONS (MAJOR SECTION) =====
           createSectionHeader('הזמנה לדין:\u200F'),
           createBodyParagraph(
-            `הואיל ו${plaintiff.title} הגיש כתב תביעה זה נגדך, אתה מוזמן להגיש כתב הגנה בתוך שלושים ימים מיום שהומצאה לך הזמנה זו, לפי תקנה 13(א) לתקנות בית משפט לענייני משפחה (סדרי דין), התשפ"א-2020.`
-          ),
-          createBodyParagraph(
-            `לתשומת לבך, אם לא תגיש כתב הגנה אזי לפי תקנה 130 לתקנות סדר הדין האזרחי, התשע"ט-2018, תהיה ל${plaintiff.title} הזכות לקבל פסק דין שלא בפניך.`,
+            `הואיל ו${plaintiff.title} הגיש כתב תביעה זה נגדך, הנך מוזמן/ת להגיש כתב הגנה ולהתייצב לדיון שייקבע בבית הדין. אי הגשת כתב הגנה או אי התייצבות עלולים להביא למתן החלטה בהיעדרך.`,
             { after: SPACING.SECTION }
           ),
 
-          // ===== SECTION B: MAIN ARGUMENTS =====
-          createSectionHeader('ב. עיקר הטענות:\u200F'),
-
-          // 1. Brief description
-          createNumberedHeader('1. תיאור תמציתי של בעלי הדין'),
+          // ===== LETTERED SECTIONS =====
+          createLetteredHeader('א', 'מערכת היחסים והעובדות'),
           createBodyParagraph(
             `${basicInfo.fullName} מ״ז ${basicInfo.idNumber} ו${basicInfo.fullName2} מ״ז ${basicInfo.idNumber2} הינם ${marriageStatus}${weddingDate ? `, נישאו ביום ${formatDate(weddingDate)}` : ''}${children.length > 0 ? `, ולהם ${children.length === 1 ? 'ילד אחד' : `${children.length} ילדים`}` : ''}.`
           ),
-
-          // Children list
-          ...(children.length > 0
-            ? children.map((child: any) => createBulletPoint(formatChildBullet(child)))
-            : []),
-
-          // 2. Summary of requested remedy
-          createNumberedHeader('2. פירוט הסעד המבוקש באופן תמציתי'),
-          createBodyParagraph(
-            'בית המשפט הנכבד מתבקש להורות על פירוק הנישואין בין הצדדים ולקבוע את מלוא הסעדים המבוקשים בתביעה זו.\u200F'
-          ),
-
-          // 3. Summary of facts
-          createNumberedHeader('3. תמצית העובדות הנחוצות לביסוסה של עילת התביעה'),
-          createBodyParagraph(
-            `הצדדים ${marriageStatus}${weddingDate ? ` מאז ${formatDate(weddingDate)}` : ''}. במהלך הנישואין התגוררו ${plaintiff.title} ו${defendant.title} יחד, אך מערכת היחסים התדרדרה עד כדי התמוטטות מוחלטת. ${plaintiff.title} מבקש/ת להתגרש מ${defendant.title} מהסיבות שיפורטו בהמשך.\u200F`
-          ),
-
-          // 4. Jurisdiction
-          createNumberedHeader('4. פירוט העובדות המקנות סמכות לבית המשפט'),
-          createBodyParagraph(
-            'המדובר בענייני משפחה ובבני משפחה לפי חוק בית המשפט לענייני משפחה, תשנ״ה – 1995. בית המשפט לענייני משפחה מוסמך לדון בתביעות גירושין.',
-            { after: SPACING.SECTION }
-          ),
-
-          // ===== SECTION C: DETAILED FACTS =====
-          createSectionHeader('חלק ג - פירוט העובדות המבססות את טענות ' + plaintiff.title),
-
-          // Relationship (standardized format - uses shared function)
-          createSubsectionHeader('מערכת היחסים'),
           createRelationshipSection(basicInfo, formData, children),
-
-          // Grounds for divorce
-          ...(groundsForDivorce
-            ? [
-                createSubsectionHeader('הרקע לבקשת הגירושין'),
-                createBodyParagraph(groundsForDivorce),
-              ]
-            : []),
-
-          // Divorce reasons (legal grounds)
-          ...(divorceReasons
-            ? [
-                createSubsectionHeader('עילות הגירושין'),
-                createBodyParagraph(divorceReasons),
-              ]
-            : []),
-
-          // Marriage details
-          ...(divorceData.weddingCity || divorceData.religiousMarriage
-            ? [
-                createSubsectionHeader('פרטי הנישואין'),
-                ...(divorceData.weddingCity
-                  ? [createBodyParagraph(`הנישואין נערכו בעיר ${divorceData.weddingCity}.`)]
-                  : []),
-                ...(divorceData.religiousMarriage === 'כן'
-                  ? [
-                      createBodyParagraph('הנישואין נערכו בטקס דתי.'),
-                      ...(divorceData.religiousCouncil
-                        ? [createBodyParagraph(`הצדדים רשומים במועצה הדתית ${divorceData.religiousCouncil}.`)]
-                        : []),
-                    ]
-                  : divorceData.religiousMarriage === 'לא'
-                  ? [createBodyParagraph('הנישואין לא נערכו בטקס דתי.')]
-                  : []),
-              ]
-            : []),
-
-          // Police complaints (if any)
           ...(divorceData.policeComplaints === 'כן'
             ? [
-                createSubsectionHeader('תלונות במשטרה'),
                 createBodyParagraph(
                   `${divorceData.policeComplaintsWho ? `${divorceData.policeComplaintsWho} ` : ''}הגיש/ה תלונות במשטרה${divorceData.policeComplaintsWhere ? ` ב${divorceData.policeComplaintsWhere}` : ''}${divorceData.policeComplaintsDate ? ` ביום ${divorceData.policeComplaintsDate}` : ''}.`
                 ),
@@ -416,44 +467,140 @@ export async function generateDivorceClaim(data: DivorceClaimData): Promise<Buff
                   : []),
               ]
             : []),
-
-          // Mediation history (if any)
           ...(divorceData.hadPreviousMediation === 'כן' && divorceData.previousMediationDetails
-            ? [
-                createSubsectionHeader('נסיונות גישור קודמים'),
-                createBodyParagraph(divorceData.previousMediationDetails),
-              ]
+            ? [createBodyParagraph(`נסיונות גישור קודמים: ${divorceData.previousMediationDetails}`)]
             : []),
-
-          // Marriage counseling/therapy details (if any)
           ...(divorceData.marriageCounselingDetails
-            ? [
-                createSubsectionHeader('טיפול משפחתי וייעוץ זוגי'),
-                createBodyParagraph(divorceData.marriageCounselingDetails),
-              ]
+            ? [createBodyParagraph(`טיפול זוגי/משפחתי: ${divorceData.marriageCounselingDetails}`)]
             : []),
-
-          // Ketubah (if religious marriage)
           ...(divorceData.religiousMarriage === 'כן' && (divorceData.ketubahAmount || divorceData.ketubahRequest)
             ? [
-                createSubsectionHeader('כתובה'),
-                ...(divorceData.ketubahAmount
-                  ? [createBodyParagraph(`סכום הכתובה: ${divorceData.ketubahAmount}`)]
-                  : []),
-                ...(divorceData.ketubahRequest
-                  ? [createBodyParagraph(`בקשה בעניין הכתובה: ${divorceData.ketubahRequest}`)]
-                  : []),
+                createBodyParagraph(
+                  `כתובה: ${divorceData.ketubahAmount ? `סכום ${divorceData.ketubahAmount}` : ''}${
+                    divorceData.ketubahRequest ? `; בקשה: ${divorceData.ketubahRequest}` : ''
+                  }`
+                ),
+              ]
+            : []),
+          ...(divorceData.parallelCases === 'כן' || divorceData.parallelCasesDetails
+            ? [
+                createBodyParagraph(
+                  divorceData.parallelCasesDetails ||
+                    'קיימים הליכים נוספים בבית משפט או בית דין אחר; פרטים מלאים יצורפו ככל שנדרש.'
+                ),
+              ]
+            : []),
+          ...(divorceData.urgentRelief === 'כן'
+            ? [
+                createBodyParagraph(
+                  `סעדים זמניים מבוקשים: ${
+                    divorceData.urgentReliefDetails ||
+                    'מבוקשים סעדים זמניים לשמירת המצב הקיים ולהגנה על זכויות הצדדים והקטינים.'
+                  }`
+                ),
               ]
             : []),
 
-          // ===== REMEDIES SECTION =====
-          createSectionHeader('סעדים'),
-          createBodyParagraph('אשר על כן מתבקש בית המשפט הנכבד:'),
-          createNumberedItem(1, 'להורות על פירוק הנישואין בין הצדדים.'),
-          createNumberedItem(2, 'לקבוע את ההסדרים הנדרשים לגבי הילדים, ככל שישנם קטינים משותפים.'),
-          createNumberedItem(3, 'לקבוע את ההסדרים הנדרשים לגבי הרכוש והחובות, ככל שלא הוסדרו.'),
-          createNumberedItem(4, 'לחייב את הנתבע/ת בהוצאות המשפט ושכר טרחת עו"ד.'),
-          createNumberedItem(5, 'ליתן כל סעד אחר שבית המשפט ימצא לנכון.'),
+          createLetteredHeader('ב', 'עילות וסמכות'),
+          createBodyParagraph(
+            'המדובר בענייני נישואין וגירושין של בני זוג יהודים; לפיכך סמכות הייחודית נתונה לבית הדין הרבני לפי חוק שיפוט בתי דין רבניים (נישואין וגירושין), התשי״ג–1953. התביעה מוגשת בכנות, והכריכה בעניינים הנלווים (ככל שקיימת) נעשית כדין לשם מיצוי ההליך במסגרת בית הדין.'
+          ),
+          ...(groundsForDivorce ? [createBodyParagraph(`הרקע לבקשת הגירושין: ${groundsForDivorce}`)] : []),
+          ...(divorceReasons ? [createBodyParagraph(`עילות הגירושין: ${divorceReasons}`)] : []),
+
+          // Property summary
+          ...(() => {
+            const propertyData = formData.property || {};
+            const apartments = formData.apartments || [];
+            const vehicles = formData.vehicles || [];
+            const savings = formData.savings || [];
+            const benefits = formData.benefits || [];
+            const debts = formData.debts || [];
+            const hasConcreteProperty =
+              propertyData.hasAssets === 'yes' ||
+              apartments.length > 0 ||
+              vehicles.length > 0 ||
+              savings.length > 0 ||
+              benefits.length > 0 ||
+              debts.length > 0;
+            const showProperty = divorceData.propertyDispute === 'כן' || hasConcreteProperty;
+            if (!showProperty) return [];
+            const propertyParagraphs: Paragraph[] = [];
+            propertyParagraphs.push(createLetteredHeader('ג', 'רכוש וחובות'));
+            if (apartments.length) {
+              propertyParagraphs.push(createBodyParagraph('דירות ונכסי מקרקעין:'));
+              propertyParagraphs.push(
+                ...apartments.map((apt: any) => createBulletPoint(formatPropertyItem(apt, apt.owner || 'שני הצדדים')))
+              );
+            }
+            if (vehicles.length) {
+              propertyParagraphs.push(createBodyParagraph('כלי רכב:'));
+              propertyParagraphs.push(
+                ...vehicles.map((v: any) => createBulletPoint(formatPropertyItem(v, v.owner || 'שני הצדדים')))
+              );
+            }
+            if (savings.length || benefits.length) {
+              propertyParagraphs.push(createBodyParagraph('חסכונות וזכויות כספיות:'));
+              propertyParagraphs.push(
+                ...[...savings, ...benefits].map((s: any) => createBulletPoint(formatPropertyItem(s, s.owner || 'שני הצדדים')))
+              );
+            }
+            if (debts.length) {
+              propertyParagraphs.push(createBodyParagraph('חובות והתחייבויות:'));
+              propertyParagraphs.push(
+                ...debts.map((d: any) =>
+                  createBulletPoint(
+                    `${d.description || 'חוב'}${d.amount ? ` בסך ${d.amount}` : ''}${d.date ? ` ממועד ${formatDate(d.date)}` : ''}${
+                      d.purpose ? ` (מטרה: ${d.purpose})` : ''
+                    }`
+                  )
+                )
+              );
+            }
+            if (!hasConcreteProperty) {
+              propertyParagraphs.push(
+                createBodyParagraph('קיימת מחלוקת רכושית כללית; פרטים מדויקים יפורטו בנספחים או בכתב טענות נפרד.')
+              );
+            }
+            return propertyParagraphs;
+          })(),
+
+          // Custody / support
+          ...(() => {
+            const showChildren = children.length > 0 || divorceData.childrenDispute === 'כן' || divorceData.needSupport === 'כן';
+            if (!showChildren) return [];
+            const paragraphs: Paragraph[] = [];
+            paragraphs.push(createLetteredHeader('ד', 'משמורת, שהות ומזונות'));
+            if (children.length > 0) {
+              paragraphs.push(createBodyParagraph(`הצדדים הורים ל${children.length === 1 ? 'ילד אחד' : `${children.length} ילדים`} משותפים.`));
+            }
+            if (divorceData.childrenDispute === 'כן') {
+              paragraphs.push(createBodyParagraph('קיימת מחלוקת לגבי משמורת/הסדרי שהות/חינוך ובריאות הקטינים.'));
+            }
+            if (divorceData.needSupport === 'כן') {
+              paragraphs.push(createBodyParagraph('מבוקש לדון במזונות קטינים ו/או מזונות אישה בהתאם לנתוני ההכנסה וההוצאות.'));
+            }
+            return paragraphs;
+          })(),
+
+          // Remedies
+          createLetteredHeader('ה', 'סעדים'),
+          createBodyParagraph('אשר על כן מתבקש בית הדין הנכבד:'),
+          ...requestedReliefs.map((relief, index) => createNumberedItem(index + 1, relief)),
+
+          // Summary / costs
+          createLetteredHeader('ו', 'סיכום והוצאות'),
+          createBodyParagraph(
+            'התביעה מוגשת בתום לב, ומבוקש לאשר את הסמכות הנלווית ולהורות על כל סעד שיימצא צודק וראוי. כן מתבקש לחייב את הנתבע/ת בהוצאות ושכ"ט עו"ד.'
+          ),
+
+          // Annexes
+          ...(attachmentsList.length > 0
+            ? [
+                createLetteredHeader('ז', 'נספחים'),
+                ...attachmentsList.map((att) => createBulletPoint(att)),
+              ]
+            : []),
 
           // ===== SIGNATURE =====
           new Paragraph({
@@ -649,7 +796,11 @@ function generateStatementOfDetails(
   // 6. Other family cases
   paragraphs.push(
     createNumberedHeader('6. הליכים משפטיים נוספים'),
-    createBodyParagraph(formData.courtProceedings === 'yes' ? 'קיימים הליכים משפטיים נוספים.' : 'לא קיימים הליכים משפטיים נוספים.')
+    createBodyParagraph(
+      divorceData?.parallelCases === 'כן' || formData.courtProceedings === 'yes'
+        ? divorceData?.parallelCasesDetails || 'קיימים הליכים משפטיים נוספים.'
+        : 'לא קיימים הליכים משפטיים נוספים.'
+    )
   );
 
   // 7. Therapeutic contact

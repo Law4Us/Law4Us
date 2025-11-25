@@ -12,6 +12,7 @@ interface SubmissionData {
     phone: string;
     [key: string]: any;
   };
+  folderNameOverride?: string;
   formData: any;
   selectedClaims: string[];
   signature: string; // base64 - client signature
@@ -89,7 +90,8 @@ export async function POST(request: NextRequest) {
     // Subfolders: תביעה רכושית, תביעת מזונות, תביעת משמורת
 
     const currentDate = new Date().toISOString().split('T')[0];
-    const parentFolderPattern = `${submissionData.basicInfo.fullName} תביעות`;
+    const folderNameBase = submissionData.folderNameOverride || submissionData.basicInfo.fullName;
+    const parentFolderPattern = `${folderNameBase} תביעות`;
 
     // Search for existing parent folder
     console.log(`🔍 Searching for existing parent folder: "${parentFolderPattern}"`);
@@ -105,7 +107,7 @@ export async function POST(request: NextRequest) {
       console.log(`♻️  Reusing existing parent folder: ${parentFolderName} (${parentFolderId})`);
     } else {
       // Create new parent folder
-      parentFolderName = `${submissionData.basicInfo.fullName} תביעות ${currentDate}`;
+      parentFolderName = `${folderNameBase} תביעות ${currentDate}`;
       parentFolderId = await createFolder(parentFolderName);
       console.log(`📁 Created new parent folder: ${parentFolderName} (${parentFolderId})`);
     }

@@ -47,9 +47,20 @@ export const divorceAgreementSchema = z.object({
 // Divorce Claim schema
 export const divorceClaimSchema = z.object({
   children: z.array(childFullSchema).optional(),
+  reconcileNow: z.enum(["כן", "לא"], { required_error: "יש לבחור אפשרות" }),
+  wantDivorceNow: z.enum(["כן", "לא"], { required_error: "יש לבחור אפשרות" }),
+  childrenDispute: z.enum(["כן", "לא"], { required_error: "יש לבחור אפשרות" }),
+  needSupport: z.enum(["כן", "לא"], { required_error: "יש לבחור אפשרות" }),
+  propertyDispute: z.enum(["כן", "לא"], { required_error: "יש לבחור אפשרות" }),
+  urgentRelief: z.enum(["כן", "לא"], { required_error: "יש לבחור אפשרות" }),
+  urgentReliefDetails: z.string().optional(),
+  parallelCases: z.enum(["כן", "לא"], { required_error: "יש לבחור אפשרות" }),
+  parallelCasesDetails: z.string().optional(),
   separationDate: z.string().optional(),
   divorceReason: z.string().optional(),
   additionalInfo: z.string().optional(),
+  whoWantsDivorceAndWhy: z.string().min(1, "יש לתאר את הרקע לבקשה"),
+  divorceReasons: z.string().min(1, "יש לפרט את העילות"),
   weddingCity: z.string().optional(),
   religiousMarriage: z.enum(["כן", "לא"]).optional(),
   religiousCouncil: z.string().optional(),
@@ -58,7 +69,11 @@ export const divorceClaimSchema = z.object({
   policeComplaintsWhere: z.string().optional(),
   policeComplaintsDate: z.string().optional(),
   policeComplaintsOutcome: z.string().optional(),
-  divorceReasons: z.string().optional(),
+  hadPreviousMediation: z.enum(["כן", "לא"]).optional(),
+  previousMediationDetails: z.string().optional(),
+  marriageCounselingDetails: z.string().optional(),
+  ketubahAmount: z.string().optional(),
+  ketubahRequest: z.string().optional(),
 });
 
 // Property Claim schema

@@ -1,3 +1,4 @@
+require('dotenv').config({ path: '.env.local' });
 const axios = require('axios');
 
 /**
@@ -77,6 +78,15 @@ const testData = {
     grossSalary: '23000',
     remedies: 'לאזן את כלל הזכויות, להורות על חלוקת הדירה לטובת המבקשת, ולהבטיח מזונות בהתאם לצרכי הקטינים.',
     divorce: {
+      reconcileNow: 'לא',
+      wantDivorceNow: 'כן',
+      childrenDispute: 'כן',
+      needSupport: 'כן',
+      propertyDispute: 'כן',
+      urgentRelief: 'לא',
+      urgentReliefDetails: '',
+      parallelCases: 'לא',
+      parallelCasesDetails: '',
       relationshipDescription: 'הנישואין התאפיינו בחוסר יציבות והיעדר שיתוף פעולה פיננסי מצד המשיב.',
       whoWantsDivorceAndWhy: 'המבקשת מבקשת גירושין בשל הפרדת חשבונות, הסתרת נכסים ופערים עמוקים באמון.',
       weddingCity: 'תל אביב',

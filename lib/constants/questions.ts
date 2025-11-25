@@ -545,16 +545,130 @@ export const DIVORCE_QUESTIONS: Question[] = [
   {
     id: "heading-divorce",
     type: "heading",
-    label: "גירושין",
+    label: "גירושין - מסלול אוטומטי",
+  },
+  {
+    id: "divorce.reconcileNow",
+    type: "radio",
+    label: "האם את/ה רוצה כרגע לנסות להישאר ביחד ולשקם את הזוגיות (ייעוץ/טיפול/חזרה לגור יחד)?",
+    helper: "עוזר לנו לקבוע אם להגיש שלום בית ולחילופין גירושין",
+    required: true,
+    options: [
+      { value: "כן", label: "כן" },
+      { value: "לא", label: "לא" },
+    ],
+  },
+  {
+    id: "divorce.wantDivorceNow",
+    type: "radio",
+    label: "האם את/ה מבקש/ת להתגרש עכשיו?",
+    required: true,
+    options: [
+      { value: "כן", label: "כן" },
+      { value: "לא", label: "לא" },
+    ],
+  },
+  {
+    id: "divorce.childrenDispute",
+    type: "radio",
+    label: "האם יש ויכוח על הילדים – איפה גרים, כמה זמן עם כל אחד, חינוך או בריאות?",
+    required: true,
+    options: [
+      { value: "כן", label: "כן" },
+      { value: "לא", label: "לא" },
+    ],
+  },
+  {
+    id: "divorce.needSupport",
+    type: "radio",
+    label: "האם את/ה צריך/ה שנבקש כסף חודשי לילדים או לך (מזונות)?",
+    required: true,
+    options: [
+      { value: "כן", label: "כן" },
+      { value: "לא", label: "לא" },
+    ],
+  },
+  {
+    id: "divorce.propertyDispute",
+    type: "radio",
+    label: "האם יש ויכוח על דירה/כספים/חסכונות/הלוואות או צורך להקפיא נכסים?",
+    required: true,
+    options: [
+      { value: "כן", label: "כן" },
+      { value: "לא", label: "לא" },
+    ],
+  },
+  {
+    id: "divorce.urgentRelief",
+    type: "radio",
+    label: "האם יש משהו דחוף לעצור או להסדיר זמנית (כסף זמני, סידור זמני לילדים, צו מניעה/עיקול)?",
+    required: true,
+    options: [
+      { value: "כן", label: "כן" },
+      { value: "לא", label: "לא" },
+    ],
+  },
+  {
+    id: "divorce.urgentReliefDetails",
+    type: "textarea",
+    label: "מה דחוף? (פירוט קצר)",
+    placeholder: "תארו בקצרה את הסעד הדחוף שאתם צריכים",
+    maxLength: 300,
+    conditional: {
+      dependsOn: "divorce.urgentRelief",
+      showWhen: "כן",
+    },
+  },
+  {
+    id: "divorce.parallelCases",
+    type: "radio",
+    label: "האם יש הליכים פתוחים בבית משפט/בית דין אחר?",
+    required: true,
+    options: [
+      { value: "כן", label: "כן" },
+      { value: "לא", label: "לא" },
+    ],
+  },
+  {
+    id: "divorce.parallelCasesDetails",
+    type: "textarea",
+    label: "פרטי הליכים פתוחים (אם יש):",
+    placeholder: "היכן נפתח ההליך, מספר תיק, מה נדרש שם",
+    maxLength: 400,
+    conditional: {
+      dependsOn: "divorce.parallelCases",
+      showWhen: "כן",
+    },
+  },
+  {
+    id: "heading-divorce-story",
+    type: "heading",
+    label: "רקע וסיפור הקרע",
   },
   {
     id: "divorce.whoWantsDivorceAndWhy",
     type: "textarea",
-    label: "מי רוצה להתגרש ולמה?",
-    placeholder: "תארו מי יזם את הגירושין ומה הסיבות...",
+    label: "מה קרה בזוגיות? תארו את הקרע, ניסיונות תיקון ואירועים חריגים (אלימות/בגידה/נטישה):",
+    placeholder: "כתבו במילים פשוטות מה הוביל למשבר, מתי, ומה נעשה כדי לתקן...",
     maxLength: 1000,
     required: true,
+    helper: "ננסח את הסיפור בשפה משפטית עבורכם",
   },
+  {
+    id: "heading-divorce-reasons",
+    type: "heading",
+    label: "עילות וסיבות משפטיות",
+  },
+  {
+    id: "divorce.divorceReasons",
+    type: "textarea",
+    label: "עילות/סיבות משפטיות לתביעת הגירושין:",
+    placeholder: "תארו עד 5 סעיפים או פסקאות, כל סעיף בשורה נפרדת",
+    helper: "לדוגמה: נטישה, אלימות, בגידה, סרבנות, אי קיום חיי אישות. ננסח משפטית עבורך",
+    maxLength: 1500,
+    required: true,
+  },
+
   {
     id: "heading-divorce-marriage-details",
     type: "heading",
@@ -641,20 +755,6 @@ export const DIVORCE_QUESTIONS: Question[] = [
       showWhen: "כן",
     },
   },
-  {
-    id: "heading-divorce-reasons",
-    type: "heading",
-    label: "עילות וסיבות לתביעה",
-  },
-  {
-    id: "divorce.divorceReasons",
-    type: "textarea",
-    label: "סיבות לתביעת הגירושין:",
-    placeholder: "תארו עד 5 סעיפים או פסקאות, כל סעיף בשורה נפרדת",
-    helper: "ננסח זאת בשפה משפטית עבורך",
-    maxLength: 1500,
-    required: true,
-  },
 
   // Mediation and Therapy History
   {
@@ -697,6 +797,10 @@ export const DIVORCE_QUESTIONS: Question[] = [
     type: "heading",
     label: "כתובה",
     helper: "כתובה היא מסמך הנישואין היהודי, הכולל התחייבות כספית של הבעל כלפי האישה במקרה של גירושין או פטירה. יש למלא רק אם נישאתם בנישואין דתיים.",
+    conditional: {
+      dependsOn: "divorce.religiousMarriage",
+      showWhen: "כן",
+    },
   },
   {
     id: "divorce.ketubahAmount",

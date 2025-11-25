@@ -186,7 +186,8 @@ export function createRelationshipSection(
   children: Array<any>
 ): Paragraph {
   const propertyData = formData.property || {};
-  const marriageDate = propertyData.marriageDate ? formatDate(propertyData.marriageDate) : '';
+  const marriageDateRaw = propertyData.marriageDate || basicInfo.weddingDay || '';
+  const marriageDate = marriageDateRaw ? formatDate(marriageDateRaw) : '';
 
   // Filter children by parent
   const sharedChildren = filterSharedChildren(children, basicInfo);
@@ -262,6 +263,27 @@ export function createRelationshipSection(
 }
 
 // ==================== PARAGRAPH CREATORS ====================
+
+/**
+ * Create lettered header (e.g., "א. מערכת היחסים")
+ */
+export function createLetteredHeader(letter: string, text: string): Paragraph {
+  return new Paragraph({
+    children: [
+      new TextRun({
+        text: `${letter}. ${text}`,
+        bold: true,
+        size: FONT_SIZES.SECTION,
+        underline: { type: UnderlineType.SINGLE },
+        font: 'David',
+        rightToLeft: true,
+      }),
+    ],
+    alignment: AlignmentType.START,
+    spacing: { before: SPACING.SECTION, after: SPACING.SUBSECTION },
+    bidirectional: true,
+  });
+}
 
 /**
  * Create section header (16pt, bold, underlined) - for major sections
@@ -530,6 +552,21 @@ export function createSignatureImage(
 
 // ==================== COURT HEADER ====================
 
+function createSpacerLine(after: number = SPACING.LINE): Paragraph {
+  return new Paragraph({
+    children: [
+      new TextRun({
+        text: '\u00A0',
+        size: FONT_SIZES.BODY,
+        font: 'David',
+        rightToLeft: true,
+      }),
+    ],
+    spacing: { after },
+    bidirectional: true,
+  });
+}
+
 /**
  * Create court header section WITH PARTY INFORMATION
  *
@@ -546,18 +583,31 @@ export function createCourtHeader(options: {
   basicInfo: BasicInfo;
   children?: Array<{ name: string; idNumber: string }>;
   showChildrenList?: boolean;
+  forum?: string;
+  showDateLine?: boolean;
+  docketNumberPlaceholder?: string;
+  showJudgeLine?: boolean;
+  addSpacing?: boolean;
 }): Paragraph[] {
   const paragraphs: Paragraph[] = [];
+  const forum = options.forum || 'בבית המשפט לענייני משפחה';
+  const addSpacing = options.addSpacing !== false;
 
   // Date - TOP RIGHT
-  paragraphs.push(createBodyParagraph('תאריך חתימת המסמך: ___________'));
+  if (options.showDateLine !== false) {
+    paragraphs.push(createBodyParagraph('תאריך חתימת המסמך: ___________'));
+  }
 
   // Court name - TOP RIGHT (regular body size, not bold)
+  const forumLine = options.docketNumberPlaceholder
+    ? `${forum} ${options.docketNumberPlaceholder}${options.city ? ` ${options.city}` : ''}`
+    : forum;
+
   paragraphs.push(
     new Paragraph({
       children: [
         new TextRun({
-          text: 'בבית המשפט לענייני משפחה',
+          text: forumLine,
           size: FONT_SIZES.BODY,
           font: 'David',
           rightToLeft: true,
@@ -569,22 +619,28 @@ export function createCourtHeader(options: {
     })
   );
 
+  if (addSpacing) {
+    paragraphs.push(createSpacerLine(SPACING.LINE));
+  }
+
   // City on RIGHT + Judge on LEFT (using non-breaking spaces)
-  paragraphs.push(
-    new Paragraph({
-      children: [
-        new TextRun({
-          text: `${options.city}${'\u00A0'.repeat(70)}בפני כב' השו' ${options.judgeName}`,
-          size: FONT_SIZES.BODY,
-          font: 'David',
-          rightToLeft: true,
-        }),
-      ],
-      alignment: AlignmentType.START,
-      spacing: { after: SPACING.PARAGRAPH / 2 },
-      bidirectional: true,
-    })
-  );
+  if (options.showJudgeLine !== false && !options.docketNumberPlaceholder) {
+    paragraphs.push(
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: `${options.city}${'\u00A0'.repeat(70)}בפני כב' השו' ${options.judgeName}`,
+            size: FONT_SIZES.BODY,
+            font: 'David',
+            rightToLeft: true,
+          }),
+        ],
+        alignment: AlignmentType.START,
+        spacing: { after: SPACING.PARAGRAPH / 2 },
+        bidirectional: true,
+      })
+    );
+  }
 
   // Optional children list (inline, comma-separated)
   if (options.showChildrenList && options.children && options.children.length > 0) {
@@ -734,6 +790,10 @@ export function createCourtHeader(options: {
   );
 
   paragraphs.push(createBodyParagraph(plaintiffGenderLabel, { after: SPACING.PARAGRAPH }));
+
+  if (addSpacing) {
+    paragraphs.push(createSpacerLine(SPACING.LINE));
+  }
 
   // ===== "נגד" CENTERED =====
   paragraphs.push(createCenteredTitle('נגד', FONT_SIZES.BODY));

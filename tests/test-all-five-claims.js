@@ -139,6 +139,15 @@ const testData = {
 
     // Divorce claim data
     divorce: {
+      reconcileNow: 'לא',
+      wantDivorceNow: 'כן',
+      childrenDispute: 'כן',
+      needSupport: 'כן',
+      propertyDispute: 'כן',
+      urgentRelief: 'לא',
+      urgentReliefDetails: '',
+      parallelCases: 'לא',
+      parallelCasesDetails: '',
       relationshipDescription: 'הנישואין התאפיינו בחוסר יציבות והיעדר שיתוף פעולה פיננסי.',
       whoWantsDivorceAndWhy: 'המבקשת מבקשת גירושין בשל הפרדת חשבונות, הסתרת נכסים ופערים עמוקים באמון.',
       weddingCity: 'תל אביב',
