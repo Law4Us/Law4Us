@@ -1,6 +1,14 @@
 /**
- * Divorce Claim Document Generator (תביעת גירושין)
- * Generates structured divorce claim documents with proper formatting and RTL support
+ * Divorce Claim Document Generator (תביעת גירושין כרוכה)
+ * Generates bundled divorce claim documents for Rabbinical Court (בית הדין הרבני)
+ *
+ * Structure (based on lawyer-approved template):
+ * א. רקע עובדתי - Factual Background
+ * ב. מזונות ילדים - Child Support
+ * ג. משמורת והסדרי ראייה - Custody and Visitation
+ * ד. רכוש - Property Division
+ * ה. סעדים - Reliefs
+ * + Power of Attorney, Affidavit, Attachments
  */
 
 import {
@@ -16,6 +24,12 @@ import {
   Footer,
   ImageRun,
   convertInchesToTwip,
+  Table,
+  TableRow,
+  TableCell,
+  WidthType,
+  BorderStyle,
+  TableLayoutType,
 } from 'docx';
 import { BasicInfo, FormData, Child, ClaimType } from '@/lib/api/types';
 import { transformToLegalLanguage } from './groq-service';
@@ -24,6 +38,7 @@ import {
   SPACING,
   formatDate,
   formatChildNaturally,
+  formatCurrency,
   createSectionHeader,
   createSubsectionHeader,
   createNumberedHeader,
@@ -36,16 +51,17 @@ import {
   createCourtHeader,
   createRelationshipSection,
   generatePowerOfAttorney,
-  generateAffidavit,
   generateAttachmentsSection,
   createLetteredHeader,
 } from './shared-document-generators';
 
+// ==================== TYPES ====================
+
 interface DivorceClaimData {
   basicInfo: BasicInfo;
   formData: FormData;
-  signature?: string | Buffer; // Client signature (base64 or Buffer)
-  lawyerSignature?: string | Buffer; // Lawyer signature with stamp (base64 or Buffer)
+  signature?: string | Buffer;
+  lawyerSignature?: string | Buffer;
   attachments?: Array<{
     label: string;
     description: string;
@@ -54,49 +70,19 @@ interface DivorceClaimData {
   selectedClaims?: ClaimType[];
 }
 
-const RELATED_CLAIM_LABELS: Partial<Record<ClaimType, string>> = {
-  property: 'תביעה רכושית',
-  alimony: 'תביעת מזונות',
-  custody: 'תביעת משמורת',
-};
-
-function formatHebrewList(items: string[]): string {
-  if (items.length <= 1) {
-    return items[0] || '';
-  }
-  const head = items.slice(0, -1).join(', ');
-  const tail = items[items.length - 1];
-  return `${head} ו${tail}`;
+interface GenderTerms {
+  title: string;       // התובע/התובעת
+  pronoun: string;     // הוא/היא
+  possessive: string;  // שלו/שלה
+  name: string;        // Full name
 }
 
-function getRelatedClaimsNotice(selectedClaims?: ClaimType[]): string | null {
-  if (!selectedClaims || selectedClaims.length === 0) {
-    return null;
-  }
-
-  const related = selectedClaims
-    .filter((claim) => claim !== 'divorce' && claim !== 'divorceAgreement')
-    .map((claim) => RELATED_CLAIM_LABELS[claim])
-    .filter((label): label is string => Boolean(label));
-
-  if (related.length === 0) {
-    return null;
-  }
-
-  const isPlural = related.length > 1;
-  const list = formatHebrewList(related);
-  return `בנוסף לכתב תביעה זה ${isPlural ? 'הוגשו' : 'הוגשה'} במקביל ${isPlural ? 'התביעות' : 'תביעה'} ${list} בכתבי תביעה נפרדים, המתנהלים במקביל להליך זה.`;
-}
+// ==================== HELPER FUNCTIONS ====================
 
 /**
- * Get gendered term for plaintiff (person 1)
+ * Get gendered terms for plaintiff (person 1)
  */
-function getPlaintiffTerm(gender?: 'male' | 'female', name?: string): {
-  title: string;
-  pronoun: string;
-  possessive: string;
-  name: string;
-} {
+function getPlaintiffTerm(gender?: 'male' | 'female', name?: string): GenderTerms {
   if (gender === 'male') {
     return { title: 'התובע', pronoun: 'הוא', possessive: 'שלו', name: name || 'התובע' };
   }
@@ -104,14 +90,9 @@ function getPlaintiffTerm(gender?: 'male' | 'female', name?: string): {
 }
 
 /**
- * Get gendered term for defendant (person 2)
+ * Get gendered terms for defendant (person 2)
  */
-function getDefendantTerm(gender?: 'male' | 'female', name?: string): {
-  title: string;
-  pronoun: string;
-  possessive: string;
-  name: string;
-} {
+function getDefendantTerm(gender?: 'male' | 'female', name?: string): GenderTerms {
   if (gender === 'male') {
     return { title: 'הנתבע', pronoun: 'הוא', possessive: 'שלו', name: name || 'הנתבע' };
   }
@@ -119,112 +100,859 @@ function getDefendantTerm(gender?: 'male' | 'female', name?: string): {
 }
 
 /**
- * Format child details as bullet point
+ * Get parent title (האב/האם)
  */
-function formatChildBullet(child: any): string {
-  const address = child.address || child.street || 'לא צוין';
-  return `שם:\u200F ${child.firstName} ${child.lastName} ת״ז:\u200F ${child.idNumber} ת״ל:\u200F ${child.birthDate} כתובת:\u200F ${address}`;
+function getParentTitle(gender?: 'male' | 'female'): string {
+  return gender === 'male' ? 'האב' : 'האם';
 }
 
-function ensureRabbinicalCourt(text: string): string {
-  if (!text) return text;
-  return text.replace(/בית המשפט/gu, 'בית הדין הרבני');
+/**
+ * Normalize amount to number
+ */
+function normalizeAmount(value: unknown): number {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : 0;
+  }
+  if (typeof value === 'string') {
+    const sanitized = value.replace(/[^\d.-]/g, '');
+    const parsed = Number(sanitized);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  return 0;
 }
 
-function formatPropertyItem(item: any, fallbackOwner: string = ''): string {
-  const desc = item.description || item.address || 'פריט רכוש';
-  const owner = item.owner || fallbackOwner || 'לא צוין';
-  const value = item.value || item.amount || '';
-  const extra = item.purchaseDate ? `, נרכש בשנת ${item.purchaseDate}` : '';
-  const suffix = value ? `, שווי מוערך: ${value}` : '';
-  return `${desc} (בבעלות ${owner}${extra}${suffix})`;
+/**
+ * Calculate age from birthdate
+ */
+function calculateAge(birthDate: string): number {
+  if (!birthDate) return 0;
+  const birth = new Date(birthDate);
+  const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  const monthDiff = today.getMonth() - birth.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    age--;
+  }
+  return age;
 }
 
-function buildAnnexList(attachments?: Array<{ label: string; description: string }>): string[] {
-  if (!attachments || attachments.length === 0) return [];
-  return attachments.map((att, idx) => `${att.label || `נספח ${idx + 1}`}: ${att.description || 'מסמך מצורף'}`);
+/**
+ * Format child with age
+ */
+function formatChildWithAge(child: Child): string {
+  const name = `${child.firstName || ''} ${child.lastName || ''}`.trim() || 'קטין/ה';
+  const idText = child.idNumber ? `(ת.ז ${child.idNumber})` : '';
+  const birthText = child.birthDate ? `, יליד ${formatDate(child.birthDate)}` : '';
+  const age = child.birthDate ? calculateAge(child.birthDate) : null;
+  const ageText = age !== null ? `, כיום בן ${age}` : '';
+  return `${name} ${idText}${birthText}${ageText}`;
 }
 
-type DivorceTrack = 'divorce_only' | 'divorce_with_reliefs' | 'shalom_bayit_alt';
+// ==================== TABLE HELPER FUNCTIONS ====================
 
-function resolveDivorceTrack(
-  divorceData: any,
-  formData: FormData,
-  selectedClaims?: ClaimType[]
-): DivorceTrack {
-  const wantsReconciliation = divorceData?.reconcileNow === 'כן';
-  const wantsDivorce = divorceData?.wantDivorceNow !== 'לא';
-
-  const flaggedChildren = divorceData?.childrenDispute === 'כן';
-  const flaggedSupport = divorceData?.needSupport === 'כן';
-  const flaggedProperty = divorceData?.propertyDispute === 'כן';
-  const flaggedUrgent = divorceData?.urgentRelief === 'כן';
-
-  const relatedClaimsSelected = Array.isArray(selectedClaims)
-    ? selectedClaims.some((claim) => claim === 'property' || claim === 'alimony' || claim === 'custody')
-    : false;
-
-  const hasChildren = Array.isArray(formData.children) && formData.children.length > 0;
-  const hasAssets =
-    (formData.property && formData.property.hasAssets === 'yes') ||
-    (Array.isArray(formData.apartments) && formData.apartments.length > 0) ||
-    (Array.isArray(formData.vehicles) && formData.vehicles.length > 0) ||
-    (Array.isArray(formData.savings) && formData.savings.length > 0) ||
-    (Array.isArray(formData.benefits) && formData.benefits.length > 0) ||
-    (Array.isArray(formData.debts) && formData.debts.length > 0);
-
-  const needsReliefs = flaggedChildren || flaggedSupport || flaggedProperty || flaggedUrgent || relatedClaimsSelected || hasChildren || hasAssets;
-
-  if (wantsReconciliation) {
-    return 'shalom_bayit_alt';
+/**
+ * Create a simple 2-column table for children's needs
+ * Columns: פירוט ההוצאה | סכום חודשי
+ */
+function createNeedsTable(
+  expenses: Array<{ category?: string; description?: string; monthlyAmount?: number; amount?: number }>
+): (Paragraph | Table)[] {
+  if (!expenses || expenses.length === 0) {
+    return [];
   }
 
-  if (wantsDivorce && needsReliefs) {
-    return 'divorce_with_reliefs';
-  }
+  const elements: (Paragraph | Table)[] = [];
+  const tableRows: TableRow[] = [];
 
-  if (wantsDivorce) {
-    return 'divorce_only';
-  }
+  const tableWidth = convertInchesToTwip(6.5);
+  const descWidth = Math.round(tableWidth * 0.70);
+  const amountWidth = tableWidth - descWidth;
+  const columnWidths = [descWidth, amountWidth];
 
-  return needsReliefs ? 'divorce_with_reliefs' : 'divorce_only';
-}
+  // Header row
+  tableRows.push(
+    new TableRow({
+      children: [
+        new TableCell({
+          children: [
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: 'פירוט ההוצאה',
+                  bold: true,
+                  size: FONT_SIZES.BODY,
+                  font: 'David',
+                  rightToLeft: true,
+                }),
+              ],
+              alignment: AlignmentType.CENTER,
+              bidirectional: true,
+            }),
+          ],
+          width: { size: columnWidths[0], type: WidthType.DXA },
+          shading: { fill: 'E3E6E8' },
+        }),
+        new TableCell({
+          children: [
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: 'סכום חודשי',
+                  bold: true,
+                  size: FONT_SIZES.BODY,
+                  font: 'David',
+                  rightToLeft: true,
+                }),
+              ],
+              alignment: AlignmentType.CENTER,
+              bidirectional: true,
+            }),
+          ],
+          width: { size: columnWidths[1], type: WidthType.DXA },
+          shading: { fill: 'E3E6E8' },
+        }),
+      ],
+    })
+  );
 
-function getRequestedReliefs(
-  track: DivorceTrack,
-  divorceData: any,
-  formData: FormData
-): string[] {
-  const reliefs: string[] = [];
+  // Data rows
+  let total = 0;
+  expenses.forEach((expense) => {
+    const desc = expense.description || expense.category || 'הוצאה';
+    const amount = normalizeAmount(expense.monthlyAmount || expense.amount || 0);
+    total += amount;
 
-  if (track === 'shalom_bayit_alt') {
-    reliefs.push('להורות על ניסיון שלום בית ולחילופין להורות על גירושין ולתאם סידור גט במועד קרוב.');
-  } else {
-    reliefs.push('להורות על פירוק הנישואין בין הצדדים ולתאם מועד לסידור גט.');
-  }
-
-  if (divorceData?.childrenDispute === 'כן' || (Array.isArray(formData.children) && formData.children.length > 0 && track !== 'divorce_only')) {
-    reliefs.push('לקבוע משמורת, הסדרי שהות וסמכויות חינוך ובריאות לפי טובת הילדים.');
-  }
-
-  if (divorceData?.needSupport === 'כן') {
-    reliefs.push('לקבוע מזונות ילדים ו/או מזונות אישה בהתאם לנתוני ההכנסה וההוצאות שיוצגו.');
-  }
-
-  if (divorceData?.propertyDispute === 'כן') {
-    reliefs.push('לדון בחלוקת רכוש, זכויות וחובות, ולתת צווים לשמירת נכסים במידת הצורך.');
-  }
-
-  if (divorceData?.urgentRelief === 'כן') {
-    reliefs.push(
-      `לתת סעדים זמניים ודחופים (${divorceData.urgentReliefDetails || 'כגון צווי מניעה/עיקול, מזונות זמניים או משמורת זמנית לפי הצורך'}).`
+    tableRows.push(
+      new TableRow({
+        children: [
+          new TableCell({
+            children: [
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: desc,
+                    size: FONT_SIZES.BODY,
+                    font: 'David',
+                    rightToLeft: true,
+                  }),
+                ],
+                alignment: AlignmentType.START,
+                bidirectional: true,
+              }),
+            ],
+            width: { size: columnWidths[0], type: WidthType.DXA },
+          }),
+          new TableCell({
+            children: [
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: `${amount.toLocaleString('he-IL')} ש"ח`,
+                    size: FONT_SIZES.BODY,
+                    font: 'David',
+                    rightToLeft: true,
+                  }),
+                ],
+                alignment: AlignmentType.CENTER,
+                bidirectional: true,
+              }),
+            ],
+            width: { size: columnWidths[1], type: WidthType.DXA },
+          }),
+        ],
+      })
     );
+  });
+
+  // Create table with RTL support
+  const table = new Table({
+    rows: tableRows,
+    width: { size: tableWidth, type: WidthType.DXA },
+    layout: TableLayoutType.FIXED,
+    columnWidths,
+    margins: {
+      top: convertInchesToTwip(0.05),
+      bottom: convertInchesToTwip(0.05),
+      right: convertInchesToTwip(0.08),
+      left: convertInchesToTwip(0.08),
+    },
+    borders: {
+      top: { style: BorderStyle.SINGLE, size: 1, color: '515F61' },
+      bottom: { style: BorderStyle.SINGLE, size: 1, color: '515F61' },
+      left: { style: BorderStyle.SINGLE, size: 1, color: '515F61' },
+      right: { style: BorderStyle.SINGLE, size: 1, color: '515F61' },
+      insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: 'E3E6E8' },
+      insideVertical: { style: BorderStyle.SINGLE, size: 1, color: 'E3E6E8' },
+    },
+    visuallyRightToLeft: true,
+  });
+
+  elements.push(table);
+
+  // Total line
+  elements.push(
+    createBodyParagraph(`סה"כ הוצאות חודשיות לקטינים: ${total.toLocaleString('he-IL')} ש"ח.`)
+  );
+
+  return elements;
+}
+
+/**
+ * Create a 3-column property table
+ * Columns: תיאור | בעלות | שווי משוער (or סכום for debts)
+ */
+function createPropertyTable(
+  items: Array<any>,
+  type: 'property' | 'vehicles' | 'savings' | 'debts'
+): (Paragraph | Table)[] {
+  if (!items || items.length === 0) {
+    return [];
   }
 
-  reliefs.push('לחייב את הנתבע/ת בהוצאות ההליך ושכ"ט עו"ד וליתן כל סעד נוסף שבית הדין ימצא לנכון.');
+  const elements: (Paragraph | Table)[] = [];
+  const tableRows: TableRow[] = [];
 
-  return reliefs;
+  const tableWidth = convertInchesToTwip(6.5);
+  const descWidth = Math.round(tableWidth * 0.45);
+  const ownerWidth = Math.round(tableWidth * 0.25);
+  const valueWidth = tableWidth - descWidth - ownerWidth;
+  const columnWidths = [descWidth, ownerWidth, valueWidth];
+
+  // Determine headers based on type
+  const valueHeader = type === 'debts' ? 'סכום' : 'שווי משוער';
+  const ownerHeader = type === 'debts' ? 'בעל החוב' : 'בעלות';
+
+  // Header row
+  tableRows.push(
+    new TableRow({
+      children: [
+        new TableCell({
+          children: [
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: 'תיאור',
+                  bold: true,
+                  size: FONT_SIZES.BODY,
+                  font: 'David',
+                  rightToLeft: true,
+                }),
+              ],
+              alignment: AlignmentType.CENTER,
+              bidirectional: true,
+            }),
+          ],
+          width: { size: columnWidths[0], type: WidthType.DXA },
+          shading: { fill: 'E3E6E8' },
+        }),
+        new TableCell({
+          children: [
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: ownerHeader,
+                  bold: true,
+                  size: FONT_SIZES.BODY,
+                  font: 'David',
+                  rightToLeft: true,
+                }),
+              ],
+              alignment: AlignmentType.CENTER,
+              bidirectional: true,
+            }),
+          ],
+          width: { size: columnWidths[1], type: WidthType.DXA },
+          shading: { fill: 'E3E6E8' },
+        }),
+        new TableCell({
+          children: [
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: valueHeader,
+                  bold: true,
+                  size: FONT_SIZES.BODY,
+                  font: 'David',
+                  rightToLeft: true,
+                }),
+              ],
+              alignment: AlignmentType.CENTER,
+              bidirectional: true,
+            }),
+          ],
+          width: { size: columnWidths[2], type: WidthType.DXA },
+          shading: { fill: 'E3E6E8' },
+        }),
+      ],
+    })
+  );
+
+  // Data rows
+  items.forEach((item) => {
+    // Get description based on item type
+    let desc = '';
+    if (type === 'property') {
+      desc = item.address || item.description || 'נכס';
+    } else if (type === 'vehicles') {
+      const make = item.make || item.manufacturer || '';
+      const model = item.model || '';
+      const year = item.year || '';
+      const plate = item.plateNumber || item.licensePlate || '';
+      desc = `${make} ${model} ${year}`.trim() || 'רכב';
+      if (plate) desc += ` (${plate})`;
+    } else if (type === 'savings') {
+      desc = item.description || item.bankName || item.type || 'חיסכון';
+    } else if (type === 'debts') {
+      desc = item.description || item.type || 'חוב';
+    }
+
+    const owner = item.owner || item.ownership || 'שני הצדדים';
+    const value = item.value || item.amount || item.estimatedValue || '';
+    const valueText = value ? `${normalizeAmount(value).toLocaleString('he-IL')} ש"ח` : 'לא צוין';
+
+    tableRows.push(
+      new TableRow({
+        children: [
+          new TableCell({
+            children: [
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: desc,
+                    size: FONT_SIZES.BODY,
+                    font: 'David',
+                    rightToLeft: true,
+                  }),
+                ],
+                alignment: AlignmentType.START,
+                bidirectional: true,
+              }),
+            ],
+            width: { size: columnWidths[0], type: WidthType.DXA },
+          }),
+          new TableCell({
+            children: [
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: owner,
+                    size: FONT_SIZES.BODY,
+                    font: 'David',
+                    rightToLeft: true,
+                  }),
+                ],
+                alignment: AlignmentType.CENTER,
+                bidirectional: true,
+              }),
+            ],
+            width: { size: columnWidths[1], type: WidthType.DXA },
+          }),
+          new TableCell({
+            children: [
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: valueText,
+                    size: FONT_SIZES.BODY,
+                    font: 'David',
+                    rightToLeft: true,
+                  }),
+                ],
+                alignment: AlignmentType.CENTER,
+                bidirectional: true,
+              }),
+            ],
+            width: { size: columnWidths[2], type: WidthType.DXA },
+          }),
+        ],
+      })
+    );
+  });
+
+  // Create table with RTL support
+  const table = new Table({
+    rows: tableRows,
+    width: { size: tableWidth, type: WidthType.DXA },
+    layout: TableLayoutType.FIXED,
+    columnWidths,
+    margins: {
+      top: convertInchesToTwip(0.05),
+      bottom: convertInchesToTwip(0.05),
+      right: convertInchesToTwip(0.08),
+      left: convertInchesToTwip(0.08),
+    },
+    borders: {
+      top: { style: BorderStyle.SINGLE, size: 1, color: '515F61' },
+      bottom: { style: BorderStyle.SINGLE, size: 1, color: '515F61' },
+      left: { style: BorderStyle.SINGLE, size: 1, color: '515F61' },
+      right: { style: BorderStyle.SINGLE, size: 1, color: '515F61' },
+      insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: 'E3E6E8' },
+      insideVertical: { style: BorderStyle.SINGLE, size: 1, color: 'E3E6E8' },
+    },
+    visuallyRightToLeft: true,
+  });
+
+  elements.push(table);
+
+  return elements;
 }
+
+// ==================== SECTION GENERATORS ====================
+
+/**
+ * Section א - Factual Background (רקע עובדתי)
+ * Includes marriage details, children, separation, mediation, and BLAME LANGUAGE
+ */
+function generateFactualBackgroundSection(
+  basicInfo: BasicInfo,
+  formData: FormData,
+  divorceData: any,
+  children: Child[],
+  plaintiff: GenderTerms,
+  defendant: GenderTerms
+): Paragraph[] {
+  const paragraphs: Paragraph[] = [];
+
+  paragraphs.push(createLetteredHeader('א', 'רקע עובדתי'));
+
+  // Marriage details - dynamic based on available data
+  const marriageDate = basicInfo.weddingDay ? formatDate(basicInfo.weddingDay) : '';
+  const weddingCity = divorceData.weddingCity || '';
+  const isReligiousMarriage = divorceData.religiousMarriage === 'כן';
+
+  // Build marriage sentence dynamically
+  let marriageText = 'הצדדים הם בני זוג';
+  if (isReligiousMarriage) {
+    marriageText += `, אשר נישאו כדמו"י`;
+  } else {
+    marriageText += ', אשר נישאו';
+  }
+  if (marriageDate) {
+    marriageText += ` בתאריך ${marriageDate}`;
+  }
+  if (weddingCity) {
+    marriageText += ` ב${weddingCity}`;
+  }
+  marriageText += '.';
+  paragraphs.push(createBodyParagraph(marriageText));
+
+  // Children details
+  if (children.length > 0) {
+    const childrenList = children.map((child) => formatChildWithAge(child)).join('; ו');
+    const childrenText = children.length === 1
+      ? `מנישואי הצדדים נולד להם ילד אחד: ${childrenList}.`
+      : `מנישואי הצדדים נולדו להם ${children.length} ילדים: ${childrenList}.`;
+    paragraphs.push(createBodyParagraph(childrenText));
+  }
+
+  // Marital problems description (AI-transformed if available)
+  // Note: GROQ transforms this to a flowing story style, no need for "לטענת" prefix
+  if (divorceData.whoWantsDivorceAndWhy) {
+    paragraphs.push(createBodyParagraph(divorceData.whoWantsDivorceAndWhy));
+  } else {
+    // Fallback: basic statement if no detailed story provided
+    paragraphs.push(createBodyParagraph(
+      'במהלך השנים האחרונות התגלעו חילוקי דעות משמעותיים בין הצדדים, אשר הובילו לפירוק מערכת היחסים הזוגית.'
+    ));
+  }
+
+  // Separation status
+  const livingSeparately = formData.livingSeparately === 'כן';
+  const separationDate = formData.separationDate;
+  if (livingSeparately) {
+    let sepText = 'כיום הצדדים גרים בנפרד';
+    if (separationDate) {
+      sepText += ` מיום ${formatDate(separationDate)}`;
+    }
+    sepText += '.';
+    paragraphs.push(createBodyParagraph(sepText));
+  }
+
+  // Police complaints - with proper gendered language
+  if (divorceData.policeComplaints === 'כן') {
+    let policeText = 'הוגשו תלונות במשטרה';
+    if (divorceData.policeComplaintsWho) {
+      // Determine gender based on who filed
+      const whoFiled = divorceData.policeComplaintsWho;
+      const isPlaintiffFiling = whoFiled === plaintiff.name || whoFiled === 'התובע' || whoFiled === 'התובעת';
+      const filedVerb = isPlaintiffFiling
+        ? (plaintiff.pronoun === 'הוא' ? 'הגיש' : 'הגישה')
+        : (defendant.pronoun === 'הוא' ? 'הגיש' : 'הגישה');
+      policeText = `${whoFiled} ${filedVerb} תלונות במשטרה`;
+    }
+    if (divorceData.policeComplaintsWhere) {
+      policeText += ` ב${divorceData.policeComplaintsWhere}`;
+    }
+    if (divorceData.policeComplaintsDate) {
+      policeText += ` ביום ${formatDate(divorceData.policeComplaintsDate)}`;
+    }
+    policeText += '.';
+    paragraphs.push(createBodyParagraph(policeText));
+
+    if (divorceData.policeComplaintsOutcome) {
+      paragraphs.push(createBodyParagraph(`תוצאות ההליך: ${divorceData.policeComplaintsOutcome}`));
+    }
+  }
+
+  // Mediation attempts - flows as a story
+  if (divorceData.hadPreviousMediation === 'כן') {
+    if (divorceData.previousMediationDetails) {
+      // The details usually include "הצדדים פנו..." so we just add "הצדדים ניסו הליך גישור." before
+      paragraphs.push(createBodyParagraph(`הצדדים ניסו הליך גישור. ${divorceData.previousMediationDetails}`));
+    } else {
+      paragraphs.push(createBodyParagraph('הצדדים ניסו הליך גישור, אולם הגישור לא צלח.'));
+    }
+  }
+
+  // Marriage counseling - flows as a story (no label)
+  if (divorceData.marriageCounselingDetails) {
+    // The details usually start with "טיפול זוגי התקיים..." so we just use it directly
+    paragraphs.push(createBodyParagraph(divorceData.marriageCounselingDetails));
+  }
+
+  // BLAME LANGUAGE (lawyer's requirement) - with proper punctuation
+  const blameWord = defendant.pronoun === 'היא' ? 'בעטיה של' : 'בעטיו של';
+  let blameText = '';
+
+  if (divorceData.hadPreviousMediation === 'כן') {
+    blameText = `${blameWord} ${defendant.title}, הגישור לא צלח והנישואין הגיעו למבוי סתום.`;
+  } else if (livingSeparately) {
+    blameText = `${blameWord} ${defendant.title}, נוצר פירוד בין הצדדים אשר אין סיכוי לגשר עליו.`;
+  } else {
+    blameText = `${blameWord} ${defendant.title}, נוצר נתק בין הצדדים ואין אפשרות להמשיך בחיים משותפים.`;
+  }
+  paragraphs.push(createBodyParagraph(blameText));
+
+  // Closing - proper gendered form
+  const requestVerb = plaintiff.pronoun === 'הוא' ? 'מבקש' : 'מבקשת';
+  paragraphs.push(createBodyParagraph(
+    `לאור המצב, ${plaintiff.title} ${requestVerb} מכבוד בית הדין להורות על גירושין.`
+  ));
+
+  return paragraphs;
+}
+
+/**
+ * Section ב - Alimony (מזונות ילדים)
+ * Includes children's needs table and income information
+ */
+function generateSimpleAlimonySection(
+  basicInfo: BasicInfo,
+  formData: FormData,
+  children: Child[],
+  plaintiff: GenderTerms,
+  defendant: GenderTerms
+): (Paragraph | Table)[] {
+  const elements: (Paragraph | Table)[] = [];
+
+  elements.push(createLetteredHeader('ב', 'מזונות ילדים'));
+
+  if (children.length === 0) {
+    elements.push(createBodyParagraph('לצדדים אין ילדים משותפים.'));
+    return elements;
+  }
+
+  // List children
+  const childNames = children.map(c => `${c.firstName || ''} ${c.lastName || ''}`.trim()).join(', ');
+  elements.push(createBodyParagraph(
+    `לצדדים ${children.length === 1 ? 'ילד אחד' : `${children.length} ילדים`}: ${childNames}.`
+  ));
+
+  // Children's needs table
+  const childrenNeeds = formData.alimony?.childrenNeeds || [];
+  if (childrenNeeds.length > 0) {
+    elements.push(createBodyParagraph('להלן פירוט צרכי הקטינים החודשיים:'));
+    elements.push(...createNeedsTable(childrenNeeds));
+    elements.push(new Paragraph({ children: [], spacing: { after: SPACING.LINE } }));
+  }
+
+  // Income information
+  const applicantIncome = formData.property?.applicantIncome || formData.alimony?.applicantIncome;
+  const respondentIncome = formData.property?.respondentIncome || formData.alimony?.respondentIncome;
+
+  if (applicantIncome || respondentIncome) {
+    const fatherTitle = basicInfo.gender === 'male' ? 'האב' : 'האם';
+    const motherTitle = basicInfo.gender === 'male' ? 'האם' : 'האב';
+
+    let incomeText = 'באשר להכנסות הצדדים: ';
+    if (applicantIncome) {
+      incomeText += `הכנסת ${fatherTitle} ${normalizeAmount(applicantIncome).toLocaleString('he-IL')} ש"ח ברוטו לחודש`;
+    }
+    if (applicantIncome && respondentIncome) {
+      incomeText += ', ';
+    }
+    if (respondentIncome) {
+      incomeText += `הכנסת ${motherTitle} ${normalizeAmount(respondentIncome).toLocaleString('he-IL')} ש"ח ברוטו לחודש`;
+    }
+    incomeText += '.';
+    elements.push(createBodyParagraph(incomeText));
+  }
+
+  // Request
+  elements.push(createBodyParagraph(
+    'מבוקש מכבוד בית הדין לפסוק מזונות לקטינים בהתאם לצרכיהם ולרמת החיים לה היו רגילים, תוך התחשבות ביכולת ההשתכרות של כל אחד מההורים.'
+  ));
+
+  return elements;
+}
+
+/**
+ * Section ג - Custody and Visitation (משמורת והסדרי ראייה)
+ * Includes current arrangement, requested arrangement, full reasoning, and acknowledgment
+ */
+function generateSimpleCustodySection(
+  basicInfo: BasicInfo,
+  formData: FormData,
+  children: Child[],
+  plaintiff: GenderTerms,
+  defendant: GenderTerms
+): Paragraph[] {
+  const paragraphs: Paragraph[] = [];
+
+  paragraphs.push(createLetteredHeader('ג', 'משמורת והסדרי ראייה'));
+
+  if (children.length === 0) {
+    paragraphs.push(createBodyParagraph('לצדדים אין ילדים משותפים.'));
+    return paragraphs;
+  }
+
+  const custodyData = formData.custody || {};
+  const plaintiffParentTitle = getParentTitle(basicInfo.gender);
+  const defendantParentTitle = getParentTitle(basicInfo.gender2);
+
+  // Current living arrangement
+  const currentArrangement = custodyData.currentLivingArrangement;
+  const separationDate = formData.separationDate || custodyData.sinceWhen;
+
+  if (currentArrangement) {
+    // Use proper singular/plural based on children count
+    const childWord = children.length === 1 ? 'הקטין מתגורר' : 'הקטינים מתגוררים';
+    let currentText = '';
+
+    if (currentArrangement === 'with_me') {
+      currentText = `${childWord} כיום עם ${plaintiff.title}`;
+    } else if (currentArrangement === 'with_partner' || currentArrangement === 'with_respondent') {
+      currentText = `${childWord} כיום עם ${defendant.title}`;
+    } else if (currentArrangement === 'split_children') {
+      currentText = 'הילדים מתגוררים בחלוקה בין הצדדים';
+    } else if (currentArrangement === 'alternating') {
+      currentText = 'הילדים מתגוררים לסירוגין אצל שני ההורים';
+    } else {
+      currentText = `${childWord} כיום עם ${defendant.title}`;
+    }
+
+    if (separationDate) {
+      currentText += ` מאז ${formatDate(separationDate)}`;
+    }
+    currentText += '.';
+    paragraphs.push(createBodyParagraph(currentText));
+  }
+
+  // Current visitation arrangement (check both field names)
+  const visitationDetails = custodyData.currentVisitationArrangement || custodyData.currentVisitationDetails;
+  if (visitationDetails) {
+    paragraphs.push(createBodyParagraph(
+      `הסדר הראייה הנוכחי: ${visitationDetails}`
+    ));
+  }
+
+  // Requested arrangement - CORRECT VALUES
+  const requestedArrangement = custodyData.requestedArrangement;
+
+  if (requestedArrangement === 'joint_custody') {
+    paragraphs.push(createBodyParagraph(
+      'מבוקשת משמורת משותפת, בה שני ההורים ישאו באחריות שווה לגידול הילדים.'
+    ));
+  } else if (requestedArrangement === 'full_custody') {
+    paragraphs.push(createBodyParagraph(
+      `מבוקשת משמורת מלאה ל${plaintiff.title}.`
+    ));
+  } else if (requestedArrangement === 'primary_with_visits') {
+    paragraphs.push(createBodyParagraph(
+      `מבוקשת משמורת ראשית ל${plaintiff.title}, תוך קביעת הסדרי ראיה נרחבים ל${defendant.title}.`
+    ));
+  } else {
+    // Default to joint if not specified
+    paragraphs.push(createBodyParagraph(
+      'מבוקשת משמורת משותפת, בה שני ההורים ישאו באחריות שווה לגידול הילדים.'
+    ));
+  }
+
+  // Reasoning - why plaintiff should have custody (whoShouldHaveCustody)
+  if (custodyData.whoShouldHaveCustody) {
+    paragraphs.push(createBodyParagraph(custodyData.whoShouldHaveCustody));
+  }
+
+  // Acknowledgment of other parent (whyNotOtherParent)
+  if (custodyData.whyNotOtherParent) {
+    paragraphs.push(createBodyParagraph(custodyData.whyNotOtherParent));
+  }
+
+  // Final request to court
+  paragraphs.push(createBodyParagraph(
+    'מבוקש מכבוד בית הדין לקבוע הסדרי משמורת וזמני שהות לטובת הקטינים, תוך שמירה על קשר רציף ומשמעותי עם שני ההורים.'
+  ));
+
+  return paragraphs;
+}
+
+/**
+ * Section ד - Property (רכוש)
+ * Includes tables for real estate, vehicles, savings, and debts
+ */
+function generateSimplePropertySection(
+  basicInfo: BasicInfo,
+  formData: FormData,
+  plaintiff: GenderTerms,
+  defendant: GenderTerms
+): (Paragraph | Table)[] {
+  const elements: (Paragraph | Table)[] = [];
+
+  elements.push(createLetteredHeader('ד', 'רכוש'));
+  elements.push(createBodyParagraph('להלן פירוט הרכוש המשותף של הצדדים:'));
+
+  const apartments = formData.apartments || [];
+  const vehicles = formData.vehicles || [];
+  const savings = formData.savings || [];
+  const benefits = formData.benefits || [];
+  const debts = formData.debts || [];
+
+  // Real estate
+  if (apartments.length > 0) {
+    elements.push(createSubsectionHeader('נכסי מקרקעין:'));
+    elements.push(...createPropertyTable(apartments, 'property'));
+    elements.push(new Paragraph({ children: [], spacing: { after: SPACING.LINE } }));
+  }
+
+  // Vehicles
+  if (vehicles.length > 0) {
+    elements.push(createSubsectionHeader('כלי רכב:'));
+    elements.push(...createPropertyTable(vehicles, 'vehicles'));
+    elements.push(new Paragraph({ children: [], spacing: { after: SPACING.LINE } }));
+  }
+
+  // Savings and benefits
+  const allSavings = [...savings, ...benefits];
+  if (allSavings.length > 0) {
+    elements.push(createSubsectionHeader('חסכונות וכספים:'));
+    elements.push(...createPropertyTable(allSavings, 'savings'));
+    elements.push(new Paragraph({ children: [], spacing: { after: SPACING.LINE } }));
+  }
+
+  // Debts
+  if (debts.length > 0) {
+    elements.push(createSubsectionHeader('חובות והתחייבויות:'));
+    elements.push(...createPropertyTable(debts, 'debts'));
+    elements.push(new Paragraph({ children: [], spacing: { after: SPACING.LINE } }));
+  }
+
+  // No property case
+  if (apartments.length === 0 && vehicles.length === 0 && allSavings.length === 0 && debts.length === 0) {
+    elements.push(createBodyParagraph('פרטי הרכוש יפורטו בדיון או בכתב טענות נפרד.'));
+  }
+
+  // Request
+  elements.push(createBodyParagraph(
+    'מבוקש מכבוד בית הדין לחלק את הרכוש המשותף בין הצדדים בהתאם לחוק יחסי ממון בין בני זוג, תשל"ג-1973, ובהתחשב בתרומתו של כל צד לרכישת הרכוש ולרווחת המשפחה.'
+  ));
+
+  return elements;
+}
+
+/**
+ * Section ה - Reliefs (סעדים)
+ * Numbered list of requested reliefs
+ */
+function generateReliefsSection(
+  children: Child[],
+  plaintiff: GenderTerms,
+  defendant: GenderTerms
+): Paragraph[] {
+  const paragraphs: Paragraph[] = [];
+
+  paragraphs.push(createLetteredHeader('ה', 'סעדים'));
+  paragraphs.push(createBodyParagraph('לפיכך, מתבקש כבוד בית הדין:'));
+
+  // Numbered reliefs
+  paragraphs.push(createNumberedItem(1, 'להורות לצדדים להתגרש לאלתר ולקבוע מועד לסידור גט.'));
+
+  if (children.length > 0) {
+    paragraphs.push(createNumberedItem(2, 'לפסוק מזונות לקטינים בהתאם לצרכיהם.'));
+    paragraphs.push(createNumberedItem(3, 'לקבוע הסדרי משמורת וזמני שהות לטובת הקטינים.'));
+    paragraphs.push(createNumberedItem(4, 'לחלק את הרכוש המשותף בהתאם לחוק.'));
+    paragraphs.push(createNumberedItem(5, `לחייב את ${defendant.title} בהוצאות משפט.`));
+  } else {
+    paragraphs.push(createNumberedItem(2, 'לחלק את הרכוש המשותף בהתאם לחוק.'));
+    paragraphs.push(createNumberedItem(3, `לחייב את ${defendant.title} בהוצאות משפט.`));
+  }
+
+  return paragraphs;
+}
+
+/**
+ * Create signature section
+ */
+function createSignatureSection(
+  basicInfo: BasicInfo,
+  signature?: string | Buffer,
+  lawyerSignature?: string | Buffer
+): Paragraph[] {
+  const paragraphs: Paragraph[] = [];
+
+  // Spacing before signature
+  paragraphs.push(new Paragraph({ children: [], spacing: { before: SPACING.SECTION } }));
+
+  // Plaintiff signature line
+  paragraphs.push(new Paragraph({
+    children: [
+      new TextRun({
+        text: basicInfo.fullName,
+        size: FONT_SIZES.BODY,
+        font: 'David',
+        rightToLeft: true,
+      }),
+    ],
+    alignment: AlignmentType.START,
+    spacing: { after: SPACING.LINE },
+    bidirectional: true,
+  }));
+
+  // Lawyer signature
+  if (lawyerSignature) {
+    paragraphs.push(new Paragraph({
+      children: [
+        new TextRun({
+          text: 'ב"כ התובע/ת:',
+          size: FONT_SIZES.BODY,
+          font: 'David',
+          rightToLeft: true,
+        }),
+      ],
+      alignment: AlignmentType.START,
+      spacing: { after: SPACING.MINIMAL },
+      bidirectional: true,
+    }));
+    paragraphs.push(createSignatureImage(lawyerSignature, 200, 80, AlignmentType.START));
+  }
+
+  paragraphs.push(new Paragraph({
+    children: [
+      new TextRun({
+        text: 'עו"ד אריאל דרור, ב"כ התובע/ת',
+        size: FONT_SIZES.BODY,
+        font: 'David',
+        rightToLeft: true,
+      }),
+    ],
+    alignment: AlignmentType.START,
+    spacing: { after: SPACING.SECTION },
+    bidirectional: true,
+  }));
+
+  return paragraphs;
+}
+
+// ==================== MAIN GENERATOR ====================
 
 /**
  * Main export function - generates complete divorce claim document
@@ -232,75 +960,125 @@ function getRequestedReliefs(
 export async function generateDivorceClaim(data: DivorceClaimData): Promise<Buffer> {
   const { basicInfo, formData, signature, lawyerSignature, attachments, selectedClaims } = data;
 
-  // Log attachments for debugging
-  if (attachments && attachments.length > 0) {
-    console.log(`📎 Divorce claim received ${attachments.length} attachments`);
-  } else {
-    console.log(`ℹ️ Divorce claim received no attachments`);
-  }
+  console.log('📋 Generating bundled divorce claim (תביעת גירושין כרוכה)...');
 
-  // Extract gender terms with names
+  // Extract gender terms
   const plaintiff = getPlaintiffTerm(basicInfo.gender, basicInfo.fullName);
   const defendant = getDefendantTerm(basicInfo.gender2, basicInfo.fullName2);
 
-  // Extract divorce-specific data
+  // Extract data
   const divorceData = formData.divorce || {};
   const children = formData.children || [];
-  const weddingDate = basicInfo.weddingDay || '';
-  const marriageStatus = basicInfo.relationshipType === 'married' ? 'נשואים' : 'לא נשואים';
-  const track = resolveDivorceTrack(divorceData, formData, selectedClaims);
-  const requestedReliefs = getRequestedReliefs(track, divorceData, formData);
-  const attachmentsList = buildAnnexList(
-    attachments?.map((att) => ({
-      label: att.label,
-      description: att.description,
-    }))
-  );
-  const claimNatureText =
-    track === 'shalom_bayit_alt'
-      ? 'מהות התביעה:\u200F שלום בית ולחילופין גירושין (כולל סעדים נלווים לפי הצורך)'
-      : track === 'divorce_with_reliefs'
-      ? 'מהות התביעה:\u200F גירושין וסעדים נלווים (מזונות/משמורת/רכוש לפי הצורך)'
-      : 'מהות התביעה:\u200F גירושין';
 
   // Transform free-text fields to legal language using GROQ AI
-  console.log('🤖 Transforming divorce grounds to legal language...');
-
-  let groundsForDivorce = '';
   if (divorceData.whoWantsDivorceAndWhy) {
     try {
-      groundsForDivorce = await transformToLegalLanguage(divorceData.whoWantsDivorceAndWhy, {
-        claimType: 'תביעת גירושין',
-        applicantName: basicInfo.fullName,
-        respondentName: basicInfo.fullName2,
-        fieldLabel: 'הרקע לבקשת הגירושין',
-        additionalContext: 'סיבות ורקע לבקשת הגירושין',
-      });
-      groundsForDivorce = ensureRabbinicalCourt(groundsForDivorce);
+      console.log('🤖 Transforming divorce grounds to legal language...');
+      divorceData.whoWantsDivorceAndWhy = await transformToLegalLanguage(
+        divorceData.whoWantsDivorceAndWhy,
+        {
+          claimType: 'תביעת גירושין',
+          applicantName: basicInfo.fullName,
+          respondentName: basicInfo.fullName2,
+          fieldLabel: 'הרקע לבקשת הגירושין',
+          additionalContext: 'בית הדין הרבני',
+        }
+      );
     } catch (error) {
-      console.error('Error transforming grounds for divorce:', error);
-      groundsForDivorce = divorceData.whoWantsDivorceAndWhy;
+      console.error('Error transforming divorce grounds:', error);
     }
   }
 
-  let divorceReasons = '';
-  if (divorceData.divorceReasons) {
-    try {
-      divorceReasons = await transformToLegalLanguage(divorceData.divorceReasons, {
-        claimType: 'תביעת גירושין',
-        applicantName: basicInfo.fullName,
-        respondentName: basicInfo.fullName2,
-        fieldLabel: 'עילות הגירושין',
-        additionalContext: 'סיבות משפטיות לגירושין',
-      });
-      divorceReasons = ensureRabbinicalCourt(divorceReasons);
-    } catch (error) {
-      console.error('Error transforming divorce reasons:', error);
-      divorceReasons = divorceData.divorceReasons;
-    }
+  // Build document sections
+  const documentChildren: (Paragraph | Table)[] = [];
+
+  // ===== COURT HEADER =====
+  documentChildren.push(
+    ...createCourtHeader({
+      city: divorceData.weddingCity || 'ירושלים',
+      judgeName: 'דיין',
+      basicInfo: basicInfo,
+      showChildrenList: false,
+      forum: 'בבית הדין הרבני',
+      docketNumberPlaceholder: 'תיק ____________',
+      showDateLine: false,
+      showJudgeLine: false,
+    })
+  );
+
+  // ===== TITLE =====
+  documentChildren.push(createMainTitle('תביעת גירושין'));
+
+  // ===== CLAIM NATURE =====
+  const bundledText = children.length > 0
+    ? 'מהות התביעה: גירושין (ובכרוך: מזונות, משמורת, רכוש)'
+    : 'מהות התביעה: גירושין (ובכרוך: רכוש)';
+
+  documentChildren.push(new Paragraph({
+    children: [
+      new TextRun({
+        text: bundledText,
+        bold: true,
+        size: FONT_SIZES.BODY,
+        font: 'David',
+        rightToLeft: true,
+      }),
+    ],
+    alignment: AlignmentType.START,
+    spacing: { after: SPACING.PARAGRAPH, line: 360 },
+    bidirectional: true,
+  }));
+
+  // ===== SECTION א - FACTUAL BACKGROUND =====
+  documentChildren.push(
+    ...generateFactualBackgroundSection(basicInfo, formData, divorceData, children, plaintiff, defendant)
+  );
+
+  // ===== SECTION ב - ALIMONY =====
+  if (children.length > 0) {
+    documentChildren.push(
+      ...generateSimpleAlimonySection(basicInfo, formData, children, plaintiff, defendant)
+    );
   }
 
-  // Create document with full legal structure
+  // ===== SECTION ג - CUSTODY =====
+  if (children.length > 0) {
+    documentChildren.push(
+      ...generateSimpleCustodySection(basicInfo, formData, children, plaintiff, defendant)
+    );
+  }
+
+  // ===== SECTION ד - PROPERTY =====
+  documentChildren.push(
+    ...generateSimplePropertySection(basicInfo, formData, plaintiff, defendant)
+  );
+
+  // ===== SECTION ה - RELIEFS =====
+  documentChildren.push(
+    ...generateReliefsSection(children, plaintiff, defendant)
+  );
+
+  // ===== SIGNATURES =====
+  documentChildren.push(
+    ...createSignatureSection(basicInfo, signature, lawyerSignature)
+  );
+
+  // ===== PAGE BREAK =====
+  documentChildren.push(createPageBreak());
+
+  // ===== POWER OF ATTORNEY =====
+  documentChildren.push(
+    ...generatePowerOfAttorney(basicInfo, formData, signature, lawyerSignature, 'גירושין')
+  );
+
+  // ===== ATTACHMENTS (if any) =====
+  if (attachments && attachments.length > 0) {
+    console.log(`📎 Adding ${attachments.length} attachments to divorce claim`);
+    documentChildren.push(createPageBreak());
+    documentChildren.push(...generateAttachmentsSection(attachments, 0));
+  }
+
+  // Create document
   const doc = new Document({
     sections: [
       {
@@ -340,554 +1118,13 @@ export async function generateDivorceClaim(data: DivorceClaimData): Promise<Buff
             ],
           }),
         },
-        children: [
-          // ===== COURT HEADER WITH PARTY INFO =====
-          ...createCourtHeader({
-            city: 'בתל אביב',
-            judgeName: 'דיין',
-            basicInfo: basicInfo,
-            showChildrenList: false, // Divorce claims don't show children list in header
-            forum: 'בבית הדין הרבני',
-            docketNumberPlaceholder: 'תיק ____________',
-            showDateLine: false,
-            showJudgeLine: false,
-          }),
-
-          // ===== TITLE =====
-          createMainTitle('תביעת גירושין'),
-
-          // ===== NATURE OF CLAIM =====
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: claimNatureText,
-                bold: true,
-                size: FONT_SIZES.BODY,
-                font: 'David',
-              }),
-            ],
-            alignment: AlignmentType.START,
-            spacing: { after: SPACING.LINE, line: 360 },
-            bidirectional: true,
-          }),
-
-          // שווי נושא התובענה
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: 'שווי נושא התובענה:\u200F',
-                bold: true,
-                underline: { type: UnderlineType.SINGLE },
-                size: FONT_SIZES.BODY,
-                font: 'David',
-              }),
-              new TextRun({
-                text: ' לא קצוב (הליך בבית הדין הרבני).\u200F',
-                size: FONT_SIZES.BODY,
-                font: 'David',
-              }),
-            ],
-            alignment: AlignmentType.START,
-            spacing: { after: SPACING.LINE, line: 360 },
-            bidirectional: true,
-          }),
-
-          // סכום אגרת בית משפט
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: 'סכום אגרת בית דין (ככל שקיימת):\u200F',
-                bold: true,
-                underline: { type: UnderlineType.SINGLE },
-                size: FONT_SIZES.BODY,
-                font: 'David',
-              }),
-              new TextRun({
-                text: ' בהתאם לתקנות ולנהלי בית הדין הרבני.\u200F',
-                size: FONT_SIZES.BODY,
-                font: 'David',
-              }),
-            ],
-            alignment: AlignmentType.START,
-            spacing: { after: SPACING.PARAGRAPH, line: 360 },
-            bidirectional: true,
-          }),
-
-          // ===== REQUESTED REMEDIES =====
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: 'הסעדים המבוקשים:\u200F',
-                bold: true,
-                underline: { type: UnderlineType.SINGLE },
-                size: FONT_SIZES.BODY,
-                font: 'David',
-              }),
-              new TextRun({
-                text:
-                  track === 'shalom_bayit_alt'
-                    ? ' בית הדין הרבני הנכבד מתבקש להורות על ניסיון שלום בית, ולחילופין להורות על גירושין ולדון בסעדים הנלווים כמפורט להלן.\u200F'
-                    : track === 'divorce_with_reliefs'
-                    ? ' בית הדין הרבני הנכבד מתבקש להורות על פירוק הנישואין ולדון במזונות, משמורת ורכוש לפי הצורך כמפורט בהמשך.\u200F'
-                    : ' בית הדין הרבני הנכבד מתבקש להורות על פירוק הנישואין בין הצדדים ולתאם מועד לסידור גט.\u200F',
-                size: FONT_SIZES.BODY,
-                font: 'David',
-              }),
-            ],
-            alignment: AlignmentType.START,
-            spacing: { after: SPACING.PARAGRAPH, line: 360 },
-            bidirectional: true,
-          }),
-
-          ...(() => {
-            const relatedClaimsNotice = getRelatedClaimsNotice(selectedClaims);
-            return relatedClaimsNotice ? [createBodyParagraph(relatedClaimsNotice)] : [];
-          })(),
-
-          // ===== SUMMONS (MAJOR SECTION) =====
-          createSectionHeader('הזמנה לדין:\u200F'),
-          createBodyParagraph(
-            `הואיל ו${plaintiff.title} הגיש כתב תביעה זה נגדך, הנך מוזמן/ת להגיש כתב הגנה ולהתייצב לדיון שייקבע בבית הדין. אי הגשת כתב הגנה או אי התייצבות עלולים להביא למתן החלטה בהיעדרך.`,
-            { after: SPACING.SECTION }
-          ),
-
-          // ===== LETTERED SECTIONS =====
-          createLetteredHeader('א', 'מערכת היחסים והעובדות'),
-          createBodyParagraph(
-            `${basicInfo.fullName} מ״ז ${basicInfo.idNumber} ו${basicInfo.fullName2} מ״ז ${basicInfo.idNumber2} הינם ${marriageStatus}${weddingDate ? `, נישאו ביום ${formatDate(weddingDate)}` : ''}${children.length > 0 ? `, ולהם ${children.length === 1 ? 'ילד אחד' : `${children.length} ילדים`}` : ''}.`
-          ),
-          createRelationshipSection(basicInfo, formData, children),
-          ...(divorceData.policeComplaints === 'כן'
-            ? [
-                createBodyParagraph(
-                  `${divorceData.policeComplaintsWho ? `${divorceData.policeComplaintsWho} ` : ''}הגיש/ה תלונות במשטרה${divorceData.policeComplaintsWhere ? ` ב${divorceData.policeComplaintsWhere}` : ''}${divorceData.policeComplaintsDate ? ` ביום ${divorceData.policeComplaintsDate}` : ''}.`
-                ),
-                ...(divorceData.policeComplaintsOutcome
-                  ? [createBodyParagraph(`תוצאות ההליך: ${divorceData.policeComplaintsOutcome}`)]
-                  : []),
-              ]
-            : []),
-          ...(divorceData.hadPreviousMediation === 'כן' && divorceData.previousMediationDetails
-            ? [createBodyParagraph(`נסיונות גישור קודמים: ${divorceData.previousMediationDetails}`)]
-            : []),
-          ...(divorceData.marriageCounselingDetails
-            ? [createBodyParagraph(`טיפול זוגי/משפחתי: ${divorceData.marriageCounselingDetails}`)]
-            : []),
-          ...(divorceData.religiousMarriage === 'כן' && (divorceData.ketubahAmount || divorceData.ketubahRequest)
-            ? [
-                createBodyParagraph(
-                  `כתובה: ${divorceData.ketubahAmount ? `סכום ${divorceData.ketubahAmount}` : ''}${
-                    divorceData.ketubahRequest ? `; בקשה: ${divorceData.ketubahRequest}` : ''
-                  }`
-                ),
-              ]
-            : []),
-          ...(divorceData.parallelCases === 'כן' || divorceData.parallelCasesDetails
-            ? [
-                createBodyParagraph(
-                  divorceData.parallelCasesDetails ||
-                    'קיימים הליכים נוספים בבית משפט או בית דין אחר; פרטים מלאים יצורפו ככל שנדרש.'
-                ),
-              ]
-            : []),
-          ...(divorceData.urgentRelief === 'כן'
-            ? [
-                createBodyParagraph(
-                  `סעדים זמניים מבוקשים: ${
-                    divorceData.urgentReliefDetails ||
-                    'מבוקשים סעדים זמניים לשמירת המצב הקיים ולהגנה על זכויות הצדדים והקטינים.'
-                  }`
-                ),
-              ]
-            : []),
-
-          createLetteredHeader('ב', 'עילות וסמכות'),
-          createBodyParagraph(
-            'המדובר בענייני נישואין וגירושין של בני זוג יהודים; לפיכך סמכות הייחודית נתונה לבית הדין הרבני לפי חוק שיפוט בתי דין רבניים (נישואין וגירושין), התשי״ג–1953. התביעה מוגשת בכנות, והכריכה בעניינים הנלווים (ככל שקיימת) נעשית כדין לשם מיצוי ההליך במסגרת בית הדין.'
-          ),
-          ...(groundsForDivorce ? [createBodyParagraph(`הרקע לבקשת הגירושין: ${groundsForDivorce}`)] : []),
-          ...(divorceReasons ? [createBodyParagraph(`עילות הגירושין: ${divorceReasons}`)] : []),
-
-          // Property summary
-          ...(() => {
-            const propertyData = formData.property || {};
-            const apartments = formData.apartments || [];
-            const vehicles = formData.vehicles || [];
-            const savings = formData.savings || [];
-            const benefits = formData.benefits || [];
-            const debts = formData.debts || [];
-            const hasConcreteProperty =
-              propertyData.hasAssets === 'yes' ||
-              apartments.length > 0 ||
-              vehicles.length > 0 ||
-              savings.length > 0 ||
-              benefits.length > 0 ||
-              debts.length > 0;
-            const showProperty = divorceData.propertyDispute === 'כן' || hasConcreteProperty;
-            if (!showProperty) return [];
-            const propertyParagraphs: Paragraph[] = [];
-            propertyParagraphs.push(createLetteredHeader('ג', 'רכוש וחובות'));
-            if (apartments.length) {
-              propertyParagraphs.push(createBodyParagraph('דירות ונכסי מקרקעין:'));
-              propertyParagraphs.push(
-                ...apartments.map((apt: any) => createBulletPoint(formatPropertyItem(apt, apt.owner || 'שני הצדדים')))
-              );
-            }
-            if (vehicles.length) {
-              propertyParagraphs.push(createBodyParagraph('כלי רכב:'));
-              propertyParagraphs.push(
-                ...vehicles.map((v: any) => createBulletPoint(formatPropertyItem(v, v.owner || 'שני הצדדים')))
-              );
-            }
-            if (savings.length || benefits.length) {
-              propertyParagraphs.push(createBodyParagraph('חסכונות וזכויות כספיות:'));
-              propertyParagraphs.push(
-                ...[...savings, ...benefits].map((s: any) => createBulletPoint(formatPropertyItem(s, s.owner || 'שני הצדדים')))
-              );
-            }
-            if (debts.length) {
-              propertyParagraphs.push(createBodyParagraph('חובות והתחייבויות:'));
-              propertyParagraphs.push(
-                ...debts.map((d: any) =>
-                  createBulletPoint(
-                    `${d.description || 'חוב'}${d.amount ? ` בסך ${d.amount}` : ''}${d.date ? ` ממועד ${formatDate(d.date)}` : ''}${
-                      d.purpose ? ` (מטרה: ${d.purpose})` : ''
-                    }`
-                  )
-                )
-              );
-            }
-            if (!hasConcreteProperty) {
-              propertyParagraphs.push(
-                createBodyParagraph('קיימת מחלוקת רכושית כללית; פרטים מדויקים יפורטו בנספחים או בכתב טענות נפרד.')
-              );
-            }
-            return propertyParagraphs;
-          })(),
-
-          // Custody / support
-          ...(() => {
-            const showChildren = children.length > 0 || divorceData.childrenDispute === 'כן' || divorceData.needSupport === 'כן';
-            if (!showChildren) return [];
-            const paragraphs: Paragraph[] = [];
-            paragraphs.push(createLetteredHeader('ד', 'משמורת, שהות ומזונות'));
-            if (children.length > 0) {
-              paragraphs.push(createBodyParagraph(`הצדדים הורים ל${children.length === 1 ? 'ילד אחד' : `${children.length} ילדים`} משותפים.`));
-            }
-            if (divorceData.childrenDispute === 'כן') {
-              paragraphs.push(createBodyParagraph('קיימת מחלוקת לגבי משמורת/הסדרי שהות/חינוך ובריאות הקטינים.'));
-            }
-            if (divorceData.needSupport === 'כן') {
-              paragraphs.push(createBodyParagraph('מבוקש לדון במזונות קטינים ו/או מזונות אישה בהתאם לנתוני ההכנסה וההוצאות.'));
-            }
-            return paragraphs;
-          })(),
-
-          // Remedies
-          createLetteredHeader('ה', 'סעדים'),
-          createBodyParagraph('אשר על כן מתבקש בית הדין הנכבד:'),
-          ...requestedReliefs.map((relief, index) => createNumberedItem(index + 1, relief)),
-
-          // Summary / costs
-          createLetteredHeader('ו', 'סיכום והוצאות'),
-          createBodyParagraph(
-            'התביעה מוגשת בתום לב, ומבוקש לאשר את הסמכות הנלווית ולהורות על כל סעד שיימצא צודק וראוי. כן מתבקש לחייב את הנתבע/ת בהוצאות ושכ"ט עו"ד.'
-          ),
-
-          // Annexes
-          ...(attachmentsList.length > 0
-            ? [
-                createLetteredHeader('ז', 'נספחים'),
-                ...attachmentsList.map((att) => createBulletPoint(att)),
-              ]
-            : []),
-
-          // ===== SIGNATURE =====
-          new Paragraph({
-            children: [],
-            spacing: { before: SPACING.SECTION, after: SPACING.LINE },
-          }),
-          ...(signature
-            ? [
-                new Paragraph({
-                  children: [
-                    new TextRun({
-                      text: 'חתימת בא כוח: ',
-                      size: FONT_SIZES.BODY,
-                      font: 'David',
-                    }),
-                  ],
-                  alignment: AlignmentType.START,
-                  spacing: { after: SPACING.MINIMAL },
-                  bidirectional: true,
-                }),
-                createSignatureImage(signature, 200, 80, AlignmentType.START),
-                new Paragraph({
-                  children: [
-                    new TextRun({
-                      text: 'עו"ד אריאל דרור',
-                      size: FONT_SIZES.BODY,
-                      font: 'David',
-                    }),
-                  ],
-                  alignment: AlignmentType.START,
-                  spacing: { after: SPACING.SECTION },
-                  bidirectional: true,
-                }),
-              ]
-            : [
-                new Paragraph({
-                  children: [
-                    new TextRun({
-                      text: '__________________',
-                      size: FONT_SIZES.BODY,
-                      font: 'David',
-                    }),
-                  ],
-                  alignment: AlignmentType.START,
-                  spacing: { after: SPACING.MINIMAL },
-                }),
-                new Paragraph({
-                  children: [
-                    new TextRun({
-                      text: 'עו"ד אריאל דרור',
-                      size: FONT_SIZES.BODY,
-                      font: 'David',
-                    }),
-                  ],
-                  alignment: AlignmentType.START,
-                  spacing: { after: SPACING.SECTION },
-                  bidirectional: true,
-                }),
-              ]),
-
-          // ===== PAGE BREAK =====
-          createPageBreak(),
-
-          // ===== טופס 3 (FORM 3 - STATEMENT OF DETAILS) =====
-          ...generateStatementOfDetails(basicInfo, formData, divorceData, signature as string),
-
-          // ===== PAGE BREAK =====
-          createPageBreak(),
-
-          // ===== ייפוי כוח (POWER OF ATTORNEY) =====
-          ...generatePowerOfAttorney(basicInfo, formData, signature, lawyerSignature, 'גירושין'),
-
-          // ===== PAGE BREAK =====
-          createPageBreak(),
-
-          // ===== תצהיר (AFFIDAVIT) =====
-          ...generateAffidavit(basicInfo, formData, lawyerSignature),
-
-          // ===== ATTACHMENTS (if any) =====
-          ...(attachments && attachments.length > 0
-            ? [createPageBreak(), ...generateAttachmentsSection(attachments, 0)]
-            : []),
-        ],
+        children: documentChildren,
       },
     ],
   });
 
   // Generate buffer
   const buffer = await Packer.toBuffer(doc);
+  console.log('✅ Bundled divorce claim generated successfully');
   return buffer;
-}
-
-/**
- * Generate טופס 3 (Form 3 - Statement of Details) for divorce claim
- */
-function generateStatementOfDetails(
-  basicInfo: BasicInfo,
-  formData: FormData,
-  divorceData: any,
-  signature?: string
-): Paragraph[] {
-  const paragraphs: Paragraph[] = [];
-
-  const plaintiff = getPlaintiffTerm(basicInfo.gender, basicInfo.fullName);
-  const defendant = getDefendantTerm(basicInfo.gender2, basicInfo.fullName2);
-  const children = formData.children || [];
-
-  // Title
-  paragraphs.push(
-    new Paragraph({
-      children: [
-        new TextRun({
-          text: 'טופס 3 - הרצאת פרטים',
-          size: FONT_SIZES.SECTION,
-          font: 'David',
-          bold: true,
-        }),
-      ],
-      alignment: AlignmentType.CENTER,
-      spacing: { after: SPACING.SECTION },
-      bidirectional: true,
-    })
-  );
-
-  // 1. Personal Details
-  paragraphs.push(
-    createNumberedHeader('1. פרטי הצדדים'),
-    createBodyParagraph(`${plaintiff.title}: ${basicInfo.fullName}, ת.ז ${basicInfo.idNumber}`),
-    createBodyParagraph(`כתובת: ${basicInfo.address || 'לא צוין'}`),
-    createBodyParagraph(`טלפון: ${basicInfo.phone || 'לא צוין'}`),
-    createBodyParagraph(`דוא"ל: ${basicInfo.email || 'לא צוין'}`),
-    new Paragraph({ children: [], spacing: { after: SPACING.LINE } }),
-    createBodyParagraph(`${defendant.title}: ${basicInfo.fullName2}, ת.ז ${basicInfo.idNumber2}`),
-    createBodyParagraph(`כתובת: ${basicInfo.address2 || 'לא צוין'}`),
-    createBodyParagraph(`טלפון: ${basicInfo.phone2 || 'לא צוין'}`),
-    createBodyParagraph(`דוא"ל: ${basicInfo.email2 || 'לא צוין'}`)
-  );
-
-  // 2. Marital Status
-  paragraphs.push(
-    createNumberedHeader('2. מצב משפחתי'),
-    createBodyParagraph(
-      `סטטוס נישואין: ${basicInfo.relationshipType === 'married' ? 'נשואים' : 'לא נשואים'}`
-    ),
-    ...(basicInfo.weddingDay
-      ? [createBodyParagraph(`תאריך נישואין: ${formatDate(basicInfo.weddingDay)}`)]
-      : []),
-    ...(divorceData.weddingCity ? [createBodyParagraph(`מקום הנישואין: ${divorceData.weddingCity}`)] : []),
-    ...(formData.separationDate
-      ? [createBodyParagraph(`תאריך הפרדה: ${formatDate(formData.separationDate)}`)]
-      : [])
-  );
-
-  // 3. Children
-  if (children.length > 0) {
-    paragraphs.push(
-      createNumberedHeader('3. ילדים'),
-      createBodyParagraph(`מספר ילדים: ${children.length}`)
-    );
-
-    children.forEach((child: any, index: number) => {
-      paragraphs.push(
-        createBodyParagraph(`\nילד ${index + 1}:`),
-        createBodyParagraph(`שם: ${child.firstName} ${child.lastName}`),
-        createBodyParagraph(`ת.ז: ${child.idNumber}`),
-        createBodyParagraph(`תאריך לידה: ${child.birthDate}`),
-        createBodyParagraph(`כתובת: ${child.address || 'לא צוין'}`)
-      );
-    });
-  } else {
-    paragraphs.push(createNumberedHeader('3. ילדים'), createBodyParagraph('אין ילדים משותפים.'));
-  }
-
-  // 4. Housing
-  paragraphs.push(
-    createNumberedHeader('4. מגורים'),
-    createBodyParagraph(`האם גרים בנפרד: ${formData.livingSeparately === 'כן' ? 'כן' : 'לא'}`),
-    ...(formData.separationDate
-      ? [createBodyParagraph(`תאריך הפרדה: ${formatDate(formData.separationDate)}`)]
-      : [])
-  );
-
-  // 5. Domestic Violence
-  paragraphs.push(
-    createNumberedHeader('5. אלימות במשפחה'),
-    createBodyParagraph(
-      divorceData.policeComplaints === 'כן'
-        ? `הוגשו תלונות במשטרה: ${divorceData.policeComplaintsWho || ''} ${divorceData.policeComplaintsWhere || ''}`
-        : 'לא הוגשו תלונות במשטרה.'
-    )
-  );
-
-  // 6. Other family cases
-  paragraphs.push(
-    createNumberedHeader('6. הליכים משפטיים נוספים'),
-    createBodyParagraph(
-      divorceData?.parallelCases === 'כן' || formData.courtProceedings === 'yes'
-        ? divorceData?.parallelCasesDetails || 'קיימים הליכים משפטיים נוספים.'
-        : 'לא קיימים הליכים משפטיים נוספים.'
-    )
-  );
-
-  // 7. Therapeutic contact
-  paragraphs.push(
-    createNumberedHeader('7. פניה לגורמים טיפוליים'),
-    createBodyParagraph(
-      formData.contactedWelfare === 'yes' || formData.contactedMarriageCounseling === 'yes'
-        ? 'הצדדים פנו לגורמים טיפוליים.'
-        : 'הצדדים לא פנו לגורמים טיפוליים.'
-    )
-  );
-
-  // 8. Declaration and signature
-  paragraphs.push(
-    createNumberedHeader('8. הצהרה'),
-    createBodyParagraph(
-      `אני הח"מ, ${basicInfo.fullName}, מצהיר/ה בזאת כי כל הפרטים שמסרתי לעיל הינם נכונים ומדויקים למיטב ידיעתי.`
-    ),
-    new Paragraph({ children: [], spacing: { before: SPACING.SECTION, after: SPACING.LINE } })
-  );
-
-  // Signature
-  if (signature) {
-    paragraphs.push(
-      new Paragraph({
-        children: [
-          new TextRun({
-            text: 'חתימה: ',
-            size: FONT_SIZES.BODY,
-            font: 'David',
-          }),
-        ],
-        alignment: AlignmentType.START,
-        spacing: { after: SPACING.MINIMAL },
-        bidirectional: true,
-      }),
-      createSignatureImage(signature, 200, 80, AlignmentType.START),
-      new Paragraph({
-        children: [
-          new TextRun({
-            text: basicInfo.fullName,
-            size: FONT_SIZES.BODY,
-            font: 'David',
-          }),
-        ],
-        alignment: AlignmentType.START,
-        spacing: { after: SPACING.MINIMAL },
-        bidirectional: true,
-      }),
-      new Paragraph({
-        children: [
-          new TextRun({
-            text: `תאריך: ${formatDate(new Date().toISOString())}`,
-            size: FONT_SIZES.BODY,
-            font: 'David',
-          }),
-        ],
-        alignment: AlignmentType.START,
-        bidirectional: true,
-      })
-    );
-  } else {
-    paragraphs.push(
-      new Paragraph({
-        children: [
-          new TextRun({
-            text: 'חתימה: __________________',
-            size: FONT_SIZES.BODY,
-            font: 'David',
-          }),
-        ],
-        alignment: AlignmentType.START,
-        spacing: { after: SPACING.MINIMAL },
-      }),
-      new Paragraph({
-        children: [
-          new TextRun({
-            text: `תאריך: ${formatDate(new Date().toISOString())}`,
-            size: FONT_SIZES.BODY,
-            font: 'David',
-          }),
-        ],
-        alignment: AlignmentType.START,
-        bidirectional: true,
-      })
-    );
-  }
-
-  return paragraphs;
 }

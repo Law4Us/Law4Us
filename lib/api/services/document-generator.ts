@@ -19,6 +19,8 @@ import { generateCustodyClaim } from './custody-claim-generator';
 import { generateAlimonyClaim } from './alimony-claim-generator';
 import { generateDivorceClaim } from './divorce-claim-generator';
 import { generateDivorceAgreement } from './divorce-agreement-generator';
+import { generateDivorceClaimFamily } from './divorce-claim-family-generator';
+import { determineCourtType, DivorceRoutingResult } from '@/lib/utils/divorce-court-router';
 import {
   ClaimType,
   BasicInfo,
@@ -39,6 +41,8 @@ export interface DocumentGenerationOptions {
     description: string;
     images: Buffer[];
   }>;
+  // Set by the generator for divorce claims to pass routing result to submission
+  divorceRouting?: DivorceRoutingResult;
 }
 
 /**
@@ -260,15 +264,39 @@ export async function generateDocument(
       const { Packer } = await import('docx');
       documentBuffer = await Packer.toBuffer(document);
     } else if (claimType === 'divorce') {
-      console.log('📝 Using programmatic generator for divorce claim...');
-      documentBuffer = await generateDivorceClaim({
-        basicInfo,
-        formData,
-        signature: options.signature,
-        lawyerSignature: options.lawyerSignature,
-        attachments: options.attachments,
-        selectedClaims: options.selectedClaims,
-      });
+      // Determine which court to route to based on user's answers
+      const routing = determineCourtType({ step4: formData.divorce || {}, ...formData });
+      console.log(`📝 Divorce routing: ${routing.courtType} court, track: ${routing.track}`);
+      console.log(`   Reasons: ${routing.reasons.join('; ')}`);
+
+      if (routing.courtType === 'family') {
+        // Family Court path - simpler divorce petition
+        console.log('📝 Using Family Court generator...');
+        documentBuffer = await generateDivorceClaimFamily({
+          basicInfo,
+          formData,
+          signature: options.signature,
+          lawyerSignature: options.lawyerSignature,
+          attachments: options.attachments,
+        });
+
+        // Store routing result for the submission response
+        (options as any).divorceRouting = routing;
+      } else {
+        // Rabbinical Court path (default) - includes bundled claims
+        console.log('📝 Using Rabbinical Court generator...');
+        documentBuffer = await generateDivorceClaim({
+          basicInfo,
+          formData,
+          signature: options.signature,
+          lawyerSignature: options.lawyerSignature,
+          attachments: options.attachments,
+          selectedClaims: options.selectedClaims,
+        });
+
+        // Store routing result
+        (options as any).divorceRouting = routing;
+      }
     } else if (claimType === 'divorceAgreement') {
       console.log('📝 Using compact programmatic generator for divorce agreement...');
       documentBuffer = await generateDivorceAgreement({

@@ -199,17 +199,23 @@ export function createRelationshipSection(
   // Build continuous flowing narrative - use SHARED children only
   const sharedChildrenNames = sharedChildren.map(child => formatChildNaturally(child)).join(', ');
 
-  // Opening paragraph - couple, SHARED children, and living arrangement in one flow
+  // Opening paragraph - couple with names/IDs, marriage date, children, and living arrangement
   let relationshipText = '';
 
-  if (sharedChildren.length > 0) {
-    relationshipText = marriageDate
-      ? `המדובר בזוג נשוי, להם ${sharedChildren.length === 1 ? 'נולד ילד' : `נולדו ${sharedChildren.length} ילדים`}: ${sharedChildrenNames}. `
-      : `המדובר בזוג לא נשואי, להם ${sharedChildren.length === 1 ? 'נולד ילד' : `נולדו ${sharedChildren.length} ילדים`}: ${sharedChildrenNames}. `;
+  // Start with couple identification including names and IDs
+  const coupleIntro = `המדובר בזוג ${marriageDate ? 'נשוי' : 'לא נשואי'}, ${basicInfo.fullName} מ"ז ${basicInfo.idNumber} ו${basicInfo.fullName2} מ"ז ${basicInfo.idNumber2}`;
+
+  if (marriageDate) {
+    relationshipText = `${coupleIntro}, אשר נישאו ביום ${marriageDate}`;
   } else {
-    relationshipText = marriageDate
-      ? `המדובר בזוג נשוי. `
-      : `המדובר בזוג לא נשואי. `;
+    relationshipText = coupleIntro;
+  }
+
+  // Add children info
+  if (sharedChildren.length > 0) {
+    relationshipText += `, להם ${sharedChildren.length === 1 ? 'נולד ילד' : `נולדו ${sharedChildren.length} ילדים`}: ${sharedChildrenNames}. `;
+  } else {
+    relationshipText += '. ';
   }
 
   // Add separation info

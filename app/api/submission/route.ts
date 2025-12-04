@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generateDocument } from '@/lib/api/services/document-generator';
+import { generateDocument, DocumentGenerationOptions } from '@/lib/api/services/document-generator';
 import { uploadToDrive, createFolder, searchFolders, downloadFile } from '@/lib/api/services/google-drive';
 import { sendSubmissionConfirmation, sendSubmissionNotification } from '@/lib/services/email-service';
 import { CLAIMS } from '@/lib/constants/claims';
+import { DivorceRoutingResult, getCourtTypeName, getTrackName } from '@/lib/utils/divorce-court-router';
 
 interface SubmissionData {
   basicInfo: {
@@ -178,6 +179,9 @@ export async function POST(request: NextRequest) {
       console.log(`✅ Processed ${processedAttachments.length} attachments into ${processedAttachments.reduce((sum, att) => sum + att.images.length, 0)} pages`);
     }
 
+    // Track divorce routing result (for family court suggestions)
+    let divorceRouting: DivorceRoutingResult | undefined;
+
     // Generate documents for each selected claim
     for (const claimType of submissionData.selectedClaims) {
       console.log(`📄 Generating ${claimType} document...`);
@@ -199,7 +203,8 @@ export async function POST(request: NextRequest) {
         console.log(`📂 Created claim subfolder: ${claimFolderName} (${claimFolderId})`);
       }
 
-      const claimDoc = await generateDocument({
+      // Create options object to capture divorce routing result
+      const generationOptions: DocumentGenerationOptions = {
         basicInfo: submissionData.basicInfo as any, // Type assertion for request data
         formData: submissionData.formData,
         selectedClaims: submissionData.selectedClaims as any,
@@ -207,7 +212,18 @@ export async function POST(request: NextRequest) {
         signature: submissionData.signature,
         lawyerSignature: lawyerSignature,
         attachments: processedAttachments.length > 0 ? processedAttachments as any : undefined,
-      });
+      };
+
+      const claimDoc = await generateDocument(generationOptions);
+
+      // Capture divorce routing result (set by generateDocument for divorce claims)
+      if (claimType === 'divorce' && generationOptions.divorceRouting) {
+        divorceRouting = generationOptions.divorceRouting;
+        console.log(`📍 Divorce routed to: ${getCourtTypeName(divorceRouting.courtType)} (${divorceRouting.track})`);
+        if (divorceRouting.suggestedClaims.length > 0) {
+          console.log(`💡 Suggested additional claims: ${divorceRouting.suggestedClaims.join(', ')}`);
+        }
+      }
 
       const fileName = `${hebrewDocNames[claimType] || claimType}.docx`;
 
@@ -353,12 +369,38 @@ export async function POST(request: NextRequest) {
       console.error('❌ Error sending office notification:', emailError);
     }
 
-    return NextResponse.json({
+    // Build response with divorce routing info if applicable
+    const response: {
+      success: boolean;
+      message: string;
+      folderId: string;
+      folderName: string;
+      divorceRouting?: {
+        courtType: string;
+        courtTypeName: string;
+        track: string;
+        trackName: string;
+        suggestedClaims: string[];
+      };
+    } = {
       success: true,
       message: 'הטופס נשלח בהצלחה!',
       folderId: parentFolderId,
       folderName: parentFolderName,
-    });
+    };
+
+    // Add divorce routing info for family court path (with suggested claims)
+    if (divorceRouting) {
+      response.divorceRouting = {
+        courtType: divorceRouting.courtType,
+        courtTypeName: getCourtTypeName(divorceRouting.courtType),
+        track: divorceRouting.track,
+        trackName: getTrackName(divorceRouting.track),
+        suggestedClaims: divorceRouting.suggestedClaims,
+      };
+    }
+
+    return NextResponse.json(response);
 
   } catch (error) {
     console.error('❌ Submission error:', error);

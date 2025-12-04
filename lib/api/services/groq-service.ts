@@ -80,6 +80,21 @@ export async function transformToLegalLanguage(
 15. הקפד לציין את הקשר בין מערכת היחסים ובין הצורך במזונות (למשל: מי מטפל בילדים, מה השפעת זה על יכולת ההשתכרות)`;
   }
 
+  // Add divorce-specific instructions
+  if (context.claimType === 'תביעת גירושין' || context.claimType === 'גירושין') {
+    systemPrompt += `
+
+כללים ספציפיים לתביעות גירושין:
+8. כתוב בסגנון סיפורי זורם - אל תתחיל עם "לטענת המבקש/ת"
+9. אל תכלול תאריכי נישואין או עובדות שאינך יודע - אלה מופיעים בחלק נפרד של המסמך
+10. אל תתחיל עם "הצדדים נישאו..." - המשפט הזה כבר מופיע לפני הטקסט שלך
+11. התחל ישירות עם תיאור הבעיות או הנסיבות, למשל: "במהלך הנישואין...", "בשנים האחרונות...", "עם הזמן התגלעו..."
+12. תאר את הרקע והסיבות לגירושין באופן עובדתי ומקצועי, ללא שפה רגשית מוגזמת
+13. שמור על רציפות הסיפור - כל משפט צריך להמשיך באופן טבעי מהקודם
+14. התמקד בעובדות ובנסיבות, לא באשמות
+15. אם הטקסט המקורי מזכיר משך הנישואין (כמו "19 שנים") - אתה יכול להשאיר את זה`;
+  }
+
   const userPrompt = `
 סוג התביעה: ${context.claimType}
 שם המבקש/ת: ${context.applicantName}
@@ -94,30 +109,47 @@ ${userText}
 
 המר את הטקסט לשפה משפטית מקצועית בגוף שלישי, כפי שתופיע בכתב תביעה. החזר רק את הטקסט המומר, ללא הסברים נוספים.`;
 
-  try {
-    const response = await getGroqClient().chat.completions.create({
-      model: "llama-3.3-70b-versatile", // Fast and capable model from Groq
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
-      temperature: 0.3, // Lower temperature for more consistent legal language
-      max_tokens: 2000,
-    });
+  // Models to try in order of preference
+  const models = [
+    "llama-3.3-70b-versatile",  // Best quality
+    "llama-3.1-8b-instant",     // Fallback - faster, separate rate limit
+  ];
 
-    const transformedText = response.choices[0]?.message?.content?.trim();
+  for (const model of models) {
+    try {
+      const response = await getGroqClient().chat.completions.create({
+        model,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+        temperature: 0.3, // Lower temperature for more consistent legal language
+        max_tokens: 2000,
+      });
 
-    if (!transformedText) {
-      console.error("Groq returned empty response");
-      return userText; // Fallback to original text
+      const transformedText = response.choices[0]?.message?.content?.trim();
+
+      if (!transformedText) {
+        console.error(`Groq ${model} returned empty response`);
+        continue; // Try next model
+      }
+
+      return transformedText;
+    } catch (error: any) {
+      // If rate limited, try next model
+      if (error?.status === 429) {
+        console.log(`Groq ${model} rate limited, trying fallback model...`);
+        continue;
+      }
+      console.error(`Error calling Groq API (${model}):`, error);
+      // For other errors, try next model
+      continue;
     }
-
-    return transformedText;
-  } catch (error) {
-    console.error("Error calling Groq API:", error);
-    // Fallback: return original text if AI fails
-    return userText;
   }
+
+  // All models failed - return original text
+  console.error("All Groq models failed, returning original text");
+  return userText;
 }
 
 /**
@@ -189,30 +221,245 @@ export async function transformWithGroq(
 9. שמור על טון עובדתי ומקצועי`;
   }
 
-  try {
-    const response = await getGroqClient().chat.completions.create({
-      model: "llama-3.3-70b-versatile",
-      messages: [
-        { role: "system", content: systemPrompt },
-        {
-          role: "user",
-          content: `המר את הטקסט הבא לשפה משפטית:\n\n${userText}`,
-        },
-      ],
-      temperature: 0.3,
-      max_tokens: 2000,
-    });
+  // Models to try in order of preference
+  const models = [
+    "llama-3.3-70b-versatile",  // Best quality
+    "llama-3.1-8b-instant",     // Fallback - faster, separate rate limit
+  ];
 
-    const transformedText = response.choices[0]?.message?.content?.trim();
+  for (const model of models) {
+    try {
+      const response = await getGroqClient().chat.completions.create({
+        model,
+        messages: [
+          { role: "system", content: systemPrompt },
+          {
+            role: "user",
+            content: `המר את הטקסט הבא לשפה משפטית:\n\n${userText}`,
+          },
+        ],
+        temperature: 0.3,
+        max_tokens: 2000,
+      });
 
-    if (!transformedText) {
-      console.error("Groq returned empty response");
-      return userText;
+      const transformedText = response.choices[0]?.message?.content?.trim();
+
+      if (!transformedText) {
+        console.error(`Groq ${model} returned empty response`);
+        continue;
+      }
+
+      return transformedText;
+    } catch (error: any) {
+      if (error?.status === 429) {
+        console.log(`Groq ${model} rate limited, trying fallback model...`);
+        continue;
+      }
+      console.error(`Error calling Groq API (${model}):`, error);
+      continue;
     }
-
-    return transformedText;
-  } catch (error) {
-    console.error("Error calling Groq API:", error);
-    return userText;
   }
+
+  console.error("All Groq models failed, returning original text");
+  return userText;
+}
+
+/**
+ * Halachic Ground Analysis Result
+ * Returned by AI when analyzing user text for divorce grounds
+ */
+export interface HalachicGroundAnalysis {
+  moredet?: {
+    applicable: boolean;
+    confidence: number; // 0-1
+    facts: string[];
+  };
+  mum?: {
+    applicable: boolean;
+    confidence: number;
+    facts: string[];
+  };
+  motHaNisuin?: {
+    applicable: boolean;
+    confidence: number;
+    facts: string[];
+  };
+  bgida?: {
+    applicable: boolean;
+    confidence: number;
+    facts: string[];
+  };
+}
+
+/**
+ * Analyze user's divorce story and reasons to detect applicable halachic grounds
+ *
+ * @param userStory - The user's story (divorce.whoWantsDivorceAndWhy)
+ * @param divorceReasons - The user's reasons (divorce.divorceReasons)
+ * @returns Analysis of which halachic grounds apply with supporting facts
+ */
+export async function analyzeForHalachicGrounds(
+  userStory: string,
+  divorceReasons: string
+): Promise<HalachicGroundAnalysis | null> {
+  const combinedText = `${userStory}\n\n${divorceReasons}`.trim();
+
+  if (!combinedText || combinedText.length < 20) {
+    return null;
+  }
+
+  const systemPrompt = `אתה עורך דין מומחה בדיני משפחה יהודיים (הלכה) ובבתי הדין הרבניים בישראל.
+
+נתח את הטקסט שיימסר לך וזהה אילו מהעילות ההלכתיות הבאות לגירושין חלות:
+
+1. **מורדת** (moredet) - סירוב ליחסי אישות, עזיבת הבית ללא הסכמה, הזנחת חובות משק הבית, סירוב לשתף פעולה בחיי המשפחה, נעילת הבית בפני בן הזוג, הסתה של ילדים נגד בן הזוג.
+
+2. **מום** (mum) - מחלת נפש (דיכאון, חרדות, הפרעת אישיות), מצב נפשי או גופני שהוסתר בעת הנישואין, חוסר תפקוד ממושך, נטילת תרופות פסיכיאטריות, התפרצויות זעם ואלימות מילולית.
+
+3. **מות הנישואין** (motHaNisuin) - פירוד ממושך (מעל 18 חודשים), העדר תקשורת, העדר יחסי אישות, מאיסות הדדית, ניסיונות גישור שנכשלו, חיים נפרדים.
+
+4. **בגידה** (bgida) - קיום יחסים מחוץ לנישואין, ניהול רומן, שיחות והודעות אינטימיות עם צד שלישי, פגישות סתר עם מאהב/ת.
+
+עבור כל עילה שזיהית, החזר:
+- applicable: true/false - האם העילה חלה
+- confidence: 0-1 - רמת הביטחון (1 = וודאי, 0.7 = סביר, 0.5 = אפשרי)
+- facts: מערך של עובדות ספציפיות מהטקסט שתומכות בעילה
+
+החזר תשובה בפורמט JSON בלבד, ללא הסברים נוספים.
+
+דוגמת פלט:
+{
+  "moredet": {
+    "applicable": true,
+    "confidence": 0.9,
+    "facts": ["האישה מסרבת ליחסי אישות מזה שנתיים", "עזבה את הבית למשך שבועיים"]
+  },
+  "motHaNisuin": {
+    "applicable": true,
+    "confidence": 0.8,
+    "facts": ["הצדדים בפירוד מזה 20 חודשים", "אין תקשורת ביניהם"]
+  }
+}`;
+
+  const userPrompt = `נתח את הטקסט הבא וזהה את העילות ההלכתיות לגירושין. החזר JSON בלבד:
+
+"""
+${combinedText}
+"""`;
+
+  const models = [
+    "llama-3.3-70b-versatile",
+    "llama-3.1-8b-instant",
+  ];
+
+  for (const model of models) {
+    try {
+      const response = await getGroqClient().chat.completions.create({
+        model,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+        temperature: 0.2, // Low temperature for consistent analysis
+        max_tokens: 1500,
+      });
+
+      const content = response.choices[0]?.message?.content?.trim();
+
+      if (!content) {
+        console.error(`Groq ${model} returned empty response for ground analysis`);
+        continue;
+      }
+
+      // Parse JSON response
+      try {
+        // Remove markdown code block if present
+        let jsonStr = content;
+        if (content.startsWith('```')) {
+          jsonStr = content.replace(/```json?\n?/g, '').replace(/```$/g, '').trim();
+        }
+
+        const analysis = JSON.parse(jsonStr) as HalachicGroundAnalysis;
+        return analysis;
+      } catch (parseError) {
+        console.error(`Failed to parse Groq response as JSON:`, content);
+        continue;
+      }
+    } catch (error: any) {
+      if (error?.status === 429) {
+        console.log(`Groq ${model} rate limited for ground analysis, trying fallback...`);
+        continue;
+      }
+      console.error(`Error calling Groq API for ground analysis (${model}):`, error);
+      continue;
+    }
+  }
+
+  console.error("All Groq models failed for ground analysis");
+  return null;
+}
+
+/**
+ * Transform specific facts into legal language for a halachic ground
+ *
+ * @param facts - Array of facts to transform
+ * @param groundType - The type of halachic ground
+ * @param plaintiffGender - Gender of plaintiff for proper terms
+ * @returns Transformed legal paragraph
+ */
+export async function transformFactsToLegalParagraph(
+  facts: string[],
+  groundType: string,
+  plaintiffGender: 'male' | 'female' = 'male'
+): Promise<string> {
+  if (!facts || facts.length === 0) {
+    return '';
+  }
+
+  const factsList = facts.join('\n- ');
+
+  const systemPrompt = `אתה עורך דין המנסח טענות לבית הדין הרבני.
+
+המר את העובדות הבאות לפסקה משפטית מקצועית בעברית.
+
+כללים:
+1. כתוב בגוף שלישי
+2. השתמש ב"לטענת התובע/ת" או "כפי שיפורט"
+3. שמור על כל העובדות
+4. כתוב בסגנון משפטי רשמי
+5. התאם לנושא: ${groundType}
+6. התובע/ת הוא/היא: ${plaintiffGender === 'male' ? 'גבר' : 'אישה'}`;
+
+  const models = [
+    "llama-3.3-70b-versatile",
+    "llama-3.1-8b-instant",
+  ];
+
+  for (const model of models) {
+    try {
+      const response = await getGroqClient().chat.completions.create({
+        model,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: `עובדות:\n- ${factsList}\n\nהמר לפסקה משפטית:` },
+        ],
+        temperature: 0.3,
+        max_tokens: 1000,
+      });
+
+      const content = response.choices[0]?.message?.content?.trim();
+      if (content) {
+        return content;
+      }
+    } catch (error: any) {
+      if (error?.status === 429) {
+        continue;
+      }
+      console.error(`Error transforming facts (${model}):`, error);
+      continue;
+    }
+  }
+
+  // Fallback: just join facts
+  return `בענייננו, ${facts.join(', ')}.`;
 }

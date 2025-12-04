@@ -545,28 +545,122 @@ export const DIVORCE_QUESTIONS: Question[] = [
   {
     id: "heading-divorce",
     type: "heading",
-    label: "גירושין - מסלול אוטומטי",
+    label: "גירושין",
+  },
+  // ========== STEP 1: Empathetic Situation Assessment ==========
+  {
+    id: "divorce.currentSituation",
+    type: "radio",
+    label: "מה המצב הנוכחי?",
+    helper: "התשובה שלך תעזור לנו להתאים את ההליך המשפטי המתאים ביותר עבורך",
+    required: true,
+    options: [
+      { value: "wantDivorce", label: "אני רוצה להתגרש" },
+      { value: "wantReconciliation", label: "אני רוצה לנסות לשמור על הנישואין (שלום בית)" },
+      { value: "partnerWantsDivorce", label: "בן/בת הזוג רוצה להתגרש ואני לא" },
+    ],
+  },
+
+  // ========== STEP 2: Court Routing Questions (only for divorce path) ==========
+  {
+    id: "heading-divorce-routing",
+    type: "heading",
+    label: "שאלות להתאמת הערכאה המשפטית",
+    conditional: {
+      dependsOn: "divorce.currentSituation",
+      showWhen: "wantDivorce",
+    },
   },
   {
-    id: "divorce.reconcileNow",
+    id: "divorce.infidelity",
     type: "radio",
-    label: "האם את/ה רוצה כרגע לנסות להישאר ביחד ולשקם את הזוגיות (ייעוץ/טיפול/חזרה לגור יחד)?",
-    helper: "עוזר לנו לקבוע אם להגיש שלום בית ולחילופין גירושין",
+    label: "האם יש טענות לבגידה של אחד הצדדים?",
+    required: true,
+    options: [
+      { value: "כן", label: "כן" },
+      { value: "לא", label: "לא" },
+      { value: "preferNotToSay", label: "מעדיף/ה לא לענות" },
+    ],
+    conditional: {
+      dependsOn: "divorce.currentSituation",
+      showWhen: "wantDivorce",
+    },
+  },
+  {
+    id: "divorce.youngestChildAge",
+    type: "radio",
+    label: "מה גיל הילד/ה הקטן/ה ביותר?",
+    required: true,
+    options: [
+      { value: "noChildren", label: "אין ילדים" },
+      { value: "under6", label: "מתחת לגיל 6" },
+      { value: "6andAbove", label: "גיל 6 ומעלה" },
+    ],
+    conditional: {
+      dependsOn: "divorce.currentSituation",
+      showWhen: "wantDivorce",
+    },
+  },
+  {
+    id: "divorce.careerDisparity",
+    type: "radio",
+    label: "האם יש פער משמעותי בהכנסות בין בני הזוג?",
+    helper: "למשל: אחד עובד והשני עקרת בית, או פער של יותר מפי 2 בהכנסות",
+    required: true,
+    options: [
+      { value: "iEarnMore", label: "כן, אני מרוויח/ה יותר משמעותית" },
+      { value: "partnerEarnsMore", label: "כן, בן/בת הזוג מרוויח/ה יותר משמעותית" },
+      { value: "similar", label: "לא, ההכנסות דומות" },
+    ],
+    conditional: {
+      dependsOn: "divorce.currentSituation",
+      showWhen: "wantDivorce",
+    },
+  },
+  {
+    id: "divorce.significantProperty",
+    type: "radio",
+    label: "האם יש רכוש משמעותי לחלוקה?",
+    helper: "נדל\"ן, עסק, חסכונות משמעותיים, פנסיה",
     required: true,
     options: [
       { value: "כן", label: "כן" },
       { value: "לא", label: "לא" },
     ],
+    conditional: {
+      dependsOn: "divorce.currentSituation",
+      showWhen: "wantDivorce",
+    },
   },
   {
-    id: "divorce.wantDivorceNow",
+    id: "divorce.halachicGrounds",
     type: "radio",
-    label: "האם את/ה מבקש/ת להתגרש עכשיו?",
+    label: "האם קיימות עילות לגירושין מהסיבות הבאות?",
+    helper: "עילות אלה משמעותיות בהליך בבית הדין הרבני",
     required: true,
     options: [
-      { value: "כן", label: "כן" },
-      { value: "לא", label: "לא" },
+      { value: "refusalRelations", label: "סירוב ליחסי אישות" },
+      { value: "neglect", label: "אי טיפול בבית/במשפחה" },
+      { value: "humiliation", label: "השפלת בן/בת הזוג" },
+      { value: "fertility", label: "בעיות פוריות" },
+      { value: "other", label: "אחר" },
+      { value: "none", label: "אף אחת מהנ\"ל" },
     ],
+    conditional: {
+      dependsOn: "divorce.currentSituation",
+      showWhen: "wantDivorce",
+    },
+  },
+
+  // ========== STEP 3: Core Divorce Questions ==========
+  {
+    id: "heading-divorce-core",
+    type: "heading",
+    label: "פרטי הגירושין",
+    conditional: {
+      dependsOn: "divorce.currentSituation",
+      showWhen: "wantDivorce",
+    },
   },
   {
     id: "divorce.childrenDispute",
@@ -577,6 +671,10 @@ export const DIVORCE_QUESTIONS: Question[] = [
       { value: "כן", label: "כן" },
       { value: "לא", label: "לא" },
     ],
+    conditional: {
+      dependsOn: "divorce.currentSituation",
+      showWhen: "wantDivorce",
+    },
   },
   {
     id: "divorce.needSupport",
@@ -587,6 +685,10 @@ export const DIVORCE_QUESTIONS: Question[] = [
       { value: "כן", label: "כן" },
       { value: "לא", label: "לא" },
     ],
+    conditional: {
+      dependsOn: "divorce.currentSituation",
+      showWhen: "wantDivorce",
+    },
   },
   {
     id: "divorce.propertyDispute",
@@ -597,6 +699,10 @@ export const DIVORCE_QUESTIONS: Question[] = [
       { value: "כן", label: "כן" },
       { value: "לא", label: "לא" },
     ],
+    conditional: {
+      dependsOn: "divorce.currentSituation",
+      showWhen: "wantDivorce",
+    },
   },
   {
     id: "divorce.urgentRelief",
@@ -607,6 +713,10 @@ export const DIVORCE_QUESTIONS: Question[] = [
       { value: "כן", label: "כן" },
       { value: "לא", label: "לא" },
     ],
+    conditional: {
+      dependsOn: "divorce.currentSituation",
+      showWhen: "wantDivorce",
+    },
   },
   {
     id: "divorce.urgentReliefDetails",
@@ -628,6 +738,10 @@ export const DIVORCE_QUESTIONS: Question[] = [
       { value: "כן", label: "כן" },
       { value: "לא", label: "לא" },
     ],
+    conditional: {
+      dependsOn: "divorce.currentSituation",
+      showWhen: "wantDivorce",
+    },
   },
   {
     id: "divorce.parallelCasesDetails",
@@ -644,6 +758,10 @@ export const DIVORCE_QUESTIONS: Question[] = [
     id: "heading-divorce-story",
     type: "heading",
     label: "רקע וסיפור הקרע",
+    conditional: {
+      dependsOn: "divorce.currentSituation",
+      showWhen: "wantDivorce",
+    },
   },
   {
     id: "divorce.whoWantsDivorceAndWhy",
@@ -653,11 +771,19 @@ export const DIVORCE_QUESTIONS: Question[] = [
     maxLength: 1000,
     required: true,
     helper: "ננסח את הסיפור בשפה משפטית עבורכם",
+    conditional: {
+      dependsOn: "divorce.currentSituation",
+      showWhen: "wantDivorce",
+    },
   },
   {
     id: "heading-divorce-reasons",
     type: "heading",
     label: "עילות וסיבות משפטיות",
+    conditional: {
+      dependsOn: "divorce.currentSituation",
+      showWhen: "wantDivorce",
+    },
   },
   {
     id: "divorce.divorceReasons",
@@ -667,18 +793,30 @@ export const DIVORCE_QUESTIONS: Question[] = [
     helper: "לדוגמה: נטישה, אלימות, בגידה, סרבנות, אי קיום חיי אישות. ננסח משפטית עבורך",
     maxLength: 1500,
     required: true,
+    conditional: {
+      dependsOn: "divorce.currentSituation",
+      showWhen: "wantDivorce",
+    },
   },
 
   {
     id: "heading-divorce-marriage-details",
     type: "heading",
     label: "פרטי הנישואין",
+    conditional: {
+      dependsOn: "divorce.currentSituation",
+      showWhen: "wantDivorce",
+    },
   },
   {
     id: "divorce.weddingCity",
     type: "text",
     label: "עיר/מקום הנישואין:",
     placeholder: "לדוגמה: תל אביב",
+    conditional: {
+      dependsOn: "divorce.currentSituation",
+      showWhen: "wantDivorce",
+    },
   },
   {
     id: "divorce.religiousMarriage",
@@ -688,6 +826,10 @@ export const DIVORCE_QUESTIONS: Question[] = [
       { value: "כן", label: "כן" },
       { value: "לא", label: "לא" },
     ],
+    conditional: {
+      dependsOn: "divorce.currentSituation",
+      showWhen: "wantDivorce",
+    },
   },
   {
     id: "divorce.religiousCouncil",
@@ -704,6 +846,10 @@ export const DIVORCE_QUESTIONS: Question[] = [
     id: "heading-divorce-police",
     type: "heading",
     label: "דיווחים ותלונות",
+    conditional: {
+      dependsOn: "divorce.currentSituation",
+      showWhen: "wantDivorce",
+    },
   },
   {
     id: "divorce.policeComplaints",
@@ -713,6 +859,10 @@ export const DIVORCE_QUESTIONS: Question[] = [
       { value: "כן", label: "כן" },
       { value: "לא", label: "לא" },
     ],
+    conditional: {
+      dependsOn: "divorce.currentSituation",
+      showWhen: "wantDivorce",
+    },
   },
   {
     id: "divorce.policeComplaintsWho",
@@ -761,6 +911,10 @@ export const DIVORCE_QUESTIONS: Question[] = [
     id: "heading-divorce-mediation-history",
     type: "heading",
     label: "גישור וטיפול משפחתי - היסטוריה",
+    conditional: {
+      dependsOn: "divorce.currentSituation",
+      showWhen: "wantDivorce",
+    },
   },
   {
     id: "divorce.hadPreviousMediation",
@@ -770,6 +924,10 @@ export const DIVORCE_QUESTIONS: Question[] = [
       { value: "כן", label: "כן" },
       { value: "לא", label: "לא" },
     ],
+    conditional: {
+      dependsOn: "divorce.currentSituation",
+      showWhen: "wantDivorce",
+    },
   },
   {
     id: "divorce.previousMediationDetails",
@@ -789,9 +947,14 @@ export const DIVORCE_QUESTIONS: Question[] = [
     placeholder: "מתי, אצל מי, למשך כמה זמן, באילו נושאים",
     helper: "אם ענית \"כן\" בשאלה הכללית על ייעוץ נישואין, נא לפרט כאן",
     maxLength: 500,
+    conditional: {
+      dependsOn: "divorce.currentSituation",
+      showWhen: "wantDivorce",
+    },
   },
 
-  // Ketubah (for religious marriages)
+  // Ketubah (for religious marriages) - Note: This section's parent conditional is religiousMarriage,
+  // which itself is conditional on wantDivorce, so this is properly nested
   {
     id: "heading-divorce-ketubah",
     type: "heading",
