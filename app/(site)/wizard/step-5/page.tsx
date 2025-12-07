@@ -15,8 +15,10 @@ import {
   formatClaimTypesList,
   POWER_OF_ATTORNEY_TEMPLATE,
   FORM_3_TEMPLATE,
+  FEE_AGREEMENT_SUMMARY,
   type DocumentData,
 } from "@/lib/constants/document-templates";
+import { FileText, ChevronDown, ChevronUp } from "lucide-react";
 import { formatDate } from "@/lib/utils/format";
 import { convertFormDataFiles, extractAttachmentsFromFormData } from "@/lib/utils/file-converter";
 
@@ -37,6 +39,8 @@ export default function Step5FinalSubmission() {
     React.useState<SubmissionState>("confirming");
   const [errorMessage, setErrorMessage] = React.useState("");
   const [retryCount, setRetryCount] = React.useState(0);
+  const [feeAgreementAccepted, setFeeAgreementAccepted] = React.useState(false);
+  const [feeAgreementExpanded, setFeeAgreementExpanded] = React.useState(false);
 
   // Prepare filled documents (for backend processing)
   const filledDocuments = React.useMemo(() => {
@@ -221,17 +225,76 @@ export default function Step5FinalSubmission() {
           </div>
         </SlideInView>
 
+        {/* Fee Agreement Section */}
+        <SlideInView direction="up" delay={250}>
+          <div className="bg-white rounded-xl border-2 border-neutral-light p-6 mb-6">
+            {/* Header - Expandable */}
+            <button
+              type="button"
+              onClick={() => setFeeAgreementExpanded(!feeAgreementExpanded)}
+              className="w-full flex items-center justify-between text-right"
+            >
+              <div className="flex items-center gap-3">
+                <FileText className="w-6 h-6 text-primary" />
+                <h3 className="text-h4 font-semibold">{FEE_AGREEMENT_SUMMARY.title}</h3>
+              </div>
+              {feeAgreementExpanded ? (
+                <ChevronUp className="w-5 h-5 text-neutral-dark" />
+              ) : (
+                <ChevronDown className="w-5 h-5 text-neutral-dark" />
+              )}
+            </button>
+
+            {/* Expandable Content */}
+            {feeAgreementExpanded && (
+              <div className="mt-4 pt-4 border-t border-neutral-light">
+                {FEE_AGREEMENT_SUMMARY.sections.map((section, index) => (
+                  <div key={index} className="mb-4 last:mb-0">
+                    <h4 className="text-body font-semibold text-neutral-darker mb-1">
+                      {section.title}
+                    </h4>
+                    <p className="text-body-small text-neutral-dark">
+                      {section.content}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Checkbox */}
+            <div className="mt-4 pt-4 border-t border-neutral-light">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={feeAgreementAccepted}
+                  onChange={(e) => setFeeAgreementAccepted(e.target.checked)}
+                  className="mt-1 w-5 h-5 rounded border-2 border-neutral-dark text-primary focus:ring-primary focus:ring-2"
+                />
+                <span className="text-body text-neutral-darker">
+                  {FEE_AGREEMENT_SUMMARY.acknowledgmentText}
+                </span>
+              </label>
+            </div>
+          </div>
+        </SlideInView>
+
         {/* Submit Button */}
         <SlideInView direction="up" delay={300}>
-          <div className="flex justify-center">
+          <div className="flex flex-col items-center gap-2">
             <Button
               onClick={handleSubmit}
               variant="primary"
               size="lg"
               className="w-full md:w-auto min-w-[300px]"
+              disabled={!feeAgreementAccepted}
             >
               שלח תביעה
             </Button>
+            {!feeAgreementAccepted && (
+              <p className="text-body-small text-neutral-dark">
+                יש לאשר את תנאי השירות לפני השליחה
+              </p>
+            )}
           </div>
         </SlideInView>
       </div>
