@@ -198,3 +198,102 @@ export function getTrackName(track: DivorceTrack): string {
     ? 'שלום בית'
     : 'גירושין';
 }
+
+/**
+ * New routing function using numeric income and property values
+ * Used by the guided flow in wizard step 1
+ */
+interface NumericRoutingAnswers {
+  situation?: 'agreement' | 'shalomBayit' | 'divorce' | 'defense' | 'specific';
+  hasInfidelity?: 'yes' | 'no' | 'preferNotToSay';
+  youngestChildAge?: 'none' | 'under6' | '6to12' | 'over12';
+  applicantIncome?: number;
+  respondentIncome?: number;
+  propertyTypes?: string[];
+  propertyValue?: 'under1m' | '1to2m' | '2to4m' | 'over4m' | 'unknown';
+  halachicGrounds?: 'refusesRelations' | 'cantHaveChildren' | 'none' | 'unsure';
+}
+
+export interface NumericRoutingResult {
+  court: 'family' | 'rabbinical';
+  reasons: string[];
+  familyScore: number;
+  rabbinicalScore: number;
+}
+
+/**
+ * Calculates court recommendation using numeric income values and specific property thresholds
+ *
+ * Scoring:
+ * - Family Court default: +5 points (heavily weighted)
+ * - Infidelity: +100 to Family (forces family court)
+ * - Young children (<6): +2 to Family
+ * - Income disparity (2x+): +3 to Rabbinical
+ * - Property value (>2M): +2 to Rabbinical
+ * - Has business: +2 to Rabbinical
+ * - Halachic grounds: +3 to Rabbinical
+ */
+export function calculateCourtFromNumericAnswers(answers: NumericRoutingAnswers): NumericRoutingResult {
+  const reasons: string[] = [];
+  let familyScore = 5; // Default heavy weight to Family Court
+  let rabbinicalScore = 0;
+
+  // Force Family Court if infidelity
+  if (answers.hasInfidelity === 'yes') {
+    familyScore += 100;
+    reasons.push('בגידה - מחייב בית משפט לענייני משפחה');
+  }
+
+  // Young children lean Family Court
+  if (answers.youngestChildAge === 'under6') {
+    familyScore += 2;
+    reasons.push('ילדים צעירים (מתחת ל-6) - נוטה לבית משפט לענייני משפחה');
+  }
+
+  // Income disparity leans Rabbinical
+  if (answers.applicantIncome && answers.respondentIncome) {
+    const higher = Math.max(answers.applicantIncome, answers.respondentIncome);
+    const lower = Math.min(answers.applicantIncome, answers.respondentIncome);
+    if (lower > 0 && higher / lower >= 2) {
+      rabbinicalScore += 3;
+      reasons.push(`פער הכנסות משמעותי (יחס ${(higher / lower).toFixed(1)}:1) - נוטה לבית הדין הרבני`);
+    }
+  }
+
+  // Significant property leans Rabbinical
+  if (answers.propertyValue === '2to4m') {
+    rabbinicalScore += 2;
+    reasons.push('שווי נכס גבוה (2-4 מיליון) - נוטה לבית הדין הרבני');
+  } else if (answers.propertyValue === 'over4m') {
+    rabbinicalScore += 3;
+    reasons.push('שווי נכס גבוה מאוד (מעל 4 מיליון) - נוטה לבית הדין הרבני');
+  }
+
+  // Has business leans Rabbinical
+  if (answers.propertyTypes?.includes('business')) {
+    rabbinicalScore += 2;
+    reasons.push('עסק משותף - נוטה לבית הדין הרבני');
+  }
+
+  // Halachic grounds lean Rabbinical
+  if (answers.halachicGrounds === 'refusesRelations') {
+    rabbinicalScore += 3;
+    reasons.push('עילה הלכתית (סירוב ליחסים) - נוטה לבית הדין הרבני');
+  } else if (answers.halachicGrounds === 'cantHaveChildren') {
+    rabbinicalScore += 3;
+    reasons.push('עילה הלכתית (אי יכולת ללדת) - נוטה לבית הדין הרבני');
+  }
+
+  const court: 'family' | 'rabbinical' = rabbinicalScore > familyScore ? 'rabbinical' : 'family';
+
+  if (court === 'family' && reasons.length === 0) {
+    reasons.push('ברירת מחדל - בית משפט לענייני משפחה');
+  }
+
+  return {
+    court,
+    reasons,
+    familyScore,
+    rabbinicalScore
+  };
+}

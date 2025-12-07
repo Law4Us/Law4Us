@@ -4,14 +4,17 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { HelpCircle, ListChecks } from "lucide-react";
 import { Button, FormField, Input, Select } from "@/components/ui";
 import { useWizardStore } from "@/lib/stores/wizard-store";
 import { basicInfoSchema, type BasicInfo } from "@/lib/schemas/basic-info";
 import { CLAIMS } from "@/lib/constants/claims";
-import { formatPhoneNumber, formatIdNumber } from "@/lib/utils";
+import { formatPhoneNumber, formatIdNumber, cn } from "@/lib/utils";
 import { ProgressiveSection, ProgressiveSections } from "@/components/wizard/progressive-section";
 import { ClaimCard } from "@/components/wizard/claim-card";
 import { SlideInView } from "@/components/animations/slide-in-view";
+import { RoutingQuestions } from "@/components/wizard/routing-questions";
+import type { ClaimType, RecommendedCourt, WizardPath } from "@/lib/types";
 
 export default function Step1ClaimPicker() {
   const router = useRouter();
@@ -20,9 +23,13 @@ export default function Step1ClaimPicker() {
     selectedClaims,
     updateBasicInfo,
     toggleClaim,
+    setSelectedClaims,
     nextStep,
     sessionId,
     currentStep,
+    wizardPath,
+    setWizardPath,
+    setRecommendedCourt,
   } = useWizardStore();
 
   // Check for existing session and offer to resume
@@ -148,8 +155,34 @@ export default function Step1ClaimPicker() {
     return !!(relType && wedding);
   }, [watch("relationshipType"), watch("weddingDay")]);
 
+  // Track if guided flow is complete
+  const [guidedFlowComplete, setGuidedFlowComplete] = React.useState(false);
+
   // Check if section 4 is complete (claims)
-  const isSection4Complete = selectedClaims.length > 0;
+  // For guided path, need to complete the routing flow
+  // For direct path, need to select at least one claim
+  const isSection4Complete = wizardPath === "guided"
+    ? guidedFlowComplete && selectedClaims.length > 0
+    : wizardPath === "direct"
+    ? selectedClaims.length > 0
+    : false;
+
+  // Handle routing questions completion
+  const handleRoutingComplete = (claims: ClaimType[], court: RecommendedCourt) => {
+    setSelectedClaims(claims);
+    setRecommendedCourt(court);
+    setGuidedFlowComplete(true);
+  };
+
+  // Path selection handler
+  const handlePathSelect = (path: WizardPath) => {
+    setWizardPath(path);
+    setGuidedFlowComplete(false);
+    if (path === "direct") {
+      // Clear any previous routing selections when switching to direct
+      setSelectedClaims([]);
+    }
+  };
 
   // Update completed sections
   React.useEffect(() => {
@@ -511,36 +544,161 @@ export default function Step1ClaimPicker() {
             canExpand={isSection3Complete}
             onToggle={() => handleSectionToggle(4)}
           >
-            {selectedClaims.includes("divorce") &&
-             !(selectedClaims.includes("property") &&
-               selectedClaims.includes("custody") &&
-               selectedClaims.includes("alimony")) && (
-              <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-6 py-4 text-right">
-                <p className="text-body font-semibold text-amber-900">
-                  ⚠️ לתשומת לבכם: תביעת גירושין בבית הדין הרבני כרוכה בהגשת תביעות נלוות (רכוש, מזונות, משמורת).
-                </p>
-                <p className="text-caption text-amber-800 mt-1">
-                  מומלץ לסמן גם את התביעות הרלוונטיות כדי שנוכל למלא את כלל הטפסים והנספחים עבורך.
-                </p>
+            {/* Path Selection */}
+            {!wizardPath && (
+              <div className="space-y-4">
+                <p className="text-body text-neutral-dark mb-4">כיצד תרצו להמשיך?</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* I know what I need */}
+                  <button
+                    type="button"
+                    onClick={() => handlePathSelect("direct")}
+                    className={cn(
+                      "relative w-full text-right rounded-xl py-6 px-6 transition-all duration-300",
+                      "border-2 bg-white hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-primary/20",
+                      "border-neutral-light hover:border-primary"
+                    )}
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className="p-3 bg-primary/10 rounded-xl">
+                        <ListChecks className="w-6 h-6 text-primary" />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="text-lg font-semibold text-neutral-darkest mb-1">
+                          אני יודע/ת מה אני צריך/ה
+                        </h4>
+                        <p className="text-sm text-neutral-dark">
+                          אבחר את סוגי התביעות בעצמי
+                        </p>
+                      </div>
+                    </div>
+                  </button>
+
+                  {/* I need help */}
+                  <button
+                    type="button"
+                    onClick={() => handlePathSelect("guided")}
+                    className={cn(
+                      "relative w-full text-right rounded-xl py-6 px-6 transition-all duration-300",
+                      "border-2 bg-white hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-primary/20",
+                      "border-neutral-light hover:border-primary"
+                    )}
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className="p-3 bg-primary/10 rounded-xl">
+                        <HelpCircle className="w-6 h-6 text-primary" />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="text-lg font-semibold text-neutral-darkest mb-1">
+                          אני צריך/ה עזרה להבין מה מתאים לי
+                        </h4>
+                        <p className="text-sm text-neutral-dark">
+                          נשאל כמה שאלות ונמליץ על החבילה המתאימה
+                        </p>
+                      </div>
+                    </div>
+                  </button>
+                </div>
               </div>
             )}
-            {selectedClaims.length === 0 && expandedSection === 4 && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-body-small text-red-600 font-medium">
-                  יש לבחור לפחות תביעה אחת כדי להמשיך
-                </p>
+
+            {/* Guided Path - Routing Questions */}
+            {wizardPath === "guided" && !guidedFlowComplete && (
+              <div className="space-y-4">
+                <button
+                  type="button"
+                  onClick={() => setWizardPath(null)}
+                  className="text-sm text-primary hover:text-primary-dark transition-colors mb-4"
+                >
+                  ← חזרה לבחירת מסלול
+                </button>
+                <RoutingQuestions onComplete={handleRoutingComplete} />
               </div>
             )}
-            <div className="space-y-3">
-              {CLAIMS.map((claim) => (
-                <ClaimCard
-                  key={claim.key}
-                  claim={claim}
-                  isSelected={selectedClaims.includes(claim.key)}
-                  onToggle={() => toggleClaim(claim.key)}
-                />
-              ))}
-            </div>
+
+            {/* Guided Path - Completed - Show selected claims */}
+            {wizardPath === "guided" && guidedFlowComplete && selectedClaims.length > 0 && (
+              <div className="space-y-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setGuidedFlowComplete(false);
+                    setSelectedClaims([]);
+                  }}
+                  className="text-sm text-primary hover:text-primary-dark transition-colors mb-4"
+                >
+                  ← חזרה לשאלות ניתוב
+                </button>
+                <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-4">
+                  <p className="text-body font-medium text-green-800">
+                    התביעות נבחרו בהתאם למצבך. לחצו &quot;המשך לשלב הבא&quot; כדי להמשיך.
+                  </p>
+                </div>
+                <div className="space-y-3">
+                  {selectedClaims.map((claimKey) => {
+                    const claim = CLAIMS.find(c => c.key === claimKey);
+                    if (!claim) return null;
+                    return (
+                      <ClaimCard
+                        key={claim.key}
+                        claim={claim}
+                        isSelected={true}
+                        onToggle={() => {}} // Read-only in guided mode
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Direct Path - Manual Claim Selection */}
+            {wizardPath === "direct" && (
+              <div className="space-y-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setWizardPath(null);
+                    setSelectedClaims([]);
+                  }}
+                  className="text-sm text-primary hover:text-primary-dark transition-colors mb-4"
+                >
+                  ← חזרה לבחירת מסלול
+                </button>
+
+                {selectedClaims.includes("divorce") &&
+                 !(selectedClaims.includes("property") &&
+                   selectedClaims.includes("custody") &&
+                   selectedClaims.includes("alimony")) && (
+                  <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-6 py-4 text-right">
+                    <p className="text-body font-semibold text-amber-900">
+                      לתשומת לבכם: תביעת גירושין בבית הדין הרבני כרוכה בהגשת תביעות נלוות (רכוש, מזונות, משמורת).
+                    </p>
+                    <p className="text-caption text-amber-800 mt-1">
+                      מומלץ לסמן גם את התביעות הרלוונטיות כדי שנוכל למלא את כלל הטפסים והנספחים עבורך.
+                    </p>
+                  </div>
+                )}
+
+                {selectedClaims.length === 0 && (
+                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-body-small text-red-600 font-medium">
+                      יש לבחור לפחות תביעה אחת כדי להמשיך
+                    </p>
+                  </div>
+                )}
+
+                <div className="space-y-3">
+                  {CLAIMS.map((claim) => (
+                    <ClaimCard
+                      key={claim.key}
+                      claim={claim}
+                      isSelected={selectedClaims.includes(claim.key)}
+                      onToggle={() => toggleClaim(claim.key)}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
           </ProgressiveSection>
         </SlideInView>
       </ProgressiveSections>

@@ -31,6 +31,8 @@ function getTemplatePath(claimType: ClaimType): string {
     alimony: "תביעת מזונות.docx",
     divorce: "תביעת גירושין.docx",
     divorceAgreement: "הסכם גירושין.docx",
+    shalomBayit: "תביעת שלום בית.docx",
+    divorceRabbinical: "תביעת גירושין רבני.docx",
   };
 
   const filename = templates[claimType];

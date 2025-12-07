@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { ClaimType, BasicInfo, FormData, WizardState } from "../types";
+import type { ClaimType, BasicInfo, FormData, WizardState, WizardPath, RecommendedCourt, RoutingAnswers } from "../types";
 
 const STORAGE_KEY = "law4us-wizard-v1";
 const AUTO_SAVE_DELAY = 2000; // 2 seconds
@@ -21,6 +21,12 @@ interface WizardStore extends WizardState {
   setPaymentData: (data: { paid: boolean; date?: Date }) => void;
   setFilledDocuments: (docs: { [key: string]: string }) => void;
   setSessionId: (sessionId: string) => void;
+
+  // Routing actions
+  setWizardPath: (path: WizardPath) => void;
+  updateRoutingAnswers: (answers: Partial<RoutingAnswers>) => void;
+  setRecommendedCourt: (court: RecommendedCourt) => void;
+  clearRouting: () => void;
 
   // Storage actions
   saveToLocalStorage: () => void;
@@ -58,6 +64,10 @@ const initialState: WizardState = {
     paid: false,
   },
   filledDocuments: {},
+  // Routing state
+  wizardPath: null,
+  routingAnswers: {},
+  recommendedCourt: null,
 };
 
 // Auto-save timer
@@ -133,14 +143,27 @@ export const useWizardStore = create<WizardStore>((set, get) => ({
         return { selectedClaims: state.selectedClaims.filter((c) => c !== claim) };
       }
 
-      // If selecting divorceAgreement, clear all other claims (mutual exclusivity)
-      if (claim === 'divorceAgreement') {
-        return { selectedClaims: ['divorceAgreement'] };
+      // Exclusive claims - these clear all other claims when selected
+      const exclusiveClaims: ClaimType[] = ['divorceAgreement', 'shalomBayit'];
+      if (exclusiveClaims.includes(claim)) {
+        return { selectedClaims: [claim] };
       }
 
-      // If selecting any other claim, remove divorceAgreement if it exists
-      const otherClaims = state.selectedClaims.filter((c) => c !== 'divorceAgreement');
-      return { selectedClaims: [...otherClaims, claim] };
+      // Divorce type claims - can only have one divorce type at a time
+      const divorceTypeClaims: ClaimType[] = ['divorce', 'divorceRabbinical'];
+      let filteredClaims = state.selectedClaims;
+
+      // If selecting a divorce type, remove other divorce types and exclusive claims
+      if (divorceTypeClaims.includes(claim)) {
+        filteredClaims = filteredClaims.filter(
+          (c) => !divorceTypeClaims.includes(c) && !exclusiveClaims.includes(c)
+        );
+      } else {
+        // For non-divorce claims, just remove exclusive claims
+        filteredClaims = filteredClaims.filter((c) => !exclusiveClaims.includes(c));
+      }
+
+      return { selectedClaims: [...filteredClaims, claim] };
     });
     scheduleAutoSave(get);
   },
@@ -179,6 +202,37 @@ export const useWizardStore = create<WizardStore>((set, get) => ({
     scheduleAutoSave(get);
   },
 
+  // Routing
+  setWizardPath: (path) => {
+    set({ wizardPath: path });
+    // Clear routing answers when switching paths
+    if (path === "direct") {
+      set({ routingAnswers: {}, recommendedCourt: null });
+    }
+    scheduleAutoSave(get);
+  },
+
+  updateRoutingAnswers: (answers) => {
+    set((state) => ({
+      routingAnswers: { ...state.routingAnswers, ...answers },
+    }));
+    scheduleAutoSave(get);
+  },
+
+  setRecommendedCourt: (court) => {
+    set({ recommendedCourt: court });
+    scheduleAutoSave(get);
+  },
+
+  clearRouting: () => {
+    set({
+      wizardPath: null,
+      routingAnswers: {},
+      recommendedCourt: null,
+    });
+    scheduleAutoSave(get);
+  },
+
   // Storage
   saveToLocalStorage: () => {
     if (typeof window === "undefined") return;
@@ -195,6 +249,9 @@ export const useWizardStore = create<WizardStore>((set, get) => ({
         paymentData: state.paymentData,
         filledDocuments: state.filledDocuments,
         sessionId: state.sessionId,
+        wizardPath: state.wizardPath,
+        routingAnswers: state.routingAnswers,
+        recommendedCourt: state.recommendedCourt,
         timestamp: Date.now(),
       };
 
@@ -232,6 +289,9 @@ export const useWizardStore = create<WizardStore>((set, get) => ({
         paymentData: data.paymentData || { paid: false },
         filledDocuments: data.filledDocuments || {},
         sessionId: data.sessionId,
+        wizardPath: data.wizardPath || null,
+        routingAnswers: data.routingAnswers || {},
+        recommendedCourt: data.recommendedCourt || null,
       });
 
       console.log("✅ Wizard state loaded from localStorage");

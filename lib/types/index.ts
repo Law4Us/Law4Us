@@ -2,13 +2,24 @@
  * Core type definitions for the Law4Us application
  */
 
-export type ClaimType = "divorceAgreement" | "divorce" | "property" | "custody" | "alimony";
+export type ClaimType =
+  | "divorceAgreement"
+  | "shalomBayit"
+  | "divorceRabbinical"
+  | "divorce"
+  | "property"
+  | "custody"
+  | "alimony";
 
 export interface Claim {
   key: ClaimType;
   label: string;
   description?: string;
   price: number;
+  /** If true, this is a bundled package (price includes multiple claims) */
+  isBundle?: boolean;
+  /** For bundles, which claims are included */
+  bundledClaims?: ClaimType[];
 }
 
 export interface BasicInfo {
@@ -82,6 +93,24 @@ export interface FormData {
   [key: string]: any;
 }
 
+/** Path user chose in Section 4 */
+export type WizardPath = "guided" | "direct" | null;
+
+/** Court type recommendation from routing */
+export type RecommendedCourt = "family" | "rabbinical" | null;
+
+/** Routing answers from guided flow */
+export interface RoutingAnswers {
+  situation?: "agreement" | "shalomBayit" | "divorce" | "defense" | "specific";
+  hasInfidelity?: "yes" | "no" | "preferNotToSay";
+  youngestChildAge?: "none" | "under6" | "6to12" | "over12";
+  applicantIncome?: number;
+  respondentIncome?: number;
+  propertyTypes?: string[];
+  propertyValue?: "under1m" | "1to2m" | "2to4m" | "over4m" | "unknown";
+  halachicGrounds?: "refusesRelations" | "cantHaveChildren" | "none" | "unsure";
+}
+
 export interface WizardState {
   currentStep: number;
   maxReachedStep: number;
@@ -97,4 +126,8 @@ export interface WizardState {
     [key: string]: string;
   };
   sessionId?: string; // Session ID for payment recovery
+  // Routing state
+  wizardPath: WizardPath;
+  routingAnswers: RoutingAnswers;
+  recommendedCourt: RecommendedCourt;
 }
