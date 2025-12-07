@@ -6,6 +6,7 @@ import { Check, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useWizardStore } from "@/lib/stores/wizard-store";
 import { formatCurrency } from "@/lib/utils/format";
+import { CLAIMS } from "@/lib/constants/claims";
 import type { RoutingAnswers, RecommendedCourt, ClaimType } from "@/lib/types";
 
 interface RoutingQuestionsProps {
@@ -35,6 +36,14 @@ export function RoutingQuestions({ onComplete }: RoutingQuestionsProps) {
     claims: ClaimType[];
     totalPrice: number;
   } | null>(null);
+
+  // For "specific" flow - user selects claims manually
+  const [specificClaims, setSpecificClaims] = useState<ClaimType[]>([]);
+
+  // Available claims for specific selection (exclude divorce-related bundle claims)
+  const specificClaimOptions = CLAIMS.filter(
+    c => c.key === "property" || c.key === "custody" || c.key === "alimony"
+  );
 
   // Calculate court recommendation based on answers
   const calculateRecommendation = useCallback(() => {
@@ -187,7 +196,12 @@ export function RoutingQuestions({ onComplete }: RoutingQuestionsProps) {
 
   const handleComplete = () => {
     if (recommendation) {
-      onComplete(recommendation.claims, recommendation.court);
+      // For specific claims, use the user's selection
+      if (routingAnswers.situation === "specific") {
+        onComplete(specificClaims, "family");
+      } else {
+        onComplete(recommendation.claims, recommendation.court);
+      }
     }
   };
 
@@ -410,14 +424,82 @@ export function RoutingQuestions({ onComplete }: RoutingQuestionsProps) {
 
         // Special case: specific claims - user will pick from claim cards
         if (routingAnswers.situation === "specific") {
+          const toggleSpecificClaim = (claimKey: ClaimType) => {
+            setSpecificClaims(prev =>
+              prev.includes(claimKey)
+                ? prev.filter(c => c !== claimKey)
+                : [...prev, claimKey]
+            );
+          };
+
+          const totalPrice = specificClaims.length * 3900;
+
           return (
             <div className="space-y-6">
               <div className="bg-primary/5 rounded-2xl p-6">
                 <h3 className="text-h3 font-semibold text-primary mb-2">בחירת תביעות ספציפיות</h3>
                 <p className="text-body text-neutral-dark">
-                  תוכל/י לבחור את התביעות הספציפיות שמתאימות לך מהרשימה למטה.
+                  בחרו את התביעות שמתאימות למצבכם:
                 </p>
               </div>
+
+              {/* Claim selection cards */}
+              <div className="space-y-3">
+                {specificClaimOptions.map((claim) => (
+                  <button
+                    key={claim.key}
+                    type="button"
+                    onClick={() => toggleSpecificClaim(claim.key)}
+                    className={cn(
+                      "w-full text-right rounded-xl py-4 px-6 transition-all duration-200",
+                      "border-2 bg-white",
+                      "hover:shadow-md focus:outline-none focus:ring-4 focus:ring-primary/20",
+                      specificClaims.includes(claim.key)
+                        ? "border-primary shadow-sm"
+                        : "border-neutral-light hover:border-neutral"
+                    )}
+                  >
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex-1">
+                        <span className={cn(
+                          "text-body font-medium",
+                          specificClaims.includes(claim.key) ? "text-primary" : "text-neutral-darkest"
+                        )}>
+                          {claim.label}
+                        </span>
+                        <p className="text-sm text-neutral-dark mt-1">{claim.description}</p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-body font-medium text-neutral-dark">{formatCurrency(claim.price)}</span>
+                        <div className={cn(
+                          "w-6 h-6 rounded-md border-2 flex items-center justify-center flex-shrink-0",
+                          specificClaims.includes(claim.key) ? "bg-primary border-primary" : "border-neutral"
+                        )}>
+                          {specificClaims.includes(claim.key) && <Check className="w-4 h-4 text-white" />}
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              {/* Total price */}
+              {specificClaims.length > 0 && (
+                <div className="bg-white rounded-xl border-2 border-neutral-light p-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-body font-medium text-neutral-dark">סה&quot;כ ({specificClaims.length} תביעות)</span>
+                    <span className="text-xl font-bold text-primary">{formatCurrency(totalPrice)}</span>
+                  </div>
+                </div>
+              )}
+
+              {specificClaims.length === 0 && (
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                  <p className="text-body-small text-amber-700 font-medium">
+                    יש לבחור לפחות תביעה אחת כדי להמשיך
+                  </p>
+                </div>
+              )}
             </div>
           );
         }
@@ -529,6 +611,10 @@ export function RoutingQuestions({ onComplete }: RoutingQuestionsProps) {
       case "halachic":
         return !!routingAnswers.halachicGrounds;
       case "result":
+        // For specific claims, require at least one selection
+        if (routingAnswers.situation === "specific") {
+          return specificClaims.length > 0;
+        }
         return true;
       default:
         return false;
