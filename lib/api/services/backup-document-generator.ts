@@ -138,6 +138,8 @@ function getClaimLabel(claimType: ClaimType): string {
     alimony: 'תביעת מזונות',
     divorce: 'תביעת גירושין',
     divorceAgreement: 'הסכם גירושין',
+    shalomBayit: 'תביעה לשלום בית',
+    divorceRabbinical: 'תביעת גירושין (בית דין רבני)',
   };
   return labels[claimType] || claimType;
 }

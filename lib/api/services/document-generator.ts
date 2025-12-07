@@ -20,6 +20,7 @@ import { generateAlimonyClaim } from './alimony-claim-generator';
 import { generateDivorceClaim } from './divorce-claim-generator';
 import { generateDivorceAgreement } from './divorce-agreement-generator';
 import { generateDivorceClaimFamily } from './divorce-claim-family-generator';
+import { generateShalomBayitClaim } from './shalombayit-claim-generator';
 import { determineCourtType, DivorceRoutingResult } from '@/lib/utils/divorce-court-router';
 import {
   ClaimType,
@@ -55,6 +56,8 @@ function getTemplatePath(claimType: ClaimType): string {
     alimony: 'תביעת מזונות.docx',
     divorce: 'תביעת גירושין.docx',
     divorceAgreement: 'הסכם גירושין.docx',
+    shalomBayit: 'תביעת שלום בית.docx',        // Programmatically generated
+    divorceRabbinical: 'תביעת גירושין רבני.docx', // Programmatically generated
   };
 
   const filename = templates[claimType];
@@ -65,8 +68,17 @@ function getTemplatePath(claimType: ClaimType): string {
  * Check if template exists
  */
 export function templateExists(claimType: ClaimType): boolean {
-  // Property, custody, alimony, divorce, and divorceAgreement claims don't use templates - they're programmatically generated
-  if (claimType === 'property' || claimType === 'custody' || claimType === 'alimony' || claimType === 'divorce' || claimType === 'divorceAgreement') {
+  // These claims are programmatically generated (no templates needed)
+  const programmaticClaims: ClaimType[] = [
+    'property',
+    'custody',
+    'alimony',
+    'divorce',
+    'divorceAgreement',
+    'shalomBayit',
+    'divorceRabbinical',
+  ];
+  if (programmaticClaims.includes(claimType)) {
     return true;
   }
 
@@ -307,6 +319,26 @@ export async function generateDocument(
         lawyerSignature: options.lawyerSignature,
         attachments: options.attachments,
         selectedClaims: options.selectedClaims, // Pass to enable smart referencing
+      });
+    } else if (claimType === 'shalomBayit') {
+      console.log('📝 Using Shalom Bayit generator for Rabbinical Court...');
+      documentBuffer = await generateShalomBayitClaim({
+        basicInfo,
+        formData,
+        signature: options.signature,
+        lawyerSignature: options.lawyerSignature,
+        selectedClaims: options.selectedClaims,
+      });
+    } else if (claimType === 'divorceRabbinical') {
+      // Rabbinical bundled divorce - uses the same generator as rabbinical court divorce
+      console.log('📝 Using Rabbinical Court bundled divorce generator...');
+      documentBuffer = await generateDivorceClaim({
+        basicInfo,
+        formData,
+        signature: options.signature,
+        lawyerSignature: options.lawyerSignature,
+        attachments: options.attachments,
+        selectedClaims: options.selectedClaims,
       });
     } else {
       // Step 1: Prepare data with AI transformation

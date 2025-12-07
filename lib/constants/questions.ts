@@ -1723,10 +1723,128 @@ export const ALIMONY_QUESTIONS: Question[] = [
 
 ];
 
+// ============================================================================
+// SHALOM BAYIT QUESTIONS (reconciliation claim)
+// ============================================================================
+
+export const SHALOMBAYIT_QUESTIONS: Question[] = [
+  {
+    id: "heading-shalombayit",
+    type: "heading",
+    label: "תביעה לשלום בית",
+  },
+  {
+    id: "shalomBayit.marriageQuality",
+    type: "radio",
+    label: "איך הייתה מערכת היחסים בתחילת הנישואין?",
+    required: true,
+    options: [
+      { value: "excellent", label: "מצוינת - אהבה והרמוניה" },
+      { value: "good", label: "טובה - עם עליות וירידות רגילות" },
+      { value: "difficult", label: "קשה מההתחלה" },
+    ],
+  },
+  {
+    id: "shalomBayit.crisisDuration",
+    type: "radio",
+    label: "מתי החלה המשבר הנוכחי?",
+    required: true,
+    options: [
+      { value: "recent", label: "לאחרונה (פחות מחודש)" },
+      { value: "months", label: "לפני מספר חודשים" },
+      { value: "year", label: "לפני כשנה" },
+      { value: "years", label: "כבר שנים" },
+    ],
+  },
+  {
+    id: "shalomBayit.crisisReasons",
+    type: "textarea",
+    label: "מה לדעתך הסיבות העיקריות למשבר?",
+    placeholder: "תארו את הגורמים שהובילו למצב הנוכחי...",
+    required: true,
+    maxLength: 2000,
+  },
+  {
+    id: "shalomBayit.previousAttempts",
+    type: "radio",
+    label: "האם ניסיתם בעבר לפתור את הבעיות?",
+    required: true,
+    options: [
+      { value: "none", label: "לא ניסינו" },
+      { value: "ourselves", label: "ניסינו בעצמנו" },
+      { value: "family", label: "בעזרת משפחה/חברים" },
+      { value: "professional", label: "בעזרת איש מקצוע (יועץ/מטפל)" },
+    ],
+  },
+  {
+    id: "shalomBayit.counselingDetails",
+    type: "textarea",
+    label: "פרטו על הטיפול/ייעוץ שקיבלתם",
+    placeholder: "סוג הטיפול, משך הזמן, תוצאות...",
+    conditional: {
+      dependsOn: "shalomBayit.previousAttempts",
+      showWhen: "professional",
+    },
+    maxLength: 1000,
+  },
+  {
+    id: "shalomBayit.partnerWillingness",
+    type: "radio",
+    label: "האם בן/בת הזוג מוכן/ה לנסות שלום בית?",
+    required: true,
+    options: [
+      { value: "yes", label: "כן, מוכן/ה" },
+      { value: "maybe", label: "לא בטוח/ה" },
+      { value: "no", label: "לא, רוצה להתגרש" },
+      { value: "unknown", label: "לא יודע/ת" },
+    ],
+  },
+  {
+    id: "shalomBayit.whatWouldHelp",
+    type: "textarea",
+    label: "מה לדעתך יכול לעזור להציל את הנישואין?",
+    placeholder: "תארו מה לדעתך נדרש כדי לשקם את מערכת היחסים...",
+    required: true,
+    maxLength: 2000,
+  },
+  {
+    id: "shalomBayit.commitment",
+    type: "radio",
+    label: "מה מידת המחויבות שלך להצלת הנישואין?",
+    required: true,
+    options: [
+      { value: "full", label: "מחויבות מלאה - אעשה הכל" },
+      { value: "willing", label: "מוכן/ה לנסות ברצינות" },
+      { value: "conditional", label: "בתנאים מסוימים" },
+      { value: "lastResort", label: "זו הזדמנות אחרונה" },
+    ],
+  },
+  {
+    id: "shalomBayit.livingArrangement",
+    type: "radio",
+    label: "מה מצב המגורים הנוכחי?",
+    required: true,
+    options: [
+      { value: "together", label: "גרים יחד" },
+      { value: "separated", label: "גרים בנפרד" },
+      { value: "sameHouseSeparate", label: "גרים באותו בית אך בנפרד" },
+    ],
+  },
+  {
+    id: "shalomBayit.additionalInfo",
+    type: "textarea",
+    label: "מידע נוסף שחשוב לדעת",
+    placeholder: "כל מידע נוסף שיכול לעזור בהכנת התביעה...",
+    maxLength: 2000,
+  },
+];
+
 // Map claim keys to their questions
 export const CLAIM_QUESTIONS_MAP: Record<string, Question[]> = {
   divorceAgreement: DIVORCE_AGREEMENT_QUESTIONS,
   divorce: DIVORCE_QUESTIONS,
+  divorceRabbinical: DIVORCE_QUESTIONS,  // Uses same questions as divorce
+  shalomBayit: SHALOMBAYIT_QUESTIONS,
   property: PROPERTY_QUESTIONS,
   custody: CUSTODY_QUESTIONS,
   alimony: ALIMONY_QUESTIONS,
