@@ -73,13 +73,35 @@ export function ProgressiveSection({
   }, [isExpanded]);
 
   // Measure content height for smooth animation
+  // Use ResizeObserver to detect when content changes
   React.useEffect(() => {
-    if (isExpanded && contentRef.current) {
-      setHeight(contentRef.current.scrollHeight);
-    } else {
+    if (!isExpanded) {
       setHeight(0);
+      return;
     }
-  }, [isExpanded]);
+
+    const updateHeight = () => {
+      if (contentRef.current) {
+        setHeight(contentRef.current.scrollHeight);
+      }
+    };
+
+    // Initial height measurement
+    updateHeight();
+
+    // Watch for content size changes
+    const resizeObserver = new ResizeObserver(() => {
+      updateHeight();
+    });
+
+    if (contentRef.current) {
+      resizeObserver.observe(contentRef.current);
+    }
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [isExpanded, children]);
 
   return (
     <div
