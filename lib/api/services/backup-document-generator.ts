@@ -516,8 +516,15 @@ export async function generateBackupDocument(data: BackupDocumentData): Promise<
   if (selectedClaims.includes('alimony') && formData.alimony) {
     paragraphs.push(createSectionHeader('תביעת מזונות'));
 
+    // Fallback chain for narrative text
+    const alimonyNarrativeText =
+      formData.relationshipDescription ||
+      formData['divorce.whoWantsDivorceAndWhy'] ||
+      formData['shalomBayit.crisisReasons'] ||
+      '';
+
     const alimonyRows = [
-      createQARow('תיאור מערכת יחסים', formatValue(formData.relationshipDescription)),
+      createQARow('תיאור מערכת יחסים', formatValue(alimonyNarrativeText)),
       createQARow('מזונות קודמים', formatValue(formData.alimony.wasPreviousAlimony)),
       createQARow('יש חשבונות בנק', formatValue(formData.alimony.hasBankAccounts)),
       createQARow('יש רכב', formatValue(formData.alimony.hasVehicle)),
@@ -534,8 +541,14 @@ export async function generateBackupDocument(data: BackupDocumentData): Promise<
   if (selectedClaims.includes('divorce') && formData.divorce) {
     paragraphs.push(createSectionHeader('תביעת גירושין'));
 
+    // Fallback chain for narrative text
+    const divorceNarrativeText =
+      formData.relationshipDescription ||
+      formData['divorce.whoWantsDivorceAndWhy'] ||
+      '';
+
     const divorceRows = [
-      createQARow('תיאור מערכת יחסים', formatValue(formData.relationshipDescription)),
+      createQARow('תיאור מערכת יחסים', formatValue(divorceNarrativeText)),
       createQARow('מי רוצה גירושין ולמה', formatValue(formData.divorce.whoWantsDivorceAndWhy)),
       createQARow('עיר נישואין', formatValue(formData.divorce.weddingCity)),
       createQARow('נישואין דתיים', formatValue(formData.divorce.religiousMarriage)),

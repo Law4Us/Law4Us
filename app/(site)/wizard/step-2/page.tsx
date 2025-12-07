@@ -17,6 +17,8 @@ import {
 import { globalQuestionsSchema } from "@/lib/schemas/global-questions";
 import { CLAIMS } from "@/lib/constants/claims";
 import { processQuestionsNames } from "@/lib/utils/name-replacement";
+import { mapRoutingToFormData, syncFormDataFields } from "@/lib/utils/routing-mapper";
+import { filterVisibleQuestions, type VisibilityContext } from "@/lib/utils/question-visibility";
 import { z } from "zod";
 
 // Helper to extract section titles from questions
@@ -53,6 +55,8 @@ export default function Step2DynamicForm() {
     updateFormData,
     nextStep,
     prevStep,
+    wizardPath,
+    routingAnswers,
   } = useWizardStore();
 
   // Build dynamic schema based on selected claims
@@ -90,10 +94,19 @@ export default function Step2DynamicForm() {
     return questions;
   }, [selectedClaims]);
 
+  // Visibility context for filtering questions
+  const visibilityContext: VisibilityContext = React.useMemo(() => ({
+    wizardPath,
+    routingAnswers,
+    selectedClaims,
+  }), [wizardPath, routingAnswers, selectedClaims]);
+
   // Replace dynamic names in question labels, placeholders, and options
+  // Then filter out questions that shouldn't be shown (already answered in routing)
   const processedQuestions = React.useMemo(() => {
-    return processQuestionsNames(allQuestions, basicInfo);
-  }, [allQuestions, basicInfo]);
+    const withNames = processQuestionsNames(allQuestions, basicInfo);
+    return filterVisibleQuestions(withNames, visibilityContext);
+  }, [allQuestions, basicInfo, visibilityContext]);
 
   // Extract section titles
   const sectionTitles = React.useMemo(() => {
@@ -152,6 +165,17 @@ export default function Step2DynamicForm() {
 
   // Track current visible section (for mobile/sidebar navigation)
   const [currentSectionIndex, setCurrentSectionIndex] = React.useState(0);
+
+  // Pre-fill formData from routing answers (for guided path users)
+  React.useEffect(() => {
+    if (routingAnswers && Object.keys(routingAnswers).length > 0) {
+      const prefilled = mapRoutingToFormData(routingAnswers, selectedClaims);
+      if (Object.keys(prefilled).length > 0) {
+        updateFormData(prefilled);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only on mount - don't re-run when routingAnswers changes
 
   // Auto-save on change (debounced)
   React.useEffect(() => {
@@ -268,8 +292,9 @@ export default function Step2DynamicForm() {
   }, [sections, isSectionComplete, watchedValues]);
 
   const onSubmit = (data: any) => {
-    // Save before navigating
-    updateFormData(data);
+    // Sync form data fields (copy claim-specific narratives to shared fields)
+    const synced = syncFormDataFields(data, selectedClaims);
+    updateFormData(synced);
 
     nextStep();
     router.push("/wizard/step-3");

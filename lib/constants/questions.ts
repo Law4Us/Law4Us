@@ -948,8 +948,8 @@ export const DIVORCE_QUESTIONS: Question[] = [
     helper: "אם ענית \"כן\" בשאלה הכללית על ייעוץ נישואין, נא לפרט כאן",
     maxLength: 500,
     conditional: {
-      dependsOn: "divorce.currentSituation",
-      showWhen: "wantDivorce",
+      dependsOn: "contactedMarriageCounseling",
+      showWhen: "כן",
     },
   },
 

@@ -340,6 +340,8 @@ async function createAlimonyDetailsSection(data: AlimonyClaimData): Promise<Para
   const relationshipDescription =
     (alimony.relationshipDescription ||
       data.formData.relationshipDescription ||
+      data.formData['divorce.whoWantsDivorceAndWhy'] ||
+      data.formData['shalomBayit.crisisReasons'] ||
       '').trim();
 
   const hasPreviousAlimonyInfo =

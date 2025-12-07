@@ -381,12 +381,18 @@ async function createFactsSection(
   paragraphs.push(createSubsectionHeader('מערכת היחסים'));
   paragraphs.push(createRelationshipSection(basicInfo, formData, minorChildren));
 
-  // Add general relationship description if provided
-  if (formData.relationshipDescription) {
+  // Add general relationship description if provided (with fallback chain)
+  const narrativeText =
+    formData.relationshipDescription ||
+    formData['divorce.whoWantsDivorceAndWhy'] ||
+    formData['shalomBayit.crisisReasons'] ||
+    '';
+
+  if (narrativeText) {
     console.log(`🤖 Transforming relationship description with Groq AI...`);
     try {
       const transformedRelationship = await transformToLegalLanguage(
-        formData.relationshipDescription,
+        narrativeText,
         {
           claimType: 'תביעת משמורת',
           applicantName: plaintiff.name,
@@ -398,7 +404,7 @@ async function createFactsSection(
     } catch (error) {
       console.error('❌ Error transforming relationship description:', error);
       // Fallback to original text if transformation fails
-      paragraphs.push(createBodyParagraph(formData.relationshipDescription));
+      paragraphs.push(createBodyParagraph(narrativeText));
     }
   }
 
