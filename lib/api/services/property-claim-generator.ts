@@ -163,10 +163,10 @@ function checkIncomeDisparity(
 /**
  * Format child details as bullet point
  * RLM after each colon to keep with Hebrew
+ * Note: Address removed per lawyer feedback (children obviously live with parents)
  */
 function formatChildBullet(child: any): string {
-  const address = child.address || child.street || 'לא צוין';
-  return `שם:\u200F ${child.firstName} ${child.lastName} ת״ז:\u200F ${child.idNumber} ת״ל:\u200F ${child.birthDate} כתובת:\u200F ${address}`;
+  return `שם:\u200F ${child.firstName} ${child.lastName} ת״ז:\u200F ${child.idNumber} ת״ל:\u200F ${child.birthDate}`;
 }
 
 /**
@@ -237,10 +237,10 @@ function createPropertySummary(
   const paragraphs: Paragraph[] = [];
   const summary = calculatePropertySummary(items);
 
-  // Total line
+  // Total line - using "כ-" prefix for estimates per lawyer feedback
   const totalText = isDebt
-    ? `סך ${categoryName} עולים לסך של ${summary.total.toLocaleString()} ש״ח`
-    : `סך ${categoryName} עולה לסך של ${summary.total.toLocaleString()} ש״ח`;
+    ? `סך ${categoryName} עולים לסך של כ-${summary.total.toLocaleString()} ש״ח`
+    : `סך ${categoryName} עולה לסך של כ-${summary.total.toLocaleString()} ש״ח`;
 
   paragraphs.push(
     new Paragraph({
@@ -301,10 +301,10 @@ function createPropertySummary(
         new Paragraph({
           children: [
             new TextRun({
-              text: `• ${ownerLabel}:\u200F ${ownerData.value.toLocaleString()} ש״ח (${ownerData.count} ${itemWord})`,
+              text: `• ${ownerLabel}:\u200F כ-${ownerData.value.toLocaleString()} ש״ח (${ownerData.count} ${itemWord})`,
               size: FONT_SIZES.BODY,
               font: 'David',
-          
+
             }),
           ],
           alignment: AlignmentType.START,
@@ -313,7 +313,7 @@ function createPropertySummary(
             right: convertInchesToTwip(0.25),
           },
           bidirectional: true,
-      
+
         })
       );
     });
@@ -345,56 +345,74 @@ function formatPropertySection(formData: any): Paragraph[] {
       paragraphs.push(
         createNumberedItem(
           index + 1,
-          `${apt.description || 'דירת מגורים'}${purchaseDate} - שווי:\u200F ${value} ש״ח${owner}`
+          `${apt.description || 'דירת מגורים'}${purchaseDate} - שווי:\u200F כ-${value} ש״ח${owner}`
         )
       );
     });
   }
 
-  // רכבים (Vehicles)
+  // רכבים (Vehicles) - per lawyer: assets during marriage belong to both
   if (propertyData.vehicles && propertyData.vehicles.length > 0) {
     paragraphs.push(createSubsectionHeader('רכבים'));
     paragraphs.push(...createPropertySummary('הרכבים', propertyData.vehicles));
     propertyData.vehicles.forEach((vehicle: any, index: number) => {
       const value = getPropertyValue(vehicle);
       const purchaseDate = formatPurchaseDate(vehicle.purchaseDate);
-      const owner = vehicle.owner ? `, בבעלות:\u200F ${vehicle.owner}` : '';
+      // If individually registered, show as joint with usage note
+      let ownerText = '';
+      if (vehicle.owner && vehicle.owner !== 'שניהם') {
+        ownerText = `, בבעלות שניהם (בשימוש:\u200F ${vehicle.owner})`;
+      } else if (vehicle.owner === 'שניהם') {
+        ownerText = ', בבעלות:\u200F שניהם';
+      }
       paragraphs.push(
         createNumberedItem(
           index + 1,
-          `${vehicle.description || 'רכב'}${purchaseDate} - שווי:\u200F ${value} ש״ח${owner}`
+          `${vehicle.description || 'רכב'}${purchaseDate} - שווי:\u200F כ-${value} ש״ח${ownerText}`
         )
       );
     });
   }
 
-  // חסכונות (Savings)
+  // חסכונות (Savings) - per lawyer: savings during marriage belong to both
   if (propertyData.savings && propertyData.savings.length > 0) {
     paragraphs.push(createSubsectionHeader('חסכונות'));
     paragraphs.push(...createPropertySummary('החסכונות', propertyData.savings));
     propertyData.savings.forEach((saving: any, index: number) => {
       const value = getPropertyValue(saving);
-      const owner = saving.owner ? `, בבעלות:\u200F ${saving.owner}` : '';
+      // If individually registered, show as joint with registration note
+      let ownerText = '';
+      if (saving.owner && saving.owner !== 'שניהם') {
+        ownerText = `, בבעלות שניהם (ע"ש:\u200F ${saving.owner})`;
+      } else if (saving.owner === 'שניהם') {
+        ownerText = ', בבעלות:\u200F שניהם';
+      }
       paragraphs.push(
         createNumberedItem(
           index + 1,
-          `${saving.description || 'חשבון חיסכון'} - סכום:\u200F ${value} ש״ח${owner}`
+          `${saving.description || 'חשבון חיסכון'} - סכום:\u200F כ-${value} ש״ח${ownerText}`
         )
       );
     });
   }
 
-  // תנאים סוציאליים (Social Benefits)
+  // תנאים סוציאליים (Social Benefits) - per lawyer: benefits belong to both
   if (propertyData.benefits && propertyData.benefits.length > 0) {
     paragraphs.push(createSubsectionHeader('תנאים סוציאליים'));
     paragraphs.push(...createPropertySummary('התנאים הסוציאליים', propertyData.benefits));
     propertyData.benefits.forEach((benefit: any, index: number) => {
       const value = getPropertyValue(benefit);
-      const owner = benefit.owner ? `, בבעלות:\u200F ${benefit.owner}` : '';
+      // If individually registered, show as joint with registration note
+      let ownerText = '';
+      if (benefit.owner && benefit.owner !== 'שניהם') {
+        ownerText = `, בבעלות שניהם (ע"ש:\u200F ${benefit.owner})`;
+      } else if (benefit.owner === 'שניהם') {
+        ownerText = ', בבעלות:\u200F שניהם';
+      }
       paragraphs.push(
         createNumberedItem(
           index + 1,
-          `${benefit.description || 'זכויות סוציאליות'} - שווי:\u200F ${value} ש״ח${owner}`
+          `${benefit.description || 'זכויות סוציאליות'} - שווי:\u200F כ-${value} ש״ח${ownerText}`
         )
       );
     });
@@ -410,21 +428,24 @@ function formatPropertySection(formData: any): Paragraph[] {
       paragraphs.push(
         createNumberedItem(
           index + 1,
-          `${property.description || 'רכוש'} - שווי:\u200F ${value} ש״ח${owner}`
+          `${property.description || 'רכוש'} - שווי:\u200F כ-${value} ש״ח${owner}`
         )
       );
     });
   }
 
-  // חובות (Debts)
+  // חובות (Debts) - updated with date/purpose per lawyer feedback
   if (propertyData.debts && propertyData.debts.length > 0) {
     paragraphs.push(createSubsectionHeader('חובות'));
     paragraphs.push(...createPropertySummary('החובות', propertyData.debts, true));
     propertyData.debts.forEach((debt: any, index: number) => {
       const amount = getPropertyValue(debt);
       const debtor = debt.debtor || debt.owner ? `, חייב:\u200F ${debt.debtor || debt.owner}` : '';
+      // Add debt date and purpose if available
+      const debtDate = debt.debtDate ? `, נלקח ביום:\u200F ${formatDate(debt.debtDate)}` : '';
+      const debtPurpose = debt.debtPurpose ? `, למטרת:\u200F ${debt.debtPurpose}` : '';
       paragraphs.push(
-        createNumberedItem(index + 1, `${debt.description || 'חוב'} - סכום:\u200F ${amount} ש״ח${debtor}`)
+        createNumberedItem(index + 1, `${debt.description || 'חוב'} - סכום:\u200F כ-${amount} ש״ח${debtDate}${debtPurpose}${debtor}`)
       );
     });
   }
@@ -621,10 +642,23 @@ export async function generatePropertyClaimDocument(
           // ===== SECTION B: MAIN ARGUMENTS =====
           createSectionHeader('ב. עיקר הטענות:\u200F'),
 
-          // 1. Brief description
+          // 1. Brief description - improved per lawyer feedback
           createNumberedHeader('1. תיאור תמציתי של בעלי הדין'),
           createBodyParagraph(
-            `${basicInfo.fullName} מ״ז ${basicInfo.idNumber} ו${basicInfo.fullName2} מ״ז ${basicInfo.idNumber2} היו במערכת יחסים ו${marriageStatus}, במהלך הקשר נולדו להם ${children.length} קטינים.`
+            (() => {
+              const weddingDate = basicInfo.weddingDay ? formatDate(basicInfo.weddingDay) : '';
+              const childrenText = children.length > 0
+                ? `, במהלך הנישואין נולדו להם ${children.length} קטינים.`
+                : '.';
+
+              if (wereMarried && weddingDate) {
+                return `${basicInfo.fullName} מ״ז ${basicInfo.idNumber} ו${basicInfo.fullName2} מ״ז ${basicInfo.idNumber2} נישאו ביום ${weddingDate}${childrenText}`;
+              } else if (wereMarried) {
+                return `${basicInfo.fullName} מ״ז ${basicInfo.idNumber} ו${basicInfo.fullName2} מ״ז ${basicInfo.idNumber2} נישאו${childrenText}`;
+              } else {
+                return `${basicInfo.fullName} מ״ז ${basicInfo.idNumber} ו${basicInfo.fullName2} מ״ז ${basicInfo.idNumber2}${children.length > 0 ? `, להם נולדו ${children.length} ילדים.` : '.'}`;
+              }
+            })()
           ),
 
           // Children list
@@ -638,9 +672,13 @@ export async function generatePropertyClaimDocument(
             `בית המשפט הנכבד מתבקש לעשות שימוש בסמכותו לפי ${lawType} ולקבוע, בין היתר, כי כל הרכוש יחולק בחלוקה שווה. כמו גם ליתן כל סעד כמבוקש בסיפא של תביעה זאת.\u200F`
           ),
 
-          // 3. Summary of facts
+          // 3. Summary of facts - includes marriage date per lawyer feedback
           createNumberedHeader('3. תמצית העובדות הנחוצות לביסוסה של עילת התביעה ומתי נולדה'),
-          createBodyParagraph(`המשטר הרכושי החל על בני הזוג הינו ${lawType}.`),
+          createBodyParagraph(
+            basicInfo.weddingDay
+              ? `בני הזוג נישאו ביום ${formatDate(basicInfo.weddingDay)}. המשטר הרכושי החל על בני הזוג הינו ${lawType}.`
+              : `המשטר הרכושי החל על בני הזוג הינו ${lawType}.`
+          ),
           createBodyParagraph(`כבוד בית המשפט מתבקש לאזן הרכוש שווה בשווה לפי ${lawType}.`),
 
           // 4. Jurisdiction
@@ -761,10 +799,10 @@ export async function generatePropertyClaimDocument(
                 `להורות על השבה ל${plaintiff.title} של כל כספים, אם ייקבע שנמשכו או נלקחו שלא כדין.`
               ),
 
-              // Financial disclosure
+              // Financial disclosure - updated per lawyer feedback
               createNumberedItem(
                 4 + offset,
-                `להורות ל${defendant.title} למסור דו״ח מרוכז בדבר כלל הזכויות הסוציאליות והכספים בבעלות${defendant.possessive}, בכל גוף רלוונטי.`
+                `${plaintiff.title} ${basicInfo.gender === 'male' ? 'מבקש' : 'מבקשת'} מ${defendant.title} למסור דו״ח מרוכז בדבר כלל הזכויות הסוציאליות והכספים בבעלות${defendant.possessive}, בכל גוף רלוונטי.`
               ),
 
               // Document disclosure

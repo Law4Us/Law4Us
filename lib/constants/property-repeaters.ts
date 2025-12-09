@@ -371,6 +371,19 @@ export const DEBT_FIELDS: RepeaterField[] = [
     ],
   },
   {
+    id: "debtDate",
+    name: "debtDate",
+    label: "מתי נלקח החוב",
+    type: "date",
+  },
+  {
+    id: "debtPurpose",
+    name: "debtPurpose",
+    label: "מטרת החוב",
+    type: "text",
+    placeholder: "לדוגמה: רכישת דירה, רכישת רכב",
+  },
+  {
     id: "proof",
     name: "proof",
     label: "אישור חוב (אופציונלי)",

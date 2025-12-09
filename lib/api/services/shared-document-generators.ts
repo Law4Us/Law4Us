@@ -175,10 +175,11 @@ export function filterPreviousChildren(children: Array<any>, basicInfo: BasicInf
 /**
  * Create relationship section (מערכת היחסים)
  * Standardized format across all three claim types
- * Based on alimony implementation (most natural and complete)
+ * Enhanced per lawyer feedback to include more details (addresses, separation)
  *
  * Format:
- * "המדובר בזוג נשוי, להם נולדו 3 ילדים: [children list]. כיום הצדדים גרים בנפרד מיום [date], כאשר הילדים מתגוררים עם [name]."
+ * "המדובר בזוג נשוי, להם נולדו 3 ילדים: [children list]. כיום הצדדים גרים בנפרד מיום [date],
+ *  כאשר [name1] מתגורר/ת ב[address1] ו[name2] מתגורר/ת ב[address2], והילדים מתגוררים עם [name]."
  */
 export function createRelationshipSection(
   basicInfo: BasicInfo,
@@ -192,9 +193,6 @@ export function createRelationshipSection(
   // Filter children by parent
   const sharedChildren = filterSharedChildren(children, basicInfo);
   const previousChildren = filterPreviousChildren(children, basicInfo);
-
-  // Determine marital status for natural wording
-  const maritalStatus = marriageDate ? 'נשוי' : 'לא נשואי';
 
   // Build continuous flowing narrative - use SHARED children only
   const sharedChildrenNames = sharedChildren.map(child => formatChildNaturally(child)).join(', ');
@@ -218,11 +216,21 @@ export function createRelationshipSection(
     relationshipText += '. ';
   }
 
-  // Add separation info
-  if (propertyData.separationDate) {
-    relationshipText += `כיום הצדדים גרים בנפרד מיום ${formatDate(propertyData.separationDate)}`;
+  // Add separation info with addresses - enhanced per lawyer feedback
+  const separationDate = propertyData.separationDate || formData.separationDate;
+  if (separationDate) {
+    relationshipText += `כיום הצדדים גרים בנפרד מיום ${formatDate(separationDate)}`;
   } else {
     relationshipText += `כיום הצדדים גרים בנפרד`;
+  }
+
+  // Add current addresses if available and different - enhanced per lawyer feedback
+  const address1 = basicInfo.address;
+  const address2 = basicInfo.address2;
+  if (address1 && address2 && address1 !== address2) {
+    const genderSuffix1 = basicInfo.gender === 'female' ? 'מתגוררת' : 'מתגורר';
+    const genderSuffix2 = basicInfo.gender2 === 'female' ? 'מתגוררת' : 'מתגורר';
+    relationshipText += `, כאשר ${basicInfo.fullName} ${genderSuffix1} ב${address1} ו${basicInfo.fullName2} ${genderSuffix2} ב${address2}`;
   }
 
   // Add SHARED children living arrangement in same paragraph
@@ -231,11 +239,11 @@ export function createRelationshipSection(
     const livingArrangement = formData.custody?.currentLivingArrangement;
 
     if (livingArrangement === 'with_applicant') {
-      relationshipText += `, כאשר הילדים מתגוררים עם ${basicInfo.fullName}.`;
+      relationshipText += `, והילדים מתגוררים עם ${basicInfo.fullName}.`;
     } else if (livingArrangement === 'with_respondent') {
-      relationshipText += `, כאשר הילדים מתגוררים עם ${basicInfo.fullName2}.`;
+      relationshipText += `, והילדים מתגוררים עם ${basicInfo.fullName2}.`;
     } else if (livingArrangement === 'split') {
-      relationshipText += `, כאשר המגורים חלוקים בין ההורים.`;
+      relationshipText += `, והמגורים של הילדים חלוקים בין ההורים.`;
     } else if (livingArrangement === 'together') {
       relationshipText += `, כאשר כל המשפחה מתגוררת יחד.`;
     } else {
