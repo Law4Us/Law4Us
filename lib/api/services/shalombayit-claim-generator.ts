@@ -3,10 +3,14 @@
  * Generates reconciliation claim documents for Rabbinical Court (בית הדין הרבני)
  *
  * Structure (based on lawyer-approved template):
- * א. כללי - רקע (General Background)
- * ב. יש למצות את הליך שלום הבית (The reconciliation process must be exhausted)
- * + Request section
- * + Power of Attorney
+ * - Court header with docket number
+ * - Parties section (plaintiff/defendant)
+ * - Main title: תביעה לשלום בית
+ * - א. כללי - רקע (General Background)
+ * - ב. יש למצות את הליך שלום הבית (The reconciliation process must be exhausted)
+ * - Request section
+ * - Signatures
+ * - Power of Attorney
  */
 
 import {
@@ -20,6 +24,7 @@ import {
   PageNumber,
   NumberFormat,
   convertInchesToTwip,
+  UnderlineType,
 } from 'docx';
 import { BasicInfo, FormData, ClaimType, Child } from '@/lib/api/types';
 import { transformToLegalLanguage, TransformContext } from './groq-service';
@@ -28,17 +33,15 @@ import {
   SPACING,
   formatDate,
   createBodyParagraph,
-  createMainTitle,
-  createSectionHeader,
-  createSubsectionHeader,
   createPageBreak,
   createSignatureImage,
-  createCourtHeader,
   generatePowerOfAttorney,
-  createLetteredHeader,
-  createNumberedItem,
   isMinor,
 } from './shared-document-generators';
+
+// Constants for spacing
+const LINE_SPACING = 360; // 1.5 line spacing
+const PARAGRAPH_SPACING = 240;
 
 // ==================== TYPES ====================
 
@@ -150,6 +153,282 @@ function formatChildWithAge(child: Child): string {
   return `${name}${idText}${birthText}`;
 }
 
+// ==================== DOCUMENT FORMATTING FUNCTIONS ====================
+
+/**
+ * Create court header matching lawyer's format exactly
+ */
+function createRabbinicalCourtHeader(city: string): Paragraph[] {
+  const paragraphs: Paragraph[] = [];
+
+  // Line 1: בבית הדין הרבני + תיק מס'
+  paragraphs.push(
+    new Paragraph({
+      children: [
+        new TextRun({
+          text: 'בבית הדין הרבני\t\t\t\t\t\tתיק מס\'\t\t    ',
+          size: 24,
+          font: 'David',
+          rightToLeft: true,
+        }),
+      ],
+      alignment: AlignmentType.START,
+      bidirectional: true,
+      spacing: { after: PARAGRAPH_SPACING / 2 },
+    })
+  );
+
+  // Line 2: City
+  paragraphs.push(
+    new Paragraph({
+      children: [
+        new TextRun({
+          text: `ב${city}`,
+          size: 24,
+          font: 'David',
+          rightToLeft: true,
+        }),
+      ],
+      alignment: AlignmentType.START,
+      bidirectional: true,
+      spacing: { after: PARAGRAPH_SPACING * 2 },
+    })
+  );
+
+  return paragraphs;
+}
+
+/**
+ * Create parties section matching lawyer's format
+ */
+function createPartiesSection(
+  basicInfo: BasicInfo,
+  plaintiff: GenderTerms,
+  defendant: GenderTerms
+): Paragraph[] {
+  const paragraphs: Paragraph[] = [];
+
+  // Plaintiff header
+  paragraphs.push(
+    new Paragraph({
+      children: [
+        new TextRun({
+          text: `התובע:\t\t\t ${basicInfo.fullName} ת.ז. ${basicInfo.idNumber}`,
+          size: 24,
+          font: 'David',
+          rightToLeft: true,
+        }),
+      ],
+      alignment: AlignmentType.START,
+      bidirectional: true,
+      spacing: { after: PARAGRAPH_SPACING / 2 },
+    })
+  );
+
+  // (הבעל/האישה)
+  paragraphs.push(
+    new Paragraph({
+      children: [
+        new TextRun({
+          text: `(${plaintiff.hebrewTitle})\t\t\tע"י ב"כ עוה"ד  אריאל דרור`,
+          size: 24,
+          font: 'David',
+          rightToLeft: true,
+        }),
+      ],
+      alignment: AlignmentType.START,
+      bidirectional: true,
+      spacing: { after: PARAGRAPH_SPACING / 2 },
+    })
+  );
+
+  // Lawyer address
+  paragraphs.push(
+    new Paragraph({
+      children: [
+        new TextRun({
+          text: '\t\t\tרח\' היצירה 3 רמת גן',
+          size: 24,
+          font: 'David',
+          rightToLeft: true,
+        }),
+      ],
+      alignment: AlignmentType.START,
+      bidirectional: true,
+      spacing: { after: PARAGRAPH_SPACING / 2 },
+    })
+  );
+
+  // Lawyer phone/fax
+  paragraphs.push(
+    new Paragraph({
+      children: [
+        new TextRun({
+          text: '\t\t\tטל\' 03-6951408  פקס\' 03-6951683',
+          size: 24,
+          font: 'David',
+          rightToLeft: true,
+        }),
+      ],
+      alignment: AlignmentType.START,
+      bidirectional: true,
+      spacing: { after: PARAGRAPH_SPACING },
+    })
+  );
+
+  // - נגד -
+  paragraphs.push(
+    new Paragraph({
+      children: [
+        new TextRun({
+          text: '\t\t\t\t-    נגד   - ',
+          size: 24,
+          font: 'David',
+          rightToLeft: true,
+        }),
+      ],
+      alignment: AlignmentType.START,
+      bidirectional: true,
+      spacing: { after: PARAGRAPH_SPACING * 2, before: PARAGRAPH_SPACING },
+    })
+  );
+
+  // Defendant header
+  const phone2 = basicInfo.phone2 ? ` פלאפון מספר ${basicInfo.phone2}` : '';
+  paragraphs.push(
+    new Paragraph({
+      children: [
+        new TextRun({
+          text: `הנתבע${defendant.pronoun === 'היא' ? 'ת' : ''}:\t\t`,
+          size: 24,
+          font: 'David',
+          rightToLeft: true,
+        }),
+        new TextRun({
+          text: `${basicInfo.fullName2} ת.ז. ${basicInfo.idNumber2}${phone2}`,
+          size: 24,
+          font: 'David',
+          rightToLeft: true,
+        }),
+      ],
+      alignment: AlignmentType.START,
+      bidirectional: true,
+      spacing: { after: PARAGRAPH_SPACING / 2 },
+    })
+  );
+
+  // (הבעל/האישה)
+  paragraphs.push(
+    new Paragraph({
+      children: [
+        new TextRun({
+          text: `(${defendant.hebrewTitle})\t\t\tמרחוב ${basicInfo.address2 || ''}`,
+          size: 24,
+          font: 'David',
+          rightToLeft: true,
+        }),
+      ],
+      alignment: AlignmentType.START,
+      bidirectional: true,
+      spacing: { after: PARAGRAPH_SPACING * 2 },
+    })
+  );
+
+  return paragraphs;
+}
+
+/**
+ * Create main title (underlined, centered)
+ */
+function createClaimTitle(text: string): Paragraph {
+  return new Paragraph({
+    children: [
+      new TextRun({
+        text: ` ${text}`,
+        bold: true,
+        underline: { type: UnderlineType.SINGLE },
+        size: 24,
+        font: 'David',
+        rightToLeft: true,
+      }),
+    ],
+    alignment: AlignmentType.CENTER,
+    bidirectional: true,
+    spacing: { before: PARAGRAPH_SPACING, after: PARAGRAPH_SPACING * 2 },
+  });
+}
+
+/**
+ * Create lettered section header (e.g., א.	כללי- רקע:)
+ * Note: Underlined header matching lawyer's format
+ */
+function createLetteredSectionHeader(letter: string, title: string): Paragraph {
+  return new Paragraph({
+    children: [
+      new TextRun({
+        text: `${letter}.\t`,
+        bold: true,
+        underline: { type: UnderlineType.SINGLE },
+        size: 24,
+        font: 'David',
+        rightToLeft: true,
+      }),
+      new TextRun({
+        text: `${title}:`,
+        bold: true,
+        underline: { type: UnderlineType.SINGLE },
+        size: 24,
+        font: 'David',
+        rightToLeft: true,
+      }),
+    ],
+    alignment: AlignmentType.START,
+    bidirectional: true,
+    spacing: { before: PARAGRAPH_SPACING * 2, after: PARAGRAPH_SPACING },
+  });
+}
+
+/**
+ * Create numbered paragraph item - with TAB after number for proper spacing
+ */
+function createNumberedParagraph(num: number, text: string): Paragraph {
+  return new Paragraph({
+    children: [
+      new TextRun({
+        text: `${num}.\t`,
+        size: 24,
+        font: 'David',
+        rightToLeft: true,
+      }),
+      new TextRun({
+        text: text,
+        size: 24,
+        font: 'David',
+        rightToLeft: true,
+      }),
+    ],
+    alignment: AlignmentType.START,
+    bidirectional: true,
+    spacing: { after: PARAGRAPH_SPACING, line: LINE_SPACING },
+  });
+}
+
+/**
+ * Create empty line for spacing
+ */
+function createEmptyLine(): Paragraph {
+  return new Paragraph({
+    children: [
+      new TextRun({
+        text: '',
+        size: 24,
+        font: 'David',
+      }),
+    ],
+    spacing: { after: PARAGRAPH_SPACING },
+  });
+}
+
 // ==================== SECTION GENERATORS ====================
 
 /**
@@ -167,7 +446,7 @@ async function generateBackgroundSection(
   const children = formData.children || [];
   const minorChildren = children.filter((child: Child) => isMinor(child.birthDate || ''));
 
-  paragraphs.push(createLetteredHeader('א', 'כללי - רקע'));
+  paragraphs.push(createLetteredSectionHeader('א', 'כללי- רקע'));
 
   // Paragraph 1: Marriage details
   const marriageDate = basicInfo.weddingDay ? formatDate(basicInfo.weddingDay) : '';
@@ -176,14 +455,14 @@ async function generateBackgroundSection(
     marriageText += ` ביום ${marriageDate}`;
   }
   marriageText += '.';
-  paragraphs.push(createNumberedItem(1, marriageText));
+  paragraphs.push(createNumberedParagraph(1, marriageText));
 
   // Paragraph 2: Children
   if (minorChildren.length > 0) {
     const childrenList = minorChildren.map(formatChildWithAge).join('; ו');
     const childWord = minorChildren.length === 1 ? 'ילדם/ילדתם' : `${minorChildren.length} ילדיהם`;
     const childrenText = `מנישואי בני הזוג נולד${minorChildren.length === 1 ? '' : 'ו'} לצדדים ${childWord}: ${childrenList}.`;
-    paragraphs.push(createNumberedItem(2, childrenText));
+    paragraphs.push(createNumberedParagraph(2, childrenText));
   }
 
   // Paragraph 3: Marriage quality and relationship
@@ -192,7 +471,7 @@ async function generateBackgroundSection(
   if (marriageQuality) {
     const qualityText = getMarriageQualityText(marriageQuality);
     const believeVerb = plaintiff.pronoun === 'היא' ? 'מאמינה' : 'מאמין';
-    paragraphs.push(createNumberedItem(nextNum++,
+    paragraphs.push(createNumberedParagraph(nextNum++,
       `${plaintiff.title}, אשר נישא${plaintiff.pronoun === 'היא' ? 'ה' : ''} ל${defendant.title} מאהבה ומתוך תקווה לבנות עמ${defendant.pronoun === 'היא' ? 'ה' : 'ו'} בית חם ומשפחה, ${believeVerb} כי ניתן לשקם את הנישואין. מערכת היחסים בתחילת הנישואין הייתה ${qualityText}.`
     ));
   }
@@ -224,7 +503,7 @@ async function generateBackgroundSection(
     }
 
     if (crisisText) {
-      paragraphs.push(createNumberedItem(nextNum++, crisisText));
+      paragraphs.push(createNumberedParagraph(nextNum++, crisisText));
     }
   }
 
@@ -239,7 +518,7 @@ async function generateBackgroundSection(
       livingText += `, וזאת מאז ${formatDate(separationDate)}`;
     }
     livingText += '.';
-    paragraphs.push(createNumberedItem(nextNum++, livingText));
+    paragraphs.push(createNumberedParagraph(nextNum++, livingText));
   }
 
   // Additional info about the situation (if provided)
@@ -254,9 +533,9 @@ async function generateBackgroundSection(
         additionalContext: 'יש לכתוב בגוף שלישי, בצורה עניינית, כפי שנכתב במסמך משפטי לבית דין רבני',
       };
       const transformed = await transformToLegalLanguage(additionalInfo, context);
-      paragraphs.push(createNumberedItem(nextNum++, transformed));
+      paragraphs.push(createNumberedParagraph(nextNum++, transformed));
     } catch {
-      paragraphs.push(createNumberedItem(nextNum++, additionalInfo));
+      paragraphs.push(createNumberedParagraph(nextNum++, additionalInfo));
     }
   }
 
@@ -266,34 +545,37 @@ async function generateBackgroundSection(
 /**
  * Section ב - יש למצות את הליך שלום הבית
  * (The reconciliation process must be exhausted)
+ * Note: Final request paragraph is included at the end of this section
  */
 async function generateReconciliationSection(
   basicInfo: BasicInfo,
   formData: FormData,
   plaintiff: GenderTerms,
-  defendant: GenderTerms
+  defendant: GenderTerms,
+  startingItemNum: number
 ): Promise<Paragraph[]> {
   const paragraphs: Paragraph[] = [];
   const shalomBayitData = formData.shalomBayit || {};
   const children = formData.children || [];
   const minorChildren = children.filter((child: Child) => isMinor(child.birthDate || ''));
 
-  paragraphs.push(createLetteredHeader('ב', 'יש למצות את הליך שלום הבית - מהסיבות הבאות'));
+  paragraphs.push(createEmptyLine());
+  paragraphs.push(createLetteredSectionHeader('ב', 'יש למצות את הליך שלום הבית- וזאת מהסיבות הבאות'));
 
-  let itemNum = 1;
+  let itemNum = startingItemNum;
   const believeVerb = plaintiff.pronoun === 'היא' ? 'תטען' : 'יטען';
   const marriedVerb = plaintiff.pronoun === 'היא' ? 'התחתנה' : 'התחתן';
 
   // Main argument - reconciliation hasn't been exhausted
-  paragraphs.push(createNumberedItem(itemNum++,
+  paragraphs.push(createNumberedParagraph(itemNum++,
     `${plaintiff.title} ${believeVerb} כי ניסיון שלום הבית לא מוצה. בקשר בין בני זוג תמיד יש ותמיד יהיו עליות ומורדות, ועליהם לדעת להתמודד איתם. ${plaintiff.title} לא ${marriedVerb} כדי להתגרש, ו${plaintiff.pronoun} מאמינ${plaintiff.pronoun === 'היא' ? 'ה' : ''} בלב שלם כי ניתן לתקן הכל.`
   ));
 
-  // Children argument
+  // Children argument (like in the reference: "וכאשר בתווך מצויה ילדה...")
   if (minorChildren.length > 0) {
-    const childWord = minorChildren.length === 1 ? 'ילדה' : 'ילדים';
+    const childRef = minorChildren.length === 1 ? 'ילד/ה' : 'ילדים';
     const deserveWord = minorChildren.length === 1 ? 'ראוי/ה' : 'ראויים';
-    paragraphs.push(createNumberedItem(itemNum++,
+    paragraphs.push(createNumberedParagraph(itemNum++,
       `לצדדים ${minorChildren.length === 1 ? 'ילד/ה קטין/ה' : `${minorChildren.length} ילדים קטינים`} אשר ${deserveWord} לגור עם שני הוריהם בתא משפחתי שלם ומתפקד. על כן מגיש/ה כעת ${plaintiff.title} תביעה זו, על מנת ליתן סיכוי אמיתי לשקם הנישואין ולחזור לשלום בית, למען המשפחה.`
     ));
   }
@@ -301,7 +583,7 @@ async function generateReconciliationSection(
   // Previous attempts
   const previousAttempts = shalomBayitData.previousAttempts;
   if (previousAttempts) {
-    paragraphs.push(createNumberedItem(itemNum++, getPreviousAttemptsText(previousAttempts)));
+    paragraphs.push(createNumberedParagraph(itemNum++, getPreviousAttemptsText(previousAttempts)));
   }
 
   // Counseling details
@@ -316,16 +598,16 @@ async function generateReconciliationSection(
         additionalContext: 'יש לכתוב בגוף שלישי, כמסמך משפטי, ולציין כי הטיפול לא מוצה',
       };
       const transformed = await transformToLegalLanguage(counselingDetails, context);
-      paragraphs.push(createNumberedItem(itemNum++, transformed));
+      paragraphs.push(createNumberedParagraph(itemNum++, transformed));
     } catch {
-      paragraphs.push(createNumberedItem(itemNum++, `פרטי הטיפול: ${counselingDetails}`));
+      paragraphs.push(createNumberedParagraph(itemNum++, `פרטי הטיפול: ${counselingDetails}`));
     }
   }
 
   // Partner willingness
   const partnerWillingness = shalomBayitData.partnerWillingness;
   if (partnerWillingness) {
-    paragraphs.push(createNumberedItem(itemNum++, getPartnerWillingnessText(partnerWillingness, defendant)));
+    paragraphs.push(createNumberedParagraph(itemNum++, getPartnerWillingnessText(partnerWillingness, defendant)));
   }
 
   // What would help
@@ -340,58 +622,41 @@ async function generateReconciliationSection(
         additionalContext: 'יש לכתוב בגוף שלישי, בצורה עניינית כמסמך משפטי',
       };
       const transformed = await transformToLegalLanguage(whatWouldHelp, context);
-      paragraphs.push(createNumberedItem(itemNum++, `${plaintiff.title} סבור${plaintiff.pronoun === 'היא' ? 'ה' : ''} כי ${transformed}`));
+      paragraphs.push(createNumberedParagraph(itemNum++, `${plaintiff.title} סבור${plaintiff.pronoun === 'היא' ? 'ה' : ''} כי ${transformed}`));
     } catch {
-      paragraphs.push(createNumberedItem(itemNum++, `${plaintiff.title} סבור${plaintiff.pronoun === 'היא' ? 'ה' : ''} כי: ${whatWouldHelp}`));
+      paragraphs.push(createNumberedParagraph(itemNum++, `${plaintiff.title} סבור${plaintiff.pronoun === 'היא' ? 'ה' : ''} כי: ${whatWouldHelp}`));
     }
   }
 
   // Commitment
   const commitment = shalomBayitData.commitment;
   if (commitment) {
-    paragraphs.push(createNumberedItem(itemNum++, getCommitmentText(commitment, plaintiff)));
+    paragraphs.push(createNumberedParagraph(itemNum++, getCommitmentText(commitment, plaintiff)));
   }
 
   // No grounds for divorce
-  paragraphs.push(createNumberedItem(itemNum++,
+  paragraphs.push(createNumberedParagraph(itemNum++,
     `יודגש כי לא קיימת כל עילת גירושין בין הצדדים אשר יש בה כדי למנוע את מיצוי הליך שלום הבית. ${plaintiff.title} מאמינ${plaintiff.pronoun === 'היא' ? 'ה' : ''} כי גם המשברים הקיימים הינם נפוצים, מצויים אצל זוגות רבים, וניתנים לתיקון.`
   ));
 
   // Willingness to do everything
   const readyVerb = plaintiff.pronoun === 'היא' ? 'מוכנה' : 'מוכן';
-  paragraphs.push(createNumberedItem(itemNum++,
+  paragraphs.push(createNumberedParagraph(itemNum++,
     `${plaintiff.title} ${readyVerb} ללכת לכל סוג של ייעוץ, ולבצע את כל שיוטל עלי${plaintiff.pronoun === 'היא' ? 'ה' : 'ו'} על מנת לנסות ולשקם הנישואין, בצורה כנה ואמיתית.`
   ));
 
-  return paragraphs;
-}
-
-/**
- * Generate request section
- */
-function generateRequestSection(
-  plaintiff: GenderTerms,
-  defendant: GenderTerms
-): Paragraph[] {
-  const paragraphs: Paragraph[] = [];
-
-  paragraphs.push(createSectionHeader('הבקשה'));
-
-  paragraphs.push(createBodyParagraph(
-    `אשר על כן, מבקש/ת ${plaintiff.title} מכבוד בית הדין:`
+  // Final request - as part of section ב (like in lawyer's template - item 15)
+  paragraphs.push(createNumberedParagraph(itemNum++,
+    `אשר על כן, מבוקש כי כב' ביה"ד יורה על שלום בית, לרבות שליחת הצדדים לטיפול זוגי מקיף לצורך פתרון המשבר אליו נקלעו.`
   ));
 
-  paragraphs.push(createNumberedItem(1, 'להורות על שלום בית.'));
-  paragraphs.push(createNumberedItem(2, 'לשלוח את הצדדים לטיפול זוגי מקיף לצורך פתרון המשבר אליו נקלעו.'));
-  paragraphs.push(createNumberedItem(3, 'להפנות את הצדדים ליחידת הסיוע לצורך ייעוץ.'));
-  paragraphs.push(createNumberedItem(4, `לחייב את ${defendant.title} לשוב לחיי שלום בית עם ${plaintiff.title}.`));
-  paragraphs.push(createNumberedItem(5, 'כל סעד אחר שכבוד בית הדין ימצא לנכון.'));
-
   return paragraphs;
 }
 
+// Request section removed - request is now part of section ב (final numbered item)
+
 /**
- * Generate signature section
+ * Generate signature section matching lawyer's format
  */
 function generateSignatureSection(
   basicInfo: BasicInfo,
@@ -402,43 +667,47 @@ function generateSignatureSection(
   const paragraphs: Paragraph[] = [];
 
   // Spacing before signatures
-  paragraphs.push(new Paragraph({ children: [], spacing: { before: SPACING.SECTION * 2 } }));
+  paragraphs.push(createEmptyLine());
+  paragraphs.push(createEmptyLine());
+  paragraphs.push(createEmptyLine());
 
   // Two-column signature layout (plaintiff on right, lawyer on left)
   paragraphs.push(new Paragraph({
     children: [
       new TextRun({
-        text: '_____________\t\t\t\t_____________',
+        text: '_____________\t\t\t\t\t\t____________',
         font: 'David',
-        size: FONT_SIZES.BODY,
+        size: 24,
         rightToLeft: true,
       }),
     ],
     alignment: AlignmentType.CENTER,
     bidirectional: true,
-    spacing: { after: SPACING.MINIMAL },
+    spacing: { after: PARAGRAPH_SPACING / 2 },
   }));
 
+  // Names
   paragraphs.push(new Paragraph({
     children: [
       new TextRun({
-        text: `${basicInfo.fullName}\t\t\t\t\tעו"ד אריאל דרור`,
+        text: `${basicInfo.fullName}\t\t\t\t\t\t   אריאל דרור, עו"ד`,
         font: 'David',
-        size: FONT_SIZES.BODY,
+        size: 24,
         rightToLeft: true,
       }),
     ],
     alignment: AlignmentType.CENTER,
     bidirectional: true,
-    spacing: { after: SPACING.MINIMAL },
+    spacing: { after: PARAGRAPH_SPACING / 2 },
   }));
 
+  // Titles
   paragraphs.push(new Paragraph({
     children: [
       new TextRun({
-        text: `${plaintiff.title}\t\t\t\t\tב"כ ${plaintiff.title}`,
+        text: `${plaintiff.title}\t\t\t\t\t\t\t\tב"כ ${plaintiff.title}`,
         font: 'David',
-        size: FONT_SIZES.BODY,
+        size: 24,
         rightToLeft: true,
       }),
     ],
@@ -463,29 +732,30 @@ export async function generateShalomBayitClaim(data: ShalomBayitData): Promise<B
   // Build document sections
   const sections: Paragraph[] = [];
 
-  // Court header
+  // Court header (matching lawyer's format)
   const city = basicInfo.address?.split(',').pop()?.trim() || 'תל אביב';
-  sections.push(...createCourtHeader({
-    city,
-    judgeName: '',
-    basicInfo,
-    forum: 'בבית הדין הרבני',
-    showJudgeLine: false,
-    showChildrenList: false,
-    docketNumberPlaceholder: 'תיק מס\' ____________',
-  }));
+  sections.push(...createRabbinicalCourtHeader(city));
 
-  // Main title
-  sections.push(createMainTitle('תביעה לשלום בית'));
+  // Parties section (plaintiff/defendant)
+  sections.push(...createPartiesSection(basicInfo, plaintiff, defendant));
+
+  // Main title (underlined, centered)
+  sections.push(createClaimTitle('תביעה לשלום בית'));
 
   // Section א - Background
-  sections.push(...await generateBackgroundSection(basicInfo, formData, plaintiff, defendant));
+  const backgroundSections = await generateBackgroundSection(basicInfo, formData, plaintiff, defendant);
+  sections.push(...backgroundSections);
 
-  // Section ב - Reconciliation must be exhausted
-  sections.push(...await generateReconciliationSection(basicInfo, formData, plaintiff, defendant));
+  // Count items in section א to continue numbering in section ב
+  // (We start from item 8 as a reasonable estimate, or we can track actual count)
+  const sectionAItemCount = backgroundSections.filter(p => {
+    // Count paragraphs that look like numbered items
+    const text = p.root?.[0]?.text || '';
+    return /^\d+\./.test(text);
+  }).length || 7;
 
-  // Request section
-  sections.push(...generateRequestSection(plaintiff, defendant));
+  // Section ב - Reconciliation must be exhausted (continues numbering from section א)
+  sections.push(...await generateReconciliationSection(basicInfo, formData, plaintiff, defendant, sectionAItemCount + 1));
 
   // Signature section
   sections.push(...generateSignatureSection(basicInfo, plaintiff, signature, lawyerSignature));

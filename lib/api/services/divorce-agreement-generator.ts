@@ -1,11 +1,6 @@
 /**
- * Divorce Agreement Document Generator (הסכם גירושין) - COMPACT VERSION
- *
- * Features:
- * - Smart referencing: References other claims (property/custody/alimony) when they exist
- * - Structured format: Uses radio options instead of free-text for reliability
- * - Groq AI transformation: Transforms small custom text fields to legal language
- * - Compact output: Avoids redundancy with other submitted claims
+ * Divorce Agreement Document Generator (הסכם גירושין)
+ * Format based on lawyer's approved templates - ready for court submission.
  */
 
 import {
@@ -14,6 +9,9 @@ import {
   Paragraph,
   TextRun,
   AlignmentType,
+  UnderlineType,
+  TabStopType,
+  TabStopPosition,
   convertInchesToTwip,
 } from 'docx';
 import { BasicInfo, FormData } from '@/lib/api/types';
@@ -21,21 +19,9 @@ import {
   FONT_SIZES,
   SPACING,
   formatDate,
-  formatChildNaturally,
-  formatCurrency,
   isMinor,
-  createSectionHeader,
-  createSubsectionHeader,
-  createBodyParagraph,
-  createNumberedItem,
-  createBulletPoint,
-  createMainTitle,
-  createCenteredTitle,
-  createInfoLine,
   createPageBreak,
   createSignatureImage,
-  createCourtHeader,
-  createRelationshipSection,
   generatePowerOfAttorney,
   generateAffidavit,
   generateAttachmentsSection,
@@ -53,57 +39,188 @@ interface DivorceAgreementData {
     description: string;
     images: Buffer[];
   }>;
-  selectedClaims?: string[]; // To detect if other claims exist
+  selectedClaims?: string[];
 }
 
+// Constants for formatting
+const TWIPS_PER_CM = 567;
+const INDENT_SMALL = TWIPS_PER_CM * 0.5;
+const INDENT_MEDIUM = TWIPS_PER_CM * 1;
+const INDENT_LARGE = TWIPS_PER_CM * 1.5;
+const LINE_SPACING = 360; // 1.5 line spacing
+const PARAGRAPH_SPACING = 240;
+const SECTION_SPACING = 480;
+
 /**
- * Get gendered conjugation for parties
+ * Get Hebrew month name
  */
-function getGenderedTerms(gender1?: 'male' | 'female', gender2?: 'male' | 'female'): {
-  applicantTerm: string;
-  respondentTerm: string;
-  pluralAgreed: string;
-  pluralDeclare: string;
-  pluralUnderstand: string;
-} {
-  const g1 = gender1 || 'male';
-  const g2 = gender2 || 'male';
-  const useMalePlural = g1 === 'male' || g2 === 'male';
-
-  return {
-    applicantTerm: g1 === 'male' ? 'בעל' : 'אישה',
-    respondentTerm: g2 === 'male' ? 'בעל' : 'אישה',
-    pluralAgreed: useMalePlural ? 'המסכימים' : 'המסכימות',
-    pluralDeclare: useMalePlural ? 'מצהירים' : 'מצהירות',
-    pluralUnderstand: useMalePlural ? 'מבינים' : 'מבינות',
-  };
+function getHebrewMonth(month: number): string {
+  const months = ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני', 'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'];
+  return months[month] || '';
 }
 
 /**
- * Convert number to Hebrew letter (1 = א, 2 = ב, etc.)
+ * Format date like "09 נובמבר 2021"
  */
-function numberToHebrewLetter(num: number): string {
-  const letters = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ז', 'ח', 'ט', 'י'];
-  return letters[num - 1] || String(num);
+function formatHebrewDate(date: Date): string {
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = getHebrewMonth(date.getMonth());
+  const year = date.getFullYear();
+  return `${day} ${month} ${year}`;
 }
 
 /**
- * Get marriage duration text
+ * Format currency with ₪ symbol
  */
-function getMarriageDuration(weddingDay?: string): string {
-  if (!weddingDay) return '';
-
-  const wedding = new Date(weddingDay);
-  const today = new Date();
-  const years = today.getFullYear() - wedding.getFullYear();
-
-  if (years <= 0) return '';
-  if (years === 1) return ' (נישואים בני שנה)';
-  return ` (נישואים בני ${years} שנים)`;
+function formatCurrency(amount: string | number): string {
+  const num = typeof amount === 'string' ? parseFloat(amount) : amount;
+  return `${num.toLocaleString('he-IL')} ₪`;
 }
 
 /**
- * Generate divorce agreement document - COMPACT VERSION
+ * Create main title paragraph
+ */
+function createTitle(text: string): Paragraph {
+  return new Paragraph({
+    children: [
+      new TextRun({
+        text,
+        bold: true,
+        size: 32, // 16pt
+        font: 'David',
+        rightToLeft: true,
+      }),
+    ],
+    alignment: AlignmentType.CENTER,
+    spacing: { after: SECTION_SPACING },
+    bidirectional: true,
+  });
+}
+
+/**
+ * Create date line
+ */
+function createDateLine(city: string, date: string): Paragraph {
+  return new Paragraph({
+    children: [
+      new TextRun({
+        text: `שנערך ונחתם ב${city} ביום ${date}`,
+        size: 24,
+        font: 'David',
+        rightToLeft: true,
+      }),
+    ],
+    alignment: AlignmentType.CENTER,
+    spacing: { after: SECTION_SPACING },
+    bidirectional: true,
+  });
+}
+
+/**
+ * Create section header (bold, underlined) - with extra spacing before/after
+ */
+function createSectionHeader(text: string): Paragraph {
+  return new Paragraph({
+    children: [
+      new TextRun({
+        text,
+        bold: true,
+        underline: { type: UnderlineType.SINGLE },
+        size: 24,
+        font: 'David',
+        rightToLeft: true,
+      }),
+    ],
+    alignment: AlignmentType.START,
+    spacing: { before: SECTION_SPACING * 1.5, after: PARAGRAPH_SPACING },
+    bidirectional: true,
+  });
+}
+
+/**
+ * Create subsection header (bold only)
+ */
+function createSubsectionHeader(text: string): Paragraph {
+  return new Paragraph({
+    children: [
+      new TextRun({
+        text,
+        bold: true,
+        size: 24,
+        font: 'David',
+        rightToLeft: true,
+      }),
+    ],
+    alignment: AlignmentType.START,
+    spacing: { before: PARAGRAPH_SPACING, after: PARAGRAPH_SPACING },
+    bidirectional: true,
+  });
+}
+
+/**
+ * Create indented body paragraph
+ */
+function createBodyParagraph(text: string, indent: number = INDENT_SMALL): Paragraph {
+  return new Paragraph({
+    children: [
+      new TextRun({
+        text,
+        size: 24,
+        font: 'David',
+        rightToLeft: true,
+      }),
+    ],
+    alignment: AlignmentType.START,
+    spacing: { after: PARAGRAPH_SPACING, line: LINE_SPACING },
+    indent: { start: indent },
+    bidirectional: true,
+  });
+}
+
+/**
+ * Create הואיל paragraph - with TAB after prefix, matching lawyer format exactly
+ */
+function createRecitalParagraph(prefix: string, text: string): Paragraph {
+  return new Paragraph({
+    children: [
+      new TextRun({
+        text: prefix + '  \t',  // Space + TAB after הואיל/והואיל
+        bold: true,
+        size: 24,
+        font: 'David',
+        rightToLeft: true,
+      }),
+      new TextRun({
+        text,
+        size: 24,
+        font: 'David',
+        rightToLeft: true,
+      }),
+    ],
+    alignment: AlignmentType.START,
+    spacing: { after: PARAGRAPH_SPACING, line: LINE_SPACING },
+    bidirectional: true,
+  });
+}
+
+/**
+ * Create empty line for spacing - matches lawyer's document formatting
+ */
+function createEmptyLine(): Paragraph {
+  return new Paragraph({
+    children: [
+      new TextRun({
+        text: '',
+        size: 24,
+        font: 'David',
+      }),
+    ],
+    spacing: { after: LINE_SPACING },
+  });
+}
+
+/**
+ * Generate divorce agreement document
  */
 export async function generateDivorceAgreement(data: DivorceAgreementData): Promise<Buffer> {
   const {
@@ -116,137 +233,424 @@ export async function generateDivorceAgreement(data: DivorceAgreementData): Prom
     selectedClaims = [],
   } = data;
 
-  console.log('📝 Generating Compact Divorce Agreement Document...');
+  console.log('📝 Generating Divorce Agreement (court-ready format)...');
 
   const divorceData = formData.divorceAgreement || {};
   const propertyData = formData.property || {};
   const children = propertyData.children || [];
   const minors = children.filter((child: any) => isMinor(child.birthDate));
 
-  const terms = getGenderedTerms(basicInfo.gender, basicInfo.gender2);
+  const today = new Date();
+  const todayFormatted = formatHebrewDate(today);
+  const city = basicInfo.address?.split(',').pop()?.trim() || 'תל אביב';
 
-  // Detect if other claims exist
+  // Detect other claims
   const hasPropertyClaim = selectedClaims.includes('property');
   const hasCustodyClaim = selectedClaims.includes('custody');
   const hasAlimonyClaim = selectedClaims.includes('alimony');
 
-  console.log(`📋 Other claims: Property=${hasPropertyClaim}, Custody=${hasCustodyClaim}, Alimony=${hasAlimonyClaim}`);
-
-  // Context for Groq transformations
+  // Groq context
   const groqContext: Omit<TransformContext, 'fieldLabel' | 'additionalContext'> = {
     claimType: 'הסכם גירושין',
     applicantName: basicInfo.fullName || 'המבקש/ת',
     respondentName: basicInfo.fullName2 || 'המשיב/ה',
   };
 
+  // Determine wife/husband based on gender
+  const applicantIsWife = basicInfo.gender === 'female';
+  const wifeName = applicantIsWife ? basicInfo.fullName : basicInfo.fullName2;
+  const wifeId = applicantIsWife ? basicInfo.idNumber : basicInfo.idNumber2;
+  const husbandName = applicantIsWife ? basicInfo.fullName2 : basicInfo.fullName;
+  const husbandId = applicantIsWife ? basicInfo.idNumber2 : basicInfo.idNumber;
+
   const paragraphs: Paragraph[] = [];
 
-  // ========== 1. MAIN TITLE ==========
-  // Note: This is an AGREEMENT (הסכם), not a CLAIM (תביעה)
-  // Therefore, we don't use court header with plaintiff/defendant terminology
-  paragraphs.push(createMainTitle('הסכם גירושין'));
+  // ==================== TITLE ====================
+  paragraphs.push(createTitle('הסכם גירושין ומזונות'));
 
-  // ========== 2. PARTIES HEADER ==========
+  // ==================== DATE LINE ====================
+  paragraphs.push(createDateLine(city, todayFormatted));
+
+  // ==================== PARTIES ====================
+  // בין:
   paragraphs.push(
     new Paragraph({
       children: [
         new TextRun({
-          text: 'בין:',
+          text: '\t\tבין:',
           bold: true,
-          size: FONT_SIZES.HEADING_2,
+          size: 24,
           font: 'David',
           rightToLeft: true,
         }),
       ],
       alignment: AlignmentType.START,
-      spacing: { before: SPACING.SECTION, after: SPACING.MINIMAL },
+      spacing: { after: PARAGRAPH_SPACING },
       bidirectional: true,
     })
   );
 
-  // Party 1 (Applicant)
-  paragraphs.push(createInfoLine('שם מלא', basicInfo.fullName || ''));
-  paragraphs.push(createInfoLine('ת.ז', basicInfo.idNumber || ''));
-  paragraphs.push(createInfoLine('כתובת', basicInfo.address || ''));
+  // Wife info
+  paragraphs.push(
+    new Paragraph({
+      children: [
+        new TextRun({
+          text: `\t\t${wifeName}\tת.ז. ${wifeId}\t\tלהלן "האישה${minors.length > 0 ? ' ו/או האם' : ''}"`,
+          size: 24,
+          font: 'David',
+          rightToLeft: true,
+        }),
+      ],
+      alignment: AlignmentType.START,
+      spacing: { after: PARAGRAPH_SPACING },
+      bidirectional: true,
+    })
+  );
 
-  paragraphs.push(createCenteredTitle('לבין:', FONT_SIZES.HEADING_2));
+  // מצד אחד
+  paragraphs.push(
+    new Paragraph({
+      children: [
+        new TextRun({
+          text: 'מצד אחד',
+          size: 24,
+          font: 'David',
+          rightToLeft: true,
+        }),
+      ],
+      alignment: AlignmentType.LEFT,
+      spacing: { after: PARAGRAPH_SPACING },
+      bidirectional: true,
+    })
+  );
 
-  // Party 2 (Respondent)
-  paragraphs.push(createInfoLine('שם מלא', basicInfo.fullName2 || ''));
-  paragraphs.push(createInfoLine('ת.ז', basicInfo.idNumber2 || ''));
-  paragraphs.push(createInfoLine('כתובת', basicInfo.address2 || ''));
+  // לבין:
+  paragraphs.push(
+    new Paragraph({
+      children: [
+        new TextRun({
+          text: '\t\tלבין:',
+          bold: true,
+          size: 24,
+          font: 'David',
+          rightToLeft: true,
+        }),
+      ],
+      alignment: AlignmentType.START,
+      spacing: { after: PARAGRAPH_SPACING },
+      bidirectional: true,
+    })
+  );
 
-  // ========== 3. REGARDING MINORS (if applicable) ==========
+  // Husband info
+  paragraphs.push(
+    new Paragraph({
+      children: [
+        new TextRun({
+          text: `\t\t${husbandName}\tת.ז. ${husbandId}\t\tלהלן "הבעל${minors.length > 0 ? ' ו/או האב' : ''}"`,
+          size: 24,
+          font: 'David',
+          rightToLeft: true,
+        }),
+      ],
+      alignment: AlignmentType.START,
+      spacing: { after: PARAGRAPH_SPACING },
+      bidirectional: true,
+    })
+  );
+
+  // מצד שני
+  paragraphs.push(
+    new Paragraph({
+      children: [
+        new TextRun({
+          text: 'מצד שני',
+          size: 24,
+          font: 'David',
+          rightToLeft: true,
+        }),
+      ],
+      alignment: AlignmentType.LEFT,
+      spacing: { after: PARAGRAPH_SPACING },
+      bidirectional: true,
+    })
+  );
+
+  // Empty line before recitals
+  paragraphs.push(createEmptyLine());
+
+  // ==================== הואיל (RECITALS) ====================
+  const weddingDate = basicInfo.weddingDay ? formatDate(basicInfo.weddingDay) : '____________';
+
+  // First הואיל - marriage
+  paragraphs.push(
+    createRecitalParagraph(
+      'הואיל',
+      `והאישה והבעל (להלן "בני הזוג" ו/או "הצדדים"), נישאו זל"ז כדמו"י ביום ${weddingDate};`
+    )
+  );
+
+  // והואיל - children (if any)
   if (minors.length > 0) {
-    paragraphs.push(
-      new Paragraph({
-        children: [
-          new TextRun({
-            text: `בעניין ${minors.length === 1 ? 'הקטין/ה' : 'הקטינים'}:`,
-            bold: true,
-            size: FONT_SIZES.HEADING_2,
-            font: 'David',
-            rightToLeft: true,
-          }),
-        ],
-        alignment: AlignmentType.START,
-        spacing: { before: SPACING.PARAGRAPH, after: SPACING.MINIMAL },
-        bidirectional: true,
-      })
-    );
-
-    minors.forEach((child: any) => {
+    if (minors.length === 1) {
+      const child = minors[0];
       paragraphs.push(
-        createBulletPoint(formatChildNaturally(child))
+        createRecitalParagraph(
+          'והואיל',
+          `ומנישואיהם לבני הזוג נולד/ה ${child.firstName} ${child.lastName || ''} ת.ז. ${child.idNumber || ''} (להלן: "הילד/ה");`
+        )
       );
-    });
-
-    paragraphs.push(
-      new Paragraph({
-        children: [],
-        spacing: { after: SPACING.SECTION },
-      })
-    );
+    } else {
+      let childText = `ומנישואיהם לבני הזוג נולדו ${minors.length} ילדים:\n`;
+      minors.forEach((child: any, index: number) => {
+        childText += `                   ${index + 1}. ${child.firstName} ${child.lastName || ''} ת.ז. ${child.idNumber || ''}\n`;
+      });
+      childText += `                   (להלן: "הילדים");`;
+      paragraphs.push(createRecitalParagraph('והואיל', childText));
+    }
   }
 
-  // ========== 4. OPENING STATEMENT ==========
-  paragraphs.push(createSectionHeader('פתיח'));
-
-  const weddingDate = basicInfo.weddingDay ? formatDate(basicInfo.weddingDay) : '__________';
-  const marriageDuration = getMarriageDuration(basicInfo.weddingDay);
-
+  // והואיל - relationship ended
   paragraphs.push(
-    createBodyParagraph(
-      `${basicInfo.fullName} ו${basicInfo.fullName2} נישאו ביום ${weddingDate}${marriageDuration}.`
+    createRecitalParagraph(
+      'והואיל',
+      'והחיים המשותפים בין בני הזוג עלו על שרטון וכל הניסיונות ליישב הסכסוך שביניהם עלו בתוהו;'
     )
   );
 
-  // Use shared relationship section for consistency (all children, not just minors)
-  const relationshipParagraph = createRelationshipSection(basicInfo, formData, children);
-  paragraphs.push(relationshipParagraph);
-
-  // Mutual agreement statement
+  // והואיל - want to divorce
   paragraphs.push(
-    createBodyParagraph(
-      `בני הזוג ${terms.pluralAgreed} בזאת להתגרש בהסכמה ולסיים את חיי הנישואין המשותפים ביניהם.`,
-      { after: SPACING.SECTION }
+    createRecitalParagraph(
+      'והואיל',
+      'וברצון בני הזוג להתגרש זמ"ז בג"פ כדמו"י בהקדם האפשרי;'
     )
   );
 
-  // ========== 5. AGREEMENT TERMS ==========
-  paragraphs.push(createSectionHeader('תנאי ההסכם'));
+  // והואיל - agreement reached
+  const agreementText = minors.length > 0
+    ? 'ובני הזוג הגיעו ביניהם להסכמה בכל העניינים הנובעים מנישואיהם והכרוכים בגירושיהם, לרבות ומבלי לפגוע בכלליות האמור, גט, מזונות, החזקת הילדים וחלוקת הרכוש בין בני הזוג;'
+    : 'ובני הזוג הגיעו ביניהם להסכמה בכל העניינים הנובעים מנישואיהם והכרוכים בגירושיהם, לרבות ומבלי לפגוע בכלליות האמור, גט וחלוקת הרכוש בין בני הזוג;';
 
+  paragraphs.push(createRecitalParagraph('והואיל', agreementText));
+
+  // Empty line before לפיכך
+  paragraphs.push(createEmptyLine());
+
+  // לפיכך
   paragraphs.push(
-    createBodyParagraph(
-      `בני הזוג הגיעו להסכמות הבאות בכל הנושאים הקשורים לגירושיהם, והם ${terms.pluralDeclare} כי הסכמות אלה נעשו מרצון חופשי, ללא כפייה או לחץ, ומתוך הבנה מלאה של המשמעויות המשפטיות של ההסכם.`
-    )
+    new Paragraph({
+      children: [
+        new TextRun({
+          text: 'לפיכך הוצהר, הוסכם והותנה בין הצדדים כלהלן:',
+          bold: true,
+          size: 24,
+          font: 'David',
+          rightToLeft: true,
+        }),
+      ],
+      alignment: AlignmentType.START,
+      spacing: { before: SECTION_SPACING, after: SECTION_SPACING },
+      bidirectional: true,
+    })
   );
 
-  let sectionCounter = 0;
+  // ==================== מבוא ====================
+  paragraphs.push(createSectionHeader('מבוא'));
+  paragraphs.push(createBodyParagraph('המבוא להסכם זה הינו חלק בלתי נפרד ממנו.'));
+  paragraphs.push(createEmptyLine());
 
-  // ========== SECTION A: PROPERTY DIVISION ==========
-  sectionCounter++;
-  paragraphs.push(createSubsectionHeader(`סעיף ${numberToHebrewLetter(sectionCounter)} - חלוקת רכוש`));
+  // ==================== גירושין ====================
+  paragraphs.push(createSectionHeader('גירושין'));
+  paragraphs.push(
+    createBodyParagraph(
+      'בני הזוג מסכימים להיפרד זמ"ז בג"פ כדמו"י ולשם כך הם יגישו בקשה לבית הדין הרבני תוך שבעה ימים ממועד אישור הסכם זה.'
+    )
+  );
+  paragraphs.push(
+    createBodyParagraph(
+      'הצדדים יישאו בחלקים שווים באגרות הכרוכות בהסדרת גירושיהם בביה"ד הרבני.'
+    )
+  );
+  paragraphs.push(createEmptyLine());
+
+  // ==================== אפוטרופסות (if children) ====================
+  if (minors.length > 0) {
+    paragraphs.push(createSectionHeader('אפוטרופסות'));
+
+    const childRef = minors.length === 1 ? 'הילד/ה' : 'הילדים';
+
+    paragraphs.push(
+      createBodyParagraph(
+        `הצדדים מצהירים, כי הוראות הסכם זה גובשו ביניהם בהסכמה מתוך ראייתם את טובת ${childRef} וכי הינם פועלים ויפעלו בעתיד בכל עניין הקשור ${minors.length === 1 ? 'אליו/ה' : 'אליהם'} רק על פי טובתם.`
+      )
+    );
+
+    paragraphs.push(
+      createBodyParagraph(
+        `מוסכם על הצדדים כי הן הבעל והן האישה היו והינם האפוטרופסים המשותפים על ${childRef} וכי אין בכל האמור בהסכם זה כדי לפגוע באפוטרופסותם זו. הצדדים מתחייבים לנהוג האחד כלפי השני בכבוד ובדרך ראויה, להימנע מלהשמיץ האחד את השני ו/או האחד את משפחתו המורחבת של השני בפני ${childRef}, להימנע מלפגוע האחד בשני בפני ${childRef}, להימנע מלערב את ${childRef} בכל דרך שהיא בכל מחלוקת הקיימת או שתתקיים ביניהם בעתיד, לשמור ולכבד את סמכותו ההורית של ההורה האחר ולחנך את ${childRef} ברוח כיבוד ואהבת אב ואם.`
+      )
+    );
+    paragraphs.push(createEmptyLine());
+  }
+
+  // ==================== משמורת והסדרי שהייה (if children) ====================
+  if (minors.length > 0) {
+    paragraphs.push(createSectionHeader('משמורת והסדרי שהייה'));
+
+    const childRef = minors.length === 1 ? 'הילד/ה' : 'הילדים';
+    const custodyAgreement = divorceData.custodyAgreement;
+
+    if (custodyAgreement === 'referenceClaim' && hasCustodyClaim) {
+      paragraphs.push(
+        createBodyParagraph(
+          `הסדרי המשמורת על ${childRef} יהיו כמפורט בתביעת המשמורת הנפרדת שהוגשה לבית המשפט.`
+        )
+      );
+    } else if (custodyAgreement === 'applicantCustody') {
+      const custodyParent = applicantIsWife ? 'האם' : 'האב';
+      const otherParent = applicantIsWife ? 'האב' : 'האם';
+      paragraphs.push(
+        createBodyParagraph(
+          `מוסכם על הצדדים, כי ${childRef} ${minors.length === 1 ? 'יהיה/תהיה' : 'יהיו'} במשמורת מלאה של ${custodyParent}.`
+        )
+      );
+      paragraphs.push(
+        createBodyParagraph(
+          `${otherParent} יהיה/תהיה זכאי/ת להסדרי ראייה שיתואמו בהסכמה בין ההורים, תוך שמירה על טובת ${childRef}.`
+        )
+      );
+    } else if (custodyAgreement === 'respondentCustody') {
+      const custodyParent = applicantIsWife ? 'האב' : 'האם';
+      const otherParent = applicantIsWife ? 'האם' : 'האב';
+      paragraphs.push(
+        createBodyParagraph(
+          `מוסכם על הצדדים, כי ${childRef} ${minors.length === 1 ? 'יהיה/תהיה' : 'יהיו'} במשמורת מלאה של ${custodyParent}.`
+        )
+      );
+      paragraphs.push(
+        createBodyParagraph(
+          `${otherParent} יהיה/תהיה זכאי/ת להסדרי ראייה שיתואמו בהסכמה בין ההורים, תוך שמירה על טובת ${childRef}.`
+        )
+      );
+    } else if (custodyAgreement === 'custom' && divorceData.custodyCustom) {
+      console.log('🤖 Transforming custody text with Groq...');
+      const transformed = await transformToLegalLanguage(divorceData.custodyCustom, {
+        ...groqContext,
+        fieldLabel: 'הסדר משמורת',
+        additionalContext: 'תיאור ההסכמה על משמורת הקטינים',
+      });
+      paragraphs.push(createBodyParagraph(transformed || divorceData.custodyCustom));
+    } else {
+      // Default: joint custody
+      paragraphs.push(
+        createBodyParagraph(
+          `מוסכם על הצדדים, כי ${childRef} ${minors.length === 1 ? 'יהיה/תהיה' : 'יהיו'} במשמורת משותפת של שני ההורים.`
+        )
+      );
+      paragraphs.push(
+        createBodyParagraph(
+          `לעניין הסדרי השהייה של כל הורה עם ${childRef}, הבעל והאישה מתחייבים לנהוג בגמישות הדדית תוך התחשבות בעבודתו ונסיבות חייו של השני, ${minors.length === 1 ? 'בגילו/ה של הילד/ה' : 'בגילם של הילדים'}, צרכיהם ופעילותם החברתית והחינוכית.`
+        )
+      );
+    }
+
+    // General custody provisions
+    paragraphs.push(
+      createBodyParagraph(
+        `כל אחד מההורים מסכים, כי ההורה האחר יקבל מידע מכל גוף ש${minors.length === 1 ? 'הילד/ה קשור/ה אליו' : 'הילדים קשורים אליו'} וכמו כן, כל אחד מהצדדים ידווח למשנהו, מבעוד מועד, על כל מידע ואירוע הקשור ${minors.length === 1 ? 'בילד/ה' : 'בילדים'} לרבות אירועים במוסדות החינוך ו/או אצל גורמים מטפלים אחרים, אסיפות הורים וכו'.`
+      )
+    );
+
+    paragraphs.push(
+      createBodyParagraph(
+        `כל הורה יהיה אחראי להשתתפות ${minors.length === 1 ? 'הילד/ה' : 'הילדים'} בפעילויות ובחוגים בעת שהותו עמו.`
+      )
+    );
+    paragraphs.push(createEmptyLine());
+  }
+
+  // ==================== מזונות ומדור ====================
+  paragraphs.push(createSectionHeader('מזונות ומדור'));
+
+  const alimonyAgreement = divorceData.alimonyAgreement;
+
+  if (alimonyAgreement === 'referenceClaim' && hasAlimonyClaim) {
+    paragraphs.push(
+      createBodyParagraph(
+        'הסדרי המזונות יהיו כמפורט בתביעת המזונות הנפרדת שהוגשה לבית המשפט.'
+      )
+    );
+  } else if (minors.length > 0) {
+    const childRef = minors.length === 1 ? 'הילד/ה' : 'הילדים';
+
+    paragraphs.push(
+      createBodyParagraph(
+        `כל אחד מההורים יישא במלוא הוצאות ${childRef} השוטפות בזמן ש${childRef} אצלו ע"פ זמני השהות שנקבעו לעיל, ובכלל זה מזונות ומדורו.`
+      )
+    );
+
+    if (alimonyAgreement === 'specificAmount' && divorceData.alimonyAmount) {
+      const amount = formatCurrency(divorceData.alimonyAmount);
+      paragraphs.push(
+        createBodyParagraph(
+          `מוסכם, כי האב יפקיד לחשבונה של האישה סכום חודשי של ${amount}, כל 10 לחודש קלנדרי עבור כלל מזונות ${childRef} (להלן: "המזונות").`
+        )
+      );
+    }
+
+    paragraphs.push(
+      createBodyParagraph(
+        `נוסף לאמור, הצדדים ישאו בחלקים שווים בהוצאות ${childRef} המשולמות לצדדי ג', כדלקמן:`
+      )
+    );
+
+    paragraphs.push(
+      createBodyParagraph(
+        `כל ההוצאות הרפואיות של ${childRef}, שאינן מכוסות על ידי קופת החולים או ביטוח רפואי ובכלל זאת תרופות, טיפולי שיניים, טיפול אורתודנטי, הוצאות אופטומטריה, טיפולים פסיכולוגיים/נפשיים, ייעוצים, וכו'. הוצאות אלו יתואמו בין הצדדים בהסכמה מראש.`,
+        INDENT_MEDIUM
+      )
+    );
+
+    paragraphs.push(
+      createBodyParagraph(
+        'כל הוצאה הקשורה למסגרת המוסד החינוכי, רכישת ספרי לימוד, מכשירי כתיבה, טיולים, אגרת חינוך בתחילת שנה"ל, רכישת ציוד לביה"ס ומסיבות חגים וסוף שנה, ועד כיתה, בעלות המקובלת.',
+        INDENT_MEDIUM
+      )
+    );
+
+    paragraphs.push(
+      createBodyParagraph('גן / צהרון בעלות עירייה.', INDENT_MEDIUM)
+    );
+
+    paragraphs.push(
+      createBodyParagraph('עד שני חוגים בתעריף מתנ"ס.', INDENT_MEDIUM)
+    );
+
+    paragraphs.push(
+      createBodyParagraph(
+        `המזונות ישולמו עד בהגיע כל ילד לגיל שמונה עשרה או עד סיום שנת הלימודים של כיתה יב' (לפי המאוחר מהשנים). ובעת השירות הצבאי החובה, ישולם שליש ממחצית הסכום היחסי עבור כל ילד.`
+      )
+    );
+    paragraphs.push(createEmptyLine());
+  } else if (alimonyAgreement === 'custom' && divorceData.alimonyCustom) {
+    console.log('🤖 Transforming alimony text with Groq...');
+    const transformed = await transformToLegalLanguage(divorceData.alimonyCustom, {
+      ...groqContext,
+      fieldLabel: 'הסדר מזונות',
+      additionalContext: 'תיאור ההסכמה על מזונות',
+    });
+    paragraphs.push(createBodyParagraph(transformed || divorceData.alimonyCustom));
+  } else {
+    paragraphs.push(
+      createBodyParagraph(
+        'בני הזוג הסכימו כי אין חיוב במזונות בין הצדדים.'
+      )
+    );
+  }
+  paragraphs.push(createEmptyLine());
+
+  // ==================== חלוקת רכוש ====================
+  paragraphs.push(createSectionHeader('חלוקת רכוש'));
 
   const propertyAgreement = divorceData.propertyAgreement;
 
@@ -262,335 +666,156 @@ export async function generateDivorceAgreement(data: DivorceAgreementData): Prom
         'בני הזוג הסכימו כי כל צד שומר על הרכוש שברשותו ולא תהיה כל תביעה רכושית הדדית בין הצדדים.'
       )
     );
-  } else if (propertyAgreement === 'equalSplit') {
     paragraphs.push(
       createBodyParagraph(
-        'בני הזוג הסכימו על חלוקה שווה של כל הרכוש המשותף שנצבר במהלך הנישואין, לרבות נכסים, כלי רכב, חשבונות בנק וזכויות סוציאליות.'
+        'כל צד יישאר עם הזכויות הסוציאליות שצבר לרבות זכויות פנסיה, ביטוחי מנהלים, קופות וקרנות.'
+      )
+    );
+  } else if (propertyAgreement === 'equalSplit') {
+    paragraphs.push(createSubsectionHeader('כללי'));
+    paragraphs.push(
+      createBodyParagraph(
+        'מוסכם בין הצדדים על חלוקה שווה של כל הרכוש המשותף שנצבר במהלך הנישואין, לרבות נכסים, כלי רכב, חשבונות בנק וזכויות סוציאליות.'
+      )
+    );
+
+    paragraphs.push(createSubsectionHeader('זכויות סוציאליות'));
+    paragraphs.push(
+      createBodyParagraph(
+        'בתוך 14 יום מאישור הסכם זה, יעבירו הצדדים זה לזה את המסמכים הרלוונטיים לצורך קיזוז בכל הקשור לזכויות שנצברו במהלך הנישואין. ככל שיהיה צורך לבצע תשלום בגין זכויות יתרות שצבר אחד מבני הזוג על האחר, יעביר הצד שצבר יותר את הכסף העודף מהזכויות שצריך להעביר עבור איזון המשאבים.'
       )
     );
   } else if (propertyAgreement === 'custom' && divorceData.propertyCustom) {
-    // Transform user text with Groq
-    console.log('🤖 Transforming property custom text with Groq...');
-    const transformedText = await transformToLegalLanguage(divorceData.propertyCustom, {
+    console.log('🤖 Transforming property text with Groq...');
+    const transformed = await transformToLegalLanguage(divorceData.propertyCustom, {
       ...groqContext,
       fieldLabel: 'חלוקת רכוש',
-      additionalContext: 'תיאור ההסכמה על חלוקת הרכוש המשותף',
+      additionalContext: 'תיאור ההסכמה על חלוקת הרכוש',
     });
-    paragraphs.push(createBodyParagraph(transformedText || divorceData.propertyCustom));
+    paragraphs.push(createBodyParagraph(transformed || divorceData.propertyCustom));
   } else {
     paragraphs.push(
-      createBodyParagraph('בני הזוג הסכימו על הסדר חלוקת רכוש על-פי תנאים שהוסכמו ביניהם.')
+      createBodyParagraph(
+        'בני הזוג הסכימו על הסדר חלוקת רכוש על-פי תנאים שהוסכמו ביניהם.'
+      )
     );
   }
+  paragraphs.push(createEmptyLine());
 
-  // ========== SECTION B: CUSTODY & VISITATION (if children exist) ==========
-  if (minors.length > 0) {
-    sectionCounter++;
-    paragraphs.push(
-      createSubsectionHeader(`סעיף ${numberToHebrewLetter(sectionCounter)} - משמורת והסדרי ראייה`)
-    );
-
-    const custodyAgreement = divorceData.custodyAgreement;
-    const visitationAgreement = divorceData.visitationAgreement;
-
-    // Custody
-    if (custodyAgreement === 'referenceClaim' && hasCustodyClaim) {
-      paragraphs.push(
-        createBodyParagraph(
-          'הסדרי המשמורת על הקטינים יהיו כמפורט בתביעת המשמורת הנפרדת שהוגשה לבית המשפט.'
-        )
-      );
-    } else if (custodyAgreement === 'jointCustody') {
-      paragraphs.push(
-        createBodyParagraph(
-          `בני הזוג הסכימו על משמורת משותפת על ${minors.length === 1 ? 'הקטין/ה' : 'הקטינים'}.`
-        )
-      );
-    } else if (custodyAgreement === 'applicantCustody') {
-      paragraphs.push(
-        createBodyParagraph(
-          `בני הזוג הסכימו כי משמורת מלאה על ${minors.length === 1 ? 'הקטין/ה' : 'הקטינים'} תהיה ל${basicInfo.fullName}.`
-        )
-      );
-    } else if (custodyAgreement === 'respondentCustody') {
-      paragraphs.push(
-        createBodyParagraph(
-          `בני הזוג הסכימו כי משמורת מלאה על ${minors.length === 1 ? 'הקטין/ה' : 'הקטינים'} תהיה ל${basicInfo.fullName2}.`
-        )
-      );
-    } else if (custodyAgreement === 'custom' && divorceData.custodyCustom) {
-      // Transform user text with Groq
-      console.log('🤖 Transforming custody custom text with Groq...');
-      const transformedText = await transformToLegalLanguage(divorceData.custodyCustom, {
-        ...groqContext,
-        fieldLabel: 'הסדר משמורת',
-        additionalContext: 'תיאור ההסכמה על משמורת הקטינים',
-      });
-      paragraphs.push(createBodyParagraph(transformedText || divorceData.custodyCustom));
-    }
-
-    // Visitation
-    if (visitationAgreement === 'referenceClaim' && hasCustodyClaim) {
-      paragraphs.push(
-        createBodyParagraph(
-          'הסדרי הראייה יהיו כמפורט בתביעת המשמורת הנפרדת.'
-        )
-      );
-    } else if (visitationAgreement === 'flexible') {
-      paragraphs.push(
-        createBodyParagraph(
-          'הסדרי הראייה יהיו גמישים ויתואמו בהסכמה בין ההורים, תוך שמירה על טובת הקטינים.'
-        )
-      );
-    } else if (visitationAgreement === 'fixed') {
-      paragraphs.push(
-        createBodyParagraph(
-          'הסדרי הראייה יהיו קבועים ויתואמו מראש בין ההורים, על מנת לשמור על יציבות עבור הקטינים.'
-        )
-      );
-    } else if (visitationAgreement === 'custom' && divorceData.visitationCustom) {
-      // Transform user text with Groq
-      console.log('🤖 Transforming visitation custom text with Groq...');
-      const transformedText = await transformToLegalLanguage(divorceData.visitationCustom, {
-        ...groqContext,
-        fieldLabel: 'הסדרי ראייה',
-        additionalContext: 'תיאור הסדרי הראייה המוסכמים',
-      });
-      paragraphs.push(createBodyParagraph(transformedText || divorceData.visitationCustom));
-    }
-  }
-
-  // ========== SECTION C: ALIMONY (if relevant) ==========
-  if (minors.length > 0 || divorceData.alimonyAgreement) {
-    sectionCounter++;
-    paragraphs.push(
-      createSubsectionHeader(`סעיף ${numberToHebrewLetter(sectionCounter)} - מזונות`)
-    );
-
-    const alimonyAgreement = divorceData.alimonyAgreement;
-
-    if (alimonyAgreement === 'referenceClaim' && hasAlimonyClaim) {
-      paragraphs.push(
-        createBodyParagraph(
-          'הסדרי המזונות יהיו כמפורט בתביעת המזונות הנפרדת שהוגשה לבית המשפט.'
-        )
-      );
-    } else if (alimonyAgreement === 'specificAmount' && divorceData.alimonyAmount) {
-      const amount = formatCurrency(divorceData.alimonyAmount);
-      paragraphs.push(
-        createBodyParagraph(
-          `בני הזוג הסכימו כי ${basicInfo.fullName2} ישלם/תשלם מזונות בסך ${amount} לחודש.`
-        )
-      );
-    } else if (alimonyAgreement === 'none') {
-      paragraphs.push(
-        createBodyParagraph(
-          'בני הזוג הסכימו כי אין חיוב במזונות בין הצדדים, וכל צד מוותר על כל תביעת מזונות כלפי האחר.'
-        )
-      );
-    } else if (alimonyAgreement === 'custom' && divorceData.alimonyCustom) {
-      // Transform user text with Groq
-      console.log('🤖 Transforming alimony custom text with Groq...');
-      const transformedText = await transformToLegalLanguage(divorceData.alimonyCustom, {
-        ...groqContext,
-        fieldLabel: 'הסדר מזונות',
-        additionalContext: 'תיאור ההסכמה על מזונות',
-      });
-      paragraphs.push(createBodyParagraph(transformedText || divorceData.alimonyCustom));
-    } else {
-      paragraphs.push(
-        createBodyParagraph('בני הזוג הסכימו על הסדר מזונות על-פי תנאים שהוסכמו ביניהם.')
-      );
-    }
-  }
-
-  // ========== SECTION D: ADDITIONAL TERMS ==========
-  if (divorceData.additionalTerms && divorceData.additionalTerms.trim().length > 0) {
-    sectionCounter++;
-    paragraphs.push(
-      createSubsectionHeader(`סעיף ${numberToHebrewLetter(sectionCounter)} - תנאים נוספים`)
-    );
-
-    // Transform user text with Groq
-    console.log('🤖 Transforming additional terms with Groq...');
-    const transformedText = await transformToLegalLanguage(divorceData.additionalTerms, {
-      ...groqContext,
-      fieldLabel: 'תנאים נוספים',
-      additionalContext: 'תיאור הסכמות נוספות כגון ביטוחים, הוצאות, ירושה',
-    });
-    paragraphs.push(createBodyParagraph(transformedText || divorceData.additionalTerms));
-  }
-
-  // ========== SECTION E: GENERAL PROVISIONS ==========
-  sectionCounter++;
-  paragraphs.push(
-    createSubsectionHeader(`סעיף ${numberToHebrewLetter(sectionCounter)} - הוראות כלליות`)
-  );
-
-  paragraphs.push(
-    createNumberedItem(
-      1,
-      'בני הזוג מוותרים בזאת באופן סופי ובלתי חוזר על כל טענה, תביעה או זכות שיש או שתהיה לאחד כלפי השני, למעט האמור במפורש בהסכם זה.'
-    )
-  );
-
-  paragraphs.push(
-    createNumberedItem(
-      2,
-      'הסכם זה ממצה את כל ההסכמות בין הצדדים בנושא הגירושין, ואין כל הסכם אחר, בכתב או בעל-פה, אשר לא נכלל בהסכם זה.'
-    )
-  );
-
-  paragraphs.push(
-    createNumberedItem(
-      3,
-      'כל שינוי בהסכם זה יהיה תקף רק אם ייעשה בכתב ויחתם על-ידי שני הצדדים.'
-    )
-  );
-
-  paragraphs.push(
-    createNumberedItem(
-      4,
-      'הסכם זה כפוף לאישור בית המשפט לענייני משפחה ו/או בית הדין הרבני, לפי העניין.'
-    )
-  );
-
-  // ========== 6. DECLARATIONS ==========
-  paragraphs.push(createSectionHeader('הצהרות'));
-
-  paragraphs.push(
-    createNumberedItem(
-      1,
-      `${basicInfo.fullName} ו${basicInfo.fullName2} ${terms.pluralDeclare} בזאת כי הסכם זה נחתם מרצונם החופשי, ללא כל כפייה, איום או לחץ מצד כלשהו.`
-    )
-  );
-
-  paragraphs.push(
-    createNumberedItem(
-      2,
-      `בני הזוג ${terms.pluralDeclare} כי הם ${terms.pluralUnderstand} את כל תנאי ההסכם ואת המשמעויות המשפטיות שלו.`
-    )
-  );
-
-  paragraphs.push(
-    createNumberedItem(
-      3,
-      'בני הזוג הוזהרו ונתנה להם ההזדמנות לקבל ייעוץ משפטי עצמאי טרם חתימת הסכם זה.'
-    )
-  );
-
-  paragraphs.push(
-    createNumberedItem(
-      4,
-      'בני הזוג מתחייבים לפעול בתום לב ליישום הסכם זה ולשתף פעולה זה עם זה לשם כך.'
-    )
-  );
-
-  // ========== 7. CLOSING & SIGNATURES ==========
+  // ==================== מזונות אישה וכתובה ====================
+  paragraphs.push(createSectionHeader('מזונות אישה וכתובה'));
   paragraphs.push(
     createBodyParagraph(
-      'ולראיה באו הצדדים על החתום:',
-      { before: SPACING.SECTION, after: SPACING.SECTION }
+      'במועד מתן הגט, האישה מוותרת על מזונותיה, כתובתה ותוספת כתובתה.'
+    )
+  );
+  paragraphs.push(createEmptyLine());
+
+  // ==================== סילוק תביעות ====================
+  paragraphs.push(createSectionHeader('סילוק תביעות'));
+  paragraphs.push(
+    createBodyParagraph(
+      'כל חוב ו/או הלוואה הרשומים ביום חתימת הסכם זה ע"ש אחד מבני הזוג, ואשר לא הוזכר במפורש בהסכם זה יחולו על אותו צד אשר על שמו רשום החוב ו/או ההלוואה.'
+    )
+  );
+  paragraphs.push(
+    createBodyParagraph(
+      'פרט לאמור בהסכם זה אין לצדדים ולא תהיינה להם כל טענות ו/או תביעות מכל מין וסוג שהוא האחד כנגד משנהו והסכם זה ממצה את כל התביעות וכל הדרישות וכל הטענות של מי מהצדדים כלפי משנהו בכל הנוגע לנישואיהם ובכל הכרוך בפרידתם.'
+    )
+  );
+  paragraphs.push(createEmptyLine());
+
+  // ==================== אישור בית המשפט ====================
+  paragraphs.push(createSectionHeader('אישור בית המשפט'));
+  paragraphs.push(
+    createBodyParagraph(
+      'הצדדים עותרים לבית המשפט לענייני משפחה, לאשר הסכם זה עפ"י הוראות חוק יחסי ממון בין בני זוג התשל"ג – 1973, חוק לתיקון דיני משפחה (מזונות) התשי"ט – 1959 וחוק הכשרות המשפטית והאפוטרופסות התשכ"ב – 1962 וליתן לו תוקף של פס"ד ע"פ כל דין.'
     )
   );
 
-  const today = new Date().toLocaleDateString('he-IL');
-  paragraphs.push(createBodyParagraph(`תאריך: ${today}`, { after: SPACING.SECTION }));
+  // ==================== SIGNATURES ====================
+  paragraphs.push(createEmptyLine());
+  paragraphs.push(createEmptyLine());
 
-  // Applicant signature (visual RIGHT side in RTL)
   paragraphs.push(
     new Paragraph({
       children: [
         new TextRun({
-          text: `${basicInfo.fullName} (${terms.applicantTerm})`,
+          text: 'ולראיה באו הצדדים על החתום:',
           bold: true,
-          size: FONT_SIZES.BODY,
+          size: 24,
           font: 'David',
           rightToLeft: true,
         }),
       ],
-      alignment: AlignmentType.START, // RIGHT in RTL
-      spacing: { before: SPACING.SECTION, after: SPACING.MINIMAL },
+      alignment: AlignmentType.START,
+      spacing: { before: SECTION_SPACING, after: SECTION_SPACING },
       bidirectional: true,
     })
   );
 
+  paragraphs.push(createEmptyLine());
+  paragraphs.push(createEmptyLine());
+
+  // Signature lines
+  paragraphs.push(
+    new Paragraph({
+      children: [
+        new TextRun({
+          text: '  __________________\t\t\t\t\t\t__________________  ',
+          size: 24,
+          font: 'David',
+        }),
+      ],
+      alignment: AlignmentType.CENTER,
+      spacing: { after: PARAGRAPH_SPACING },
+      bidirectional: true,
+    })
+  );
+
+  paragraphs.push(
+    new Paragraph({
+      children: [
+        new TextRun({
+          text: '        האישה\t\t\t\t\t\t\t\t\t\t     הבעל        ',
+          size: 24,
+          font: 'David',
+          rightToLeft: true,
+        }),
+      ],
+      alignment: AlignmentType.CENTER,
+      spacing: { after: SECTION_SPACING },
+      bidirectional: true,
+    })
+  );
+
+  // Actual signatures if provided
   if (applicantSignature) {
-    paragraphs.push(createSignatureImage(applicantSignature, 250, 125, AlignmentType.LEFT));
-  } else {
-    paragraphs.push(
-      new Paragraph({
-        children: [
-          new TextRun({
-            text: '__________________',
-            size: FONT_SIZES.BODY,
-            font: 'David',
-          }),
-        ],
-        alignment: AlignmentType.START,
-        spacing: { before: SPACING.PARAGRAPH, after: SPACING.SECTION },
-        bidirectional: true,
-      })
-    );
+    paragraphs.push(createSignatureImage(applicantSignature, 200, 100, AlignmentType.START));
   }
-
-  // Respondent signature (visual LEFT side in RTL)
-  paragraphs.push(
-    new Paragraph({
-      children: [
-        new TextRun({
-          text: `${basicInfo.fullName2} (${terms.respondentTerm})`,
-          bold: true,
-          size: FONT_SIZES.BODY,
-          font: 'David',
-          rightToLeft: true,
-        }),
-      ],
-      alignment: AlignmentType.END, // LEFT in RTL
-      spacing: { before: SPACING.SECTION, after: SPACING.MINIMAL },
-      bidirectional: true,
-    })
-  );
 
   if (respondentSignature) {
-    paragraphs.push(createSignatureImage(respondentSignature, 250, 125, AlignmentType.RIGHT));
-  } else {
-    paragraphs.push(
-      new Paragraph({
-        children: [
-          new TextRun({
-            text: '__________________',
-            size: FONT_SIZES.BODY,
-            font: 'David',
-          }),
-        ],
-        alignment: AlignmentType.END,
-        spacing: { before: SPACING.PARAGRAPH, after: SPACING.SECTION },
-        bidirectional: true,
-      })
-    );
+    paragraphs.push(createSignatureImage(respondentSignature, 200, 100, AlignmentType.END));
   }
 
-  // ========== 8. LAWYER CONFIRMATION ==========
+  // ==================== LAWYER CONFIRMATION ====================
   if (lawyerSignature) {
     paragraphs.push(createPageBreak());
-
     paragraphs.push(createSectionHeader('אישור עורך דין'));
 
     paragraphs.push(
       createBodyParagraph(
-        `אני החתום מטה, עוה"ד אריאל דרור מ"ר 31892, מאשר בזאת כי הסכם זה נחתם בפניי על-ידי ${basicInfo.fullName} ו${basicInfo.fullName2} לאחר שהוסברו להם תנאיו והשלכותיו המשפטיות.`
+        `אני החתום מטה, עוה"ד אריאל דרור מ"ר 31892, מאשר בזאת כי הסכם זה נחתם בפניי על-ידי ${wifeName} ו${husbandName} לאחר שהוסברו להם תנאיו והשלכותיו המשפטיות.`
       )
     );
 
     paragraphs.push(
-      createBodyParagraph(
-        'הצדדים חתמו על ההסכם מרצונם החופשי ובהבנה מלאה של תוכנו.',
-        { after: SPACING.SECTION }
-      )
+      createBodyParagraph('הצדדים חתמו על ההסכם מרצונם החופשי ובהבנה מלאה של תוכנו.')
     );
 
-    paragraphs.push(createBodyParagraph(`תאריך: ${today}`, { after: SPACING.SECTION }));
+    paragraphs.push(createEmptyLine());
+    paragraphs.push(createBodyParagraph(`תאריך: ${todayFormatted}`));
+    paragraphs.push(createEmptyLine());
 
     paragraphs.push(createSignatureImage(lawyerSignature, 300, 150, AlignmentType.LEFT));
 
@@ -599,17 +824,17 @@ export async function generateDivorceAgreement(data: DivorceAgreementData): Prom
         children: [
           new TextRun({
             text: 'אריאל דרור, עו"ד',
-            size: FONT_SIZES.BODY,
+            size: 24,
             font: 'David',
           }),
         ],
         alignment: AlignmentType.LEFT,
-        spacing: { after: SPACING.MINIMAL },
+        spacing: { after: PARAGRAPH_SPACING },
       })
     );
   }
 
-  // ========== 9. POWER OF ATTORNEY ==========
+  // ==================== POWER OF ATTORNEY ====================
   paragraphs.push(createPageBreak());
   const powerOfAttorneyParagraphs = generatePowerOfAttorney(
     basicInfo,
@@ -620,21 +845,15 @@ export async function generateDivorceAgreement(data: DivorceAgreementData): Prom
   );
   paragraphs.push(...powerOfAttorneyParagraphs);
 
-  // ========== 10. AFFIDAVIT ==========
+  // ==================== AFFIDAVIT ====================
   paragraphs.push(createPageBreak());
   const affidavitParagraphs = generateAffidavit(basicInfo, formData, lawyerSignature);
   paragraphs.push(...affidavitParagraphs);
 
-  // ========== 11. ATTACHMENTS ==========
+  // ==================== ATTACHMENTS ====================
   if (attachments && attachments.length > 0) {
     paragraphs.push(createPageBreak());
-
-    const mainContentPages = 3;
-    const powerOfAttorneyPages = 2;
-    const affidavitPages = 1;
-    const tocPage = mainContentPages + powerOfAttorneyPages + affidavitPages;
-
-    const attachmentParagraphs = generateAttachmentsSection(attachments, tocPage);
+    const attachmentParagraphs = generateAttachmentsSection(attachments, 7);
     paragraphs.push(...attachmentParagraphs);
   }
 
@@ -642,13 +861,22 @@ export async function generateDivorceAgreement(data: DivorceAgreementData): Prom
   const doc = new Document({
     sections: [
       {
-        properties: {},
+        properties: {
+          page: {
+            margin: {
+              top: convertInchesToTwip(1),
+              bottom: convertInchesToTwip(1),
+              left: convertInchesToTwip(1),
+              right: convertInchesToTwip(1),
+            },
+          },
+        },
         children: paragraphs,
       },
     ],
   });
 
-  console.log('✅ Compact divorce agreement document generated successfully');
+  console.log('✅ Divorce agreement document generated successfully');
 
   return await Packer.toBuffer(doc);
 }
