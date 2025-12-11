@@ -261,6 +261,7 @@ export async function generateDocument(
         formData,
         signature: options.signature,
         lawyerSignature: options.lawyerSignature,
+        attachments: options.attachments,
       });
     } else if (claimType === 'alimony') {
       console.log('📝 Using programmatic generator with Form 4 PDF integration...');

@@ -50,6 +50,11 @@ interface CustodyClaimData {
   formData: FormData;
   signature?: string | Buffer; // Client signature (base64 or Buffer)
   lawyerSignature?: string | Buffer; // Lawyer signature with stamp (base64 or Buffer)
+  attachments?: Array<{
+    label: string;
+    description: string;
+    images: Buffer[];
+  }>;
 }
 
 /**
@@ -132,7 +137,7 @@ function formatChildNamesList(children: any[]): string {
  * Generate custody claim document
  */
 export async function generateCustodyClaim(data: CustodyClaimData): Promise<Buffer> {
-  const { basicInfo, formData, signature, lawyerSignature } = data;
+  const { basicInfo, formData, signature, lawyerSignature, attachments } = data;
 
   const plaintiff = getPlaintiffTerm(basicInfo.gender, basicInfo.fullName);
   const defendant = getDefendantTerm(basicInfo.gender2, basicInfo.fullName2);
@@ -290,6 +295,11 @@ export async function generateCustodyClaim(data: CustodyClaimData): Promise<Buff
 
           // ===== תצהיר (AFFIDAVIT) =====
           ...generateAffidavit(basicInfo, formData, lawyerSignature),
+
+          // ===== נספחים (ATTACHMENTS) =====
+          ...(attachments && attachments.length > 0
+            ? [createPageBreak(), ...generateAttachmentsSection(attachments, estimateCustodyPageCount(formData))]
+            : []),
         ],
       },
     ],
@@ -845,4 +855,25 @@ function generateStatementOfDetails(
   }));
 
   return paragraphs;
+}
+
+/**
+ * Estimate page count for custody claim to calculate attachment page numbers
+ */
+function estimateCustodyPageCount(formData: any): number {
+  // Main claim: ~3 pages (header, intro, facts, remedies)
+  const mainClaim = 3;
+
+  // Form 3: depends on children count
+  const childrenCount = formData.children?.length || 0;
+  const form3 = 2 + Math.ceil(childrenCount / 3); // ~3 children per page
+
+  // Power of Attorney: ~2 pages
+  const powerOfAttorney = 2;
+
+  // Affidavit: ~1 page
+  const affidavit = 1;
+
+  // Total pages before attachments
+  return mainClaim + form3 + powerOfAttorney + affidavit;
 }

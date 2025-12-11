@@ -486,7 +486,14 @@ async function createAlimonyDetailsSection(data: AlimonyClaimData): Promise<Para
  */
 function createEmploymentSections(data: AlimonyClaimData): Paragraph[] {
   const paragraphs: Paragraph[] = [];
+  // Check both property and alimony for employment data
   const property = data.formData.property || {};
+  const alimony = data.formData.alimony || {};
+  // Merge both sources, preferring property if both exist
+  const empData = {
+    ...alimony,
+    ...property,
+  };
   const applicantGender = getApplicantGender(data.basicInfo);
   const respondentGender = getRespondentGender(data.basicInfo);
   const applicantTitle = getApplicantTitle(data.basicInfo);
@@ -499,17 +506,17 @@ function createEmploymentSections(data: AlimonyClaimData): Paragraph[] {
   // Respondent employment - SECTION level
   paragraphs.push(createSubsectionHeader(`השתכרות ${respondentTitle}`));
 
-  if (property.respondentEmploymentStatus === 'employee' && property.respondentEmployer) {
+  if (empData.respondentEmploymentStatus === 'employee' && empData.respondentEmployer) {
     paragraphs.push(
       createBodyParagraph(
-        `${respondentTitle} ${respondentEmploymentVerb} אצל ${property.respondentEmployer}.`,
+        `${respondentTitle} ${respondentEmploymentVerb} אצל ${empData.respondentEmployer}.`,
         { after: SPACING.LINE }
       )
     );
   }
 
   // Handle both employee salary and self-employed income
-  const respondentIncome = property.respondentGrossSalary || property.respondentGrossIncome;
+  const respondentIncome = empData.respondentGrossSalary || empData.respondentGrossIncome;
   if (respondentIncome) {
     paragraphs.push(
       createBodyParagraph(
@@ -519,10 +526,10 @@ function createEmploymentSections(data: AlimonyClaimData): Paragraph[] {
     );
   }
 
-  if (property.respondentAdditionalIncome) {
+  if (empData.respondentAdditionalIncome) {
     paragraphs.push(
       createBodyParagraph(
-        `הכנסות נוספות: ${property.respondentAdditionalIncome}`,
+        `הכנסות נוספות: ${empData.respondentAdditionalIncome}`,
         { after: SPACING.LINE }
       )
     );
@@ -533,17 +540,17 @@ function createEmploymentSections(data: AlimonyClaimData): Paragraph[] {
   // Applicant employment - SECTION level
   paragraphs.push(createSubsectionHeader(`השתכרות ${applicantTitle}`));
 
-  if (property.applicantEmploymentStatus === 'employee' && property.applicantEmployer) {
+  if (empData.applicantEmploymentStatus === 'employee' && empData.applicantEmployer) {
     paragraphs.push(
       createBodyParagraph(
-        `${applicantTitle} ${applicantEmploymentVerb} אצל ${property.applicantEmployer}.`,
+        `${applicantTitle} ${applicantEmploymentVerb} אצל ${empData.applicantEmployer}.`,
         { after: SPACING.LINE }
       )
     );
   }
 
   // Handle both employee salary and self-employed income
-  const applicantIncome = property.applicantGrossSalary || property.applicantGrossIncome;
+  const applicantIncome = empData.applicantGrossSalary || empData.applicantGrossIncome;
   if (applicantIncome) {
     paragraphs.push(
       createBodyParagraph(
@@ -553,10 +560,10 @@ function createEmploymentSections(data: AlimonyClaimData): Paragraph[] {
     );
   }
 
-  if (property.applicantAdditionalIncome) {
+  if (empData.applicantAdditionalIncome) {
     paragraphs.push(
       createBodyParagraph(
-        `הכנסות נוספות: ${property.applicantAdditionalIncome}`,
+        `הכנסות נוספות: ${empData.applicantAdditionalIncome}`,
         { after: SPACING.LINE }
       )
     );

@@ -811,11 +811,13 @@ function generateSimplePropertySection(
   elements.push(createLetteredHeader('ד', 'רכוש'));
   elements.push(createBodyParagraph('להלן פירוט הרכוש המשותף של הצדדים:'));
 
-  const apartments = formData.apartments || [];
-  const vehicles = formData.vehicles || [];
-  const savings = formData.savings || [];
-  const benefits = formData.benefits || [];
-  const debts = formData.debts || [];
+  // Check both root level and nested under property object
+  const propertyData = formData.property || {};
+  const apartments = formData.apartments || propertyData.apartments || [];
+  const vehicles = formData.vehicles || propertyData.vehicles || [];
+  const savings = formData.savings || propertyData.savings || [];
+  const benefits = formData.benefits || propertyData.benefits || [];
+  const debts = formData.debts || propertyData.debts || [];
 
   // Real estate
   if (apartments.length > 0) {

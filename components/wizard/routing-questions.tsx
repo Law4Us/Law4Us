@@ -28,7 +28,7 @@ interface RadioOption {
  * and recommends appropriate claims based on their situation.
  */
 export function RoutingQuestions({ onComplete }: RoutingQuestionsProps) {
-  const { routingAnswers, updateRoutingAnswers, setRecommendedCourt } = useWizardStore();
+  const { routingAnswers, updateRoutingAnswers, setRecommendedCourt, basicInfo } = useWizardStore();
 
   const [currentStep, setCurrentStep] = useState<RoutingStep>("situation");
   const [recommendation, setRecommendation] = useState<{
@@ -91,17 +91,33 @@ export function RoutingQuestions({ onComplete }: RoutingQuestionsProps) {
     let claims: ClaimType[];
     let totalPrice: number;
 
+    // Determine if there are children and applicant's gender
+    const hasChildren = answers.youngestChildAge !== "none";
+    const applicantIsFemale = basicInfo?.gender === "female";
+
     if (court === "rabbinical") {
+      // Rabbinical court - bundled divorce with all claims included
       claims = ["divorceRabbinical"];
       totalPrice = 3900;
     } else {
-      // Family court - include all claims by default
-      claims = ["divorce", "custody", "alimony", "property"];
-      totalPrice = 3900 * 4; // 15,600
+      // Family court - claims depend on children and gender
+      if (hasChildren) {
+        // Has children: divorce + custody + alimony (children) + property
+        claims = ["divorce", "custody", "alimony", "property"];
+        totalPrice = 3900 * 4; // 15,600
+      } else if (applicantIsFemale) {
+        // No children + female applicant: divorce + property + alimony (spousal/מזונות אישה)
+        claims = ["divorce", "alimony", "property"];
+        totalPrice = 3900 * 3; // 11,700
+      } else {
+        // No children + male applicant: divorce + property only
+        claims = ["divorce", "property"];
+        totalPrice = 3900 * 2; // 7,800
+      }
     }
 
     return { court, claims, totalPrice };
-  }, [routingAnswers]);
+  }, [routingAnswers, basicInfo]);
 
   // Determine next step based on answers
   const getNextStep = (current: RoutingStep): RoutingStep => {
@@ -530,6 +546,32 @@ export function RoutingQuestions({ onComplete }: RoutingQuestionsProps) {
 
         // Divorce recommendation
         const isRabbinical = recommendation.court === "rabbinical";
+
+        // Map claim types to Hebrew labels
+        const claimLabels: Record<ClaimType, string> = {
+          divorce: "תביעת גירושין",
+          custody: "תביעת משמורת",
+          alimony: "תביעת מזונות",
+          property: "תביעת רכושית",
+          divorceAgreement: "הסכם גירושין",
+          divorceRabbinical: "חבילת גירושין רבני",
+          shalomBayit: "תביעת שלום בית",
+        };
+
+        // Determine context message based on children/gender
+        const hasChildren = routingAnswers.youngestChildAge !== "none";
+        const applicantIsFemale = basicInfo?.gender === "female";
+        let contextMessage = "";
+        if (!isRabbinical) {
+          if (hasChildren) {
+            contextMessage = "יש לך ילדים, לכן כללנו תביעות משמורת ומזונות ילדים.";
+          } else if (applicantIsFemale) {
+            contextMessage = "את עשויה להיות זכאית למזונות אישה גם ללא ילדים.";
+          } else {
+            contextMessage = "ללא ילדים, התמקדנו בחלוקת הרכוש.";
+          }
+        }
+
         return (
           <div className="space-y-6">
             <div className="bg-primary/5 rounded-2xl p-6">
@@ -542,6 +584,10 @@ export function RoutingQuestions({ onComplete }: RoutingQuestionsProps) {
                 <h4 className="text-xl font-bold text-neutral-darkest mb-4">
                   {isRabbinical ? "חבילת גירושין רבני" : "גירושין בבית המשפט לענייני משפחה"}
                 </h4>
+
+                {contextMessage && (
+                  <p className="text-sm text-neutral-dark mb-4 bg-neutral-lightest p-3 rounded-lg">{contextMessage}</p>
+                )}
 
                 {isRabbinical ? (
                   <div className="space-y-3">
@@ -557,18 +603,13 @@ export function RoutingQuestions({ onComplete }: RoutingQuestionsProps) {
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    {[
-                      { label: "תביעת גירושין", price: 3900, included: true },
-                      { label: "תביעת משמורת", price: 3900, included: true },
-                      { label: "תביעת מזונות", price: 3900, included: true },
-                      { label: "תביעת רכושית", price: 3900, included: true },
-                    ].map((item) => (
-                      <div key={item.label} className="flex items-center justify-between py-2">
+                    {recommendation.claims.map((claimKey) => (
+                      <div key={claimKey} className="flex items-center justify-between py-2">
                         <div className="flex items-center gap-2">
                           <Check className="w-4 h-4 text-primary" />
-                          <span className="text-body text-neutral-darkest">{item.label}</span>
+                          <span className="text-body text-neutral-darkest">{claimLabels[claimKey]}</span>
                         </div>
-                        <span className="text-body text-neutral-dark">{formatCurrency(item.price)}</span>
+                        <span className="text-body text-neutral-dark">{formatCurrency(3900)}</span>
                       </div>
                     ))}
                   </div>
@@ -576,7 +617,7 @@ export function RoutingQuestions({ onComplete }: RoutingQuestionsProps) {
 
                 <div className="border-t border-neutral-light pt-4 mt-4">
                   <div className="flex justify-between items-center">
-                    <span className="text-body font-medium text-neutral-dark">סה&quot;כ</span>
+                    <span className="text-body font-medium text-neutral-dark">סה&quot;כ ({recommendation.claims.length} תביעות)</span>
                     <span className="text-2xl font-bold text-primary">{formatCurrency(recommendation.totalPrice)}</span>
                   </div>
                   {isRabbinical && (
