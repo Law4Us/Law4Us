@@ -665,7 +665,7 @@ export default function Step1ClaimPicker() {
                   ← חזרה לבחירת מסלול
                 </button>
 
-                {selectedClaims.includes("divorce") &&
+                {selectedClaims.includes("divorceRabbinical") &&
                  !(selectedClaims.includes("property") &&
                    selectedClaims.includes("custody") &&
                    selectedClaims.includes("alimony")) && (

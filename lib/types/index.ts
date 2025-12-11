@@ -6,7 +6,6 @@ export type ClaimType =
   | "divorceAgreement"
   | "shalomBayit"
   | "divorceRabbinical"
-  | "divorce"
   | "property"
   | "custody"
   | "alimony";

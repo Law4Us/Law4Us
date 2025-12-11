@@ -172,8 +172,9 @@ export async function GET() {
     "property",
     "custody",
     "alimony",
-    "divorce",
     "divorceAgreement",
+    "divorceRabbinical",
+    "shalomBayit",
   ];
 
   const availableTemplates: Record<string, boolean> = {};

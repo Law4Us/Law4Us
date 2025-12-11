@@ -89,9 +89,10 @@ export function syncFormDataFields(
 ): FormData {
   const synced = { ...formData };
 
-  // If divorce/divorceRabbinical selected, copy story to relationshipDescription
+  // If divorceRabbinical selected, copy story to relationshipDescription
+  // Note: 'divorce' claim no longer exists - divorces only at Rabbinical Court
   if (
-    (selectedClaims.includes('divorce') || selectedClaims.includes('divorceRabbinical')) &&
+    selectedClaims.includes('divorceRabbinical') &&
     formData['divorce.whoWantsDivorceAndWhy']
   ) {
     synced['relationshipDescription'] = formData['divorce.whoWantsDivorceAndWhy'];

@@ -50,8 +50,9 @@ const testData = {
           idNumber: '234567890',
           birthDate: '2012-03-10',
           address: 'רחוב הרצל 10, תל אביב',
+          gender: 'female', // For proper הקטינה prefix
           // FIRST PERSON - should be transformed by Groq to third person
-          childRelationship: 'אני ונועה מאוד קרובות. אני עוזרת לה בשיעורי הבית כל יום ומבלה איתה זמן איכות. יש לנו קשר מיוחד ונועה מספרת לי הכל. אני הורה הקרוב אליה יותר ואני מכירה את כל הצרכים הרגשיים שלה.',
+          childRelationship: 'נועה היא ילדה רגישה וחכמה. אני ונועה מאוד קרובות. אני עוזרת לה בשיעורי הבית כל יום ומבלה איתה זמן איכות. יש לנו קשר מיוחד ונועה מספרת לי הכל. אני הורה הקרוב אליה יותר ואני מכירה את כל הצרכים הרגשיים שלה.',
         },
         {
           firstName: 'דניאל',
@@ -60,8 +61,9 @@ const testData = {
           idNumber: '345678901',
           birthDate: '2015-07-22',
           address: 'רחוב הרצל 10, תל אביב',
+          gender: 'male', // For proper הקטין prefix
           // FIRST PERSON - should be transformed by Groq to third person
-          childRelationship: 'אני ודניאל מבלים הרבה זמן ביחד. אני לוקח אותו לגן כל בוקר ועושה איתו פעילויות. יש לי קשר מאוד חזק עם דניאל והוא מרגיש בטוח איתי. אני מכיר את הרופאים שלו ואת כל המורות בגן.',
+          childRelationship: 'דניאל הוא ילד אנרגטי ושמח. אני ודניאל מבלים הרבה זמן ביחד. אני לוקח אותו לגן כל בוקר ועושה איתו פעילויות. יש לי קשר מאוד חזק עם דניאל והוא מרגיש בטוח איתי. אני מכיר את הרופאים שלו ואת כל המורות בגן.',
         },
       ],
 
@@ -125,7 +127,7 @@ const submissionData = {
 };
 
 // Send request to submission endpoint (uploads to Google Drive)
-fetch('http://localhost:3000/api/submission/submit', {
+fetch('http://localhost:3000/api/submission', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',

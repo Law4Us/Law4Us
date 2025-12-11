@@ -149,8 +149,9 @@ export const useWizardStore = create<WizardStore>((set, get) => ({
         return { selectedClaims: [claim] };
       }
 
-      // Divorce type claims - can only have one divorce type at a time
-      const divorceTypeClaims: ClaimType[] = ['divorce', 'divorceRabbinical'];
+      // Divorce type claims - divorceRabbinical is the only divorce claim now
+      // (divorce at Family Court doesn't exist - only separate claims)
+      const divorceTypeClaims: ClaimType[] = ['divorceRabbinical'];
       let filteredClaims = state.selectedClaims;
 
       // If selecting a divorce type, remove other divorce types and exclusive claims

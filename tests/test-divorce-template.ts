@@ -1,6 +1,7 @@
 /**
- * Divorce Template Smoke Test
- * Generates the תביעת גירושין docx with representative data.
+ * Rabbinical Divorce Template Smoke Test
+ * Generates the תביעת גירושין רבני docx with representative data.
+ * Note: Divorce claims only go to Rabbinical Court (בית הדין הרבני)
  *
  * Run with:
  *    npx tsx tests/test-divorce-template.ts
@@ -10,7 +11,7 @@ import "dotenv/config";
 import fs from "fs";
 import path from "path";
 import type { BasicInfo, FormData } from "../lib/types";
-import { generateDocument } from "../lib/services/document-service";
+import { generateDocument } from "../lib/api/services/document-generator";
 
 async function run() {
   const outputDir = path.join(process.cwd(), "tmp");
@@ -112,12 +113,12 @@ async function run() {
   const documentData = {
     basicInfo,
     formData,
-    selectedClaims: ["divorce" as const],
-    claimType: "divorce" as const,
+    selectedClaims: ["divorceRabbinical" as const],
+    claimType: "divorceRabbinical" as const,
   };
 
-  console.log("🧪 Generating תביעת גירושין.docx (template test)...");
-  const buffer = await generateDocument(documentData as any, "divorce");
+  console.log("🧪 Generating תביעת גירושין רבני.docx (template test)...");
+  const buffer = await generateDocument(documentData);
   const outputPath = path.join(
     outputDir,
     `divorce-template-test-${Date.now()}.docx`

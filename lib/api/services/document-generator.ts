@@ -19,9 +19,7 @@ import { generateCustodyClaim } from './custody-claim-generator';
 import { generateAlimonyClaim } from './alimony-claim-generator';
 import { generateDivorceClaim } from './divorce-claim-generator';
 import { generateDivorceAgreement } from './divorce-agreement-generator';
-import { generateDivorceClaimFamily } from './divorce-claim-family-generator';
 import { generateShalomBayitClaim } from './shalombayit-claim-generator';
-import { determineCourtType, DivorceRoutingResult } from '@/lib/utils/divorce-court-router';
 import {
   ClaimType,
   BasicInfo,
@@ -42,25 +40,24 @@ export interface DocumentGenerationOptions {
     description: string;
     images: Buffer[];
   }>;
-  // Set by the generator for divorce claims to pass routing result to submission
-  divorceRouting?: DivorceRoutingResult;
 }
 
 /**
  * Get template path for a claim type
+ * Note: Most claims are now programmatically generated, this is for legacy template support
  */
 function getTemplatePath(claimType: ClaimType): string {
-  const templates: Record<ClaimType, string> = {
+  // Use Partial since not all claim types have templates (most are programmatically generated)
+  const templates: Partial<Record<ClaimType, string>> = {
     property: 'תביעת רכושית.docx',
     custody: 'תביעת משמורת.docx',
     alimony: 'תביעת מזונות.docx',
-    divorce: 'תביעת גירושין.docx',
     divorceAgreement: 'הסכם גירושין.docx',
     shalomBayit: 'תביעת שלום בית.docx',        // Programmatically generated
-    divorceRabbinical: 'תביעת גירושין רבני.docx', // Programmatically generated
+    divorceRabbinical: 'תביעת גירושין רבני.docx', // Programmatically generated (בית הדין הרבני only)
   };
 
-  const filename = templates[claimType];
+  const filename = templates[claimType] || `${claimType}.docx`;
   return path.join(process.cwd(), 'templates', filename);
 }
 
@@ -73,10 +70,9 @@ export function templateExists(claimType: ClaimType): boolean {
     'property',
     'custody',
     'alimony',
-    'divorce',
     'divorceAgreement',
     'shalomBayit',
-    'divorceRabbinical',
+    'divorceRabbinical', // Divorce only at בית הדין הרבני - no family court divorce
   ];
   if (programmaticClaims.includes(claimType)) {
     return true;
@@ -276,40 +272,6 @@ export async function generateDocument(
       // Convert docx Document object to buffer
       const { Packer } = await import('docx');
       documentBuffer = await Packer.toBuffer(document);
-    } else if (claimType === 'divorce') {
-      // Determine which court to route to based on user's answers
-      const routing = determineCourtType({ step4: formData.divorce || {}, ...formData });
-      console.log(`📝 Divorce routing: ${routing.courtType} court, track: ${routing.track}`);
-      console.log(`   Reasons: ${routing.reasons.join('; ')}`);
-
-      if (routing.courtType === 'family') {
-        // Family Court path - simpler divorce petition
-        console.log('📝 Using Family Court generator...');
-        documentBuffer = await generateDivorceClaimFamily({
-          basicInfo,
-          formData,
-          signature: options.signature,
-          lawyerSignature: options.lawyerSignature,
-          attachments: options.attachments,
-        });
-
-        // Store routing result for the submission response
-        (options as any).divorceRouting = routing;
-      } else {
-        // Rabbinical Court path (default) - includes bundled claims
-        console.log('📝 Using Rabbinical Court generator...');
-        documentBuffer = await generateDivorceClaim({
-          basicInfo,
-          formData,
-          signature: options.signature,
-          lawyerSignature: options.lawyerSignature,
-          attachments: options.attachments,
-          selectedClaims: options.selectedClaims,
-        });
-
-        // Store routing result
-        (options as any).divorceRouting = routing;
-      }
     } else if (claimType === 'divorceAgreement') {
       console.log('📝 Using compact programmatic generator for divorce agreement...');
       documentBuffer = await generateDivorceAgreement({

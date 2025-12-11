@@ -3,7 +3,6 @@ import { generateDocument, DocumentGenerationOptions } from '@/lib/api/services/
 import { uploadToDrive, createFolder, searchFolders, downloadFile } from '@/lib/api/services/google-drive';
 import { sendSubmissionConfirmation, sendSubmissionNotification } from '@/lib/services/email-service';
 import { CLAIMS } from '@/lib/constants/claims';
-import { DivorceRoutingResult, getCourtTypeName, getTrackName } from '@/lib/utils/divorce-court-router';
 
 interface SubmissionData {
   basicInfo: {
@@ -179,9 +178,6 @@ export async function POST(request: NextRequest) {
       console.log(`✅ Processed ${processedAttachments.length} attachments into ${processedAttachments.reduce((sum, att) => sum + att.images.length, 0)} pages`);
     }
 
-    // Track divorce routing result (for family court suggestions)
-    let divorceRouting: DivorceRoutingResult | undefined;
-
     // Generate documents for each selected claim
     for (const claimType of submissionData.selectedClaims) {
       console.log(`📄 Generating ${claimType} document...`);
@@ -215,15 +211,6 @@ export async function POST(request: NextRequest) {
       };
 
       const claimDoc = await generateDocument(generationOptions);
-
-      // Capture divorce routing result (set by generateDocument for divorce claims)
-      if (claimType === 'divorce' && generationOptions.divorceRouting) {
-        divorceRouting = generationOptions.divorceRouting;
-        console.log(`📍 Divorce routed to: ${getCourtTypeName(divorceRouting.courtType)} (${divorceRouting.track})`);
-        if (divorceRouting.suggestedClaims.length > 0) {
-          console.log(`💡 Suggested additional claims: ${divorceRouting.suggestedClaims.join(', ')}`);
-        }
-      }
 
       const fileName = `${hebrewDocNames[claimType] || claimType}.docx`;
 
@@ -388,17 +375,6 @@ export async function POST(request: NextRequest) {
       folderId: parentFolderId,
       folderName: parentFolderName,
     };
-
-    // Add divorce routing info for family court path (with suggested claims)
-    if (divorceRouting) {
-      response.divorceRouting = {
-        courtType: divorceRouting.courtType,
-        courtTypeName: getCourtTypeName(divorceRouting.courtType),
-        track: divorceRouting.track,
-        trackName: getTrackName(divorceRouting.track),
-        suggestedClaims: divorceRouting.suggestedClaims,
-      };
-    }
 
     return NextResponse.json(response);
 

@@ -100,19 +100,20 @@ export function RoutingQuestions({ onComplete }: RoutingQuestionsProps) {
       claims = ["divorceRabbinical"];
       totalPrice = 3900;
     } else {
-      // Family court - claims depend on children and gender
+      // Family court path - separate claims only (NO divorce document!)
+      // Divorce itself happens at Rabbinical Court - Family Court handles only separate claims
       if (hasChildren) {
-        // Has children: divorce + custody + alimony (children) + property
-        claims = ["divorce", "custody", "alimony", "property"];
-        totalPrice = 3900 * 4; // 15,600
-      } else if (applicantIsFemale) {
-        // No children + female applicant: divorce + property + alimony (spousal/מזונות אישה)
-        claims = ["divorce", "alimony", "property"];
+        // Has children: custody + alimony (children) + property
+        claims = ["custody", "alimony", "property"];
         totalPrice = 3900 * 3; // 11,700
-      } else {
-        // No children + male applicant: divorce + property only
-        claims = ["divorce", "property"];
+      } else if (applicantIsFemale) {
+        // No children + female applicant: property + alimony (spousal/מזונות אישה)
+        claims = ["alimony", "property"];
         totalPrice = 3900 * 2; // 7,800
+      } else {
+        // No children + male applicant: property only
+        claims = ["property"];
+        totalPrice = 3900; // 3,900
       }
     }
 
@@ -549,7 +550,6 @@ export function RoutingQuestions({ onComplete }: RoutingQuestionsProps) {
 
         // Map claim types to Hebrew labels
         const claimLabels: Record<ClaimType, string> = {
-          divorce: "תביעת גירושין",
           custody: "תביעת משמורת",
           alimony: "תביעת מזונות",
           property: "תביעת רכושית",

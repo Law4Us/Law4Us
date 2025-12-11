@@ -30,12 +30,6 @@ export const CLAIMS: Claim[] = [
     bundledClaims: ["custody", "alimony", "property"],
   },
   {
-    key: "divorce",
-    label: "תביעת גירושין משפחתי",
-    description: "הגשת תביעה לגירושין בבית המשפט לענייני משפחה",
-    price: 3900,
-  },
-  {
     key: "property",
     label: "תביעת רכושית",
     description: "תביעה בעניין חלוקת הרכוש המשותף, נכסים, חובות וזכויות כלכליות",

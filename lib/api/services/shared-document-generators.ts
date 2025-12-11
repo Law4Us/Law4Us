@@ -234,14 +234,18 @@ export function createRelationshipSection(
   }
 
   // Add SHARED children living arrangement in same paragraph
+  // Use legal titles (התובע/ת, הנתבע/ת) instead of names per lawyer feedback
+  const plaintiffTitle = basicInfo.gender === 'female' ? 'התובעת' : 'התובע';
+  const defendantTitle = basicInfo.gender2 === 'female' ? 'הנתבעת' : 'הנתבע';
+
   if (sharedChildren.length > 0) {
     // Use custody.currentLivingArrangement if available, otherwise skip living arrangement details
     const livingArrangement = formData.custody?.currentLivingArrangement;
 
     if (livingArrangement === 'with_applicant') {
-      relationshipText += `, והילדים מתגוררים עם ${basicInfo.fullName}.`;
+      relationshipText += `, כאשר הילדים מתגוררים עם ${plaintiffTitle}.`;
     } else if (livingArrangement === 'with_respondent') {
-      relationshipText += `, והילדים מתגוררים עם ${basicInfo.fullName2}.`;
+      relationshipText += `, כאשר הילדים מתגוררים עם ${defendantTitle}.`;
     } else if (livingArrangement === 'split') {
       relationshipText += `, והמגורים של הילדים חלוקים בין ההורים.`;
     } else if (livingArrangement === 'together') {
@@ -257,7 +261,7 @@ export function createRelationshipSection(
   // Add previous children if any
   if (previousChildren.length > 0) {
     const previousChildrenNames = previousChildren.map(child => formatChildNaturally(child)).join(', ');
-    const gender = basicInfo.gender === 'female' ? 'למבקשת' : 'למבקש';
+    const gender = basicInfo.gender === 'female' ? 'לתובעת' : 'לתובע';
     relationshipText += ` בנוסף, ${gender} ${previousChildren.length === 1 ? 'ילד' : 'ילדים'} מנישואין קודמים: ${previousChildrenNames}.`;
   }
 
@@ -612,38 +616,19 @@ export function createCourtHeader(options: {
     paragraphs.push(createBodyParagraph('תאריך חתימת המסמך: ___________'));
   }
 
-  // Court name - TOP RIGHT (regular body size, not bold)
-  const forumLine = options.docketNumberPlaceholder
+  // Court name with city on RIGHT + Judge on LEFT (all on same line)
+  // Format: "בבית המשפט לענייני משפחה בתל אביב                    בפני כב' השו' שמעון כהן"
+  const forumWithCity = options.docketNumberPlaceholder
     ? `${forum} ${options.docketNumberPlaceholder}${options.city ? ` ${options.city}` : ''}`
-    : forum;
+    : `${forum} ${options.city}`;
 
-  paragraphs.push(
-    new Paragraph({
-      children: [
-        new TextRun({
-          text: forumLine,
-          size: FONT_SIZES.BODY,
-          font: 'David',
-          rightToLeft: true,
-        }),
-      ],
-      alignment: AlignmentType.START, // START = right in RTL
-      spacing: { after: SPACING.LINE },
-      bidirectional: true,
-    })
-  );
-
-  if (addSpacing) {
-    paragraphs.push(createSpacerLine(SPACING.LINE));
-  }
-
-  // City on RIGHT + Judge on LEFT (using non-breaking spaces)
-  if (options.showJudgeLine !== false && !options.docketNumberPlaceholder) {
+  if (options.showJudgeLine !== false) {
+    // Court + City on right, Judge on left - same line
     paragraphs.push(
       new Paragraph({
         children: [
           new TextRun({
-            text: `${options.city}${'\u00A0'.repeat(70)}בפני כב' השו' ${options.judgeName}`,
+            text: `${forumWithCity}${'\u00A0'.repeat(50)}בפני כב' השו' ${options.judgeName}`,
             size: FONT_SIZES.BODY,
             font: 'David',
             rightToLeft: true,
@@ -654,6 +639,27 @@ export function createCourtHeader(options: {
         bidirectional: true,
       })
     );
+  } else {
+    // Just court name + city (no judge line)
+    paragraphs.push(
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: forumWithCity,
+            size: FONT_SIZES.BODY,
+            font: 'David',
+            rightToLeft: true,
+          }),
+        ],
+        alignment: AlignmentType.START,
+        spacing: { after: SPACING.LINE },
+        bidirectional: true,
+      })
+    );
+  }
+
+  if (addSpacing) {
+    paragraphs.push(createSpacerLine(SPACING.LINE));
   }
 
   // Optional children list (inline, comma-separated)
@@ -897,7 +903,7 @@ export function generatePowerOfAttorney(
   formData: FormData,
   clientSignature?: string | Buffer,
   lawyerSignature?: string | Buffer,
-  claimType: 'רכושית' | 'משמורת' | 'מזונות' | 'גירושין' = 'מזונות'
+  claimType: 'רכושית' | 'משמורת' | 'מזונות' | 'גירושין' | 'שלום בית' = 'מזונות'
 ): Paragraph[] {
   const paragraphs: Paragraph[] = [];
   const today = new Date().toLocaleDateString('he-IL');

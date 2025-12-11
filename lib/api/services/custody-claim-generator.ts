@@ -59,7 +59,7 @@ interface CustodyClaimData {
 
 /**
  * Get gendered term for plaintiff (person 1)
- * CUSTODY-SPECIFIC: Uses "מבקש/ת" instead of "תובע/ת"
+ * Uses standard "תובע/ת" terminology per lawyer feedback
  */
 function getPlaintiffTerm(gender?: 'male' | 'female', name?: string): {
   title: string;
@@ -68,14 +68,14 @@ function getPlaintiffTerm(gender?: 'male' | 'female', name?: string): {
   name: string;
 } {
   if (gender === 'male') {
-    return { title: 'המבקש', pronoun: 'הוא', possessive: 'שלו', name: name || 'המבקש' };
+    return { title: 'התובע', pronoun: 'הוא', possessive: 'שלו', name: name || 'התובע' };
   }
-  return { title: 'המבקשת', pronoun: 'היא', possessive: 'שלה', name: name || 'המבקשת' };
+  return { title: 'התובעת', pronoun: 'היא', possessive: 'שלה', name: name || 'התובעת' };
 }
 
 /**
  * Get gendered term for defendant (person 2)
- * CUSTODY-SPECIFIC: Uses "משיב/ה" instead of "נתבע/ת"
+ * Uses standard "נתבע/ת" terminology per lawyer feedback
  */
 function getDefendantTerm(gender?: 'male' | 'female', name?: string): {
   title: string;
@@ -84,9 +84,9 @@ function getDefendantTerm(gender?: 'male' | 'female', name?: string): {
   name: string;
 } {
   if (gender === 'male') {
-    return { title: 'המשיב', pronoun: 'הוא', possessive: 'שלו', name: name || 'המשיב' };
+    return { title: 'הנתבע', pronoun: 'הוא', possessive: 'שלו', name: name || 'הנתבע' };
   }
-  return { title: 'המשיבה', pronoun: 'היא', possessive: 'שלה', name: name || 'המשיבה' };
+  return { title: 'הנתבעת', pronoun: 'היא', possessive: 'שלה', name: name || 'הנתבעת' };
 }
 
 /**
@@ -131,6 +131,31 @@ function formatChildNamesList(children: any[]): string {
   return children
     .map((child: any) => `${child.firstName || ''} ${child.lastName || ''}`.trim() || 'הקטין/ה')
     .join(children.length > 1 ? ', ' : '');
+}
+
+/**
+ * Get gendered minor term based on child's gender
+ * Returns "הקטין" for male, "הקטינה" for female
+ */
+function getMinorTerm(child: any): string {
+  const gender = child.gender || child.childGender;
+  if (gender === 'female' || gender === 'נקבה') {
+    return 'הקטינה';
+  }
+  return 'הקטין';
+}
+
+/**
+ * Format Hebrew month name from date
+ */
+function formatHebrewMonthYear(date: Date): string {
+  const hebrewMonths = [
+    'ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני',
+    'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'
+  ];
+  const month = hebrewMonths[date.getMonth()];
+  const year = date.getFullYear();
+  return `${month} ${year}`;
 }
 
 /**
@@ -422,8 +447,10 @@ async function createFactsSection(
   console.log(`\n📝 Processing individual child relationships...`);
   for (const child of minorChildren) {
     if (child.childRelationship && child.childRelationship.trim().length > 0) {
-      const childName = `${child.firstName || ''} ${child.lastName || ''}`.trim() || 'הקטין/ה';
-      console.log(`  🤖 Transforming relationship with ${childName}...`);
+      const childFirstName = child.firstName || '';
+      const minorPrefix = getMinorTerm(child); // "הקטין" or "הקטינה"
+      const sectionTitle = `מערכת היחסים עם ${minorPrefix} ${childFirstName}`.trim();
+      console.log(`  🤖 Transforming relationship with ${childFirstName}...`);
 
       try {
         const transformedChildRelationship = await transformToLegalLanguage(
@@ -432,33 +459,33 @@ async function createFactsSection(
             claimType: 'תביעת משמורת',
             applicantName: plaintiff.name,
             respondentName: defendant.name,
-            fieldLabel: `מערכת היחסים עם ${childName}`,
-            additionalContext: `תיאור מערכת היחסים של ${plaintiff.title} עם הקטין/ה ${childName}`,
+            fieldLabel: sectionTitle,
+            additionalContext: `תיאור מערכת היחסים של ${plaintiff.title} עם ${minorPrefix} ${childFirstName}. השתמש בפורמט: "מערכת היחסים של ${plaintiff.title} עם ${minorPrefix} באה לידי ביטוי ב:..." ולא "מתאר/ת". אם יש תיאור אישיות (כמו "רגיש", "חכם") - הפרד אותו מתיאור היחסים.`,
           }
         );
 
-        // Add child name as subsection header
+        // Add child name as subsection header (הקטין/ה + first name only)
         paragraphs.push(
-          createSubsectionHeader(`מערכת היחסים עם ${childName}`)
+          createSubsectionHeader(sectionTitle)
         );
 
         // Add transformed relationship paragraph
         paragraphs.push(createBodyParagraph(transformedChildRelationship));
 
-        console.log(`  ✅ Transformed relationship with ${childName}`);
+        console.log(`  ✅ Transformed relationship with ${childFirstName}`);
       } catch (error) {
-        console.error(`  ❌ Error transforming relationship with ${childName}:`, error);
+        console.error(`  ❌ Error transforming relationship with ${childFirstName}:`, error);
         // Fallback to original text if transformation fails
         paragraphs.push(
-          createSubsectionHeader(`מערכת היחסים עם ${childName}`)
+          createSubsectionHeader(sectionTitle)
         );
         paragraphs.push(createBodyParagraph(child.childRelationship));
       }
     }
   }
 
-  // Current living arrangement (factual description)
-  paragraphs.push(createSubsectionHeader('מצב מגורים נוכחי'));
+  // Current living/visitation arrangement (factual description)
+  paragraphs.push(createSubsectionHeader('הסדרי השהייה/ראייה הקיימים כיום'));
 
   const currentLiving = custodyData.currentLivingArrangement;
 
@@ -586,10 +613,11 @@ async function createFactsSection(
     }
   }
 
-  // Add "since when" if provided
+  // Add "since when" if provided - using month/year format per lawyer feedback
   if (custodyData.sinceWhen && currentLiving !== 'together') {
-    const sinceDate = new Date(custodyData.sinceWhen).toLocaleDateString('he-IL');
-    paragraphs.push(createBodyParagraph(`מצב זה החל מיום ${sinceDate}.`));
+    const sinceDate = new Date(custodyData.sinceWhen);
+    const monthYear = formatHebrewMonthYear(sinceDate);
+    paragraphs.push(createBodyParagraph(`הסדר זה קיים מחודש ${monthYear}.`));
   }
 
   // Custody situation summary - Transform with Groq AI

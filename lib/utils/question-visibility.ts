@@ -45,8 +45,9 @@ export function shouldShowQuestion(
     if (wizardPath === 'guided' && routingAnswers[ROUTING_QUESTION_MAP[questionId]]) {
       return false;
     }
-    // If divorce not selected, hide divorce-specific questions
-    if (!selectedClaims.includes('divorce') && !selectedClaims.includes('divorceRabbinical')) {
+    // If divorceRabbinical not selected, hide divorce-specific questions
+    // Note: 'divorce' claim no longer exists - divorces only at Rabbinical Court
+    if (!selectedClaims.includes('divorceRabbinical')) {
       return false;
     }
   }
@@ -60,16 +61,16 @@ export function shouldShowQuestion(
   if (questionId === 'heading-divorce-routing') {
     // Only show if we need to show at least one routing question
     if (wizardPath === 'guided') return false;
-    if (!selectedClaims.includes('divorce') && !selectedClaims.includes('divorceRabbinical')) return false;
+    if (!selectedClaims.includes('divorceRabbinical')) return false;
   }
 
   // relationshipDescription - hide if claim-specific narrative exists
   if (questionId === 'relationshipDescription' || questionId === 'heading-relationship') {
-    const hasDivorce = selectedClaims.includes('divorce') || selectedClaims.includes('divorceRabbinical');
+    const hasDivorceRabbinical = selectedClaims.includes('divorceRabbinical');
     const hasShalomBayit = selectedClaims.includes('shalomBayit');
 
     // Hide if user will fill a claim-specific narrative
-    if (hasDivorce || hasShalomBayit) {
+    if (hasDivorceRabbinical || hasShalomBayit) {
       return false;
     }
   }

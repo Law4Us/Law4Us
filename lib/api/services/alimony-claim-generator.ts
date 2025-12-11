@@ -242,6 +242,7 @@ function createPartB(data: AlimonyClaimData): Paragraph[] {
 
     // 2. Relief requested - NUMBERED
     createNumberedHeader('2. פירוט הסעד המבוקש באופן תמציתי'),
+    createBodyParagraph('מתבקש לפסוק מזונות.', { after: SPACING.LINE }),
     createNumberedItem(1, 'כבוד בית המשפט יפסוק מזונות לפי הפרמטרים שבפניו.'),
     createNumberedItem(
       2,
@@ -506,18 +507,24 @@ function createEmploymentSections(data: AlimonyClaimData): Paragraph[] {
   // Respondent employment - SECTION level
   paragraphs.push(createSubsectionHeader(`השתכרות ${respondentTitle}`));
 
-  if (empData.respondentEmploymentStatus === 'employee' && empData.respondentEmployer) {
-    paragraphs.push(
-      createBodyParagraph(
-        `${respondentTitle} ${respondentEmploymentVerb} אצל ${empData.respondentEmployer}.`,
-        { after: SPACING.LINE }
-      )
-    );
-  }
-
   // Handle both employee salary and self-employed income
   const respondentIncome = empData.respondentGrossSalary || empData.respondentGrossIncome;
-  if (respondentIncome) {
+
+  if (empData.respondentEmploymentStatus === 'employee' && empData.respondentEmployer) {
+    // Build sentence with employer and income together
+    let employmentText = `${respondentTitle} ${respondentEmploymentVerb} אצל ${empData.respondentEmployer}`;
+    if (respondentIncome) {
+      employmentText += `. ${respondentIncomeLabel} המשוערת: ${formatCurrency(respondentIncome)} לחודש`;
+    }
+    employmentText += '.';
+    paragraphs.push(createBodyParagraph(employmentText, { after: SPACING.LINE }));
+
+    // Add note about pay stubs as attachments
+    paragraphs.push(
+      createBodyParagraph('מצ"ב תלושי שכר כנספחים.', { after: SPACING.LINE })
+    );
+  } else if (respondentIncome) {
+    // Self-employed or no employer specified
     paragraphs.push(
       createBodyParagraph(
         `${respondentIncomeLabel} המשוערת: ${formatCurrency(respondentIncome)} לחודש.`,
@@ -1081,13 +1088,14 @@ function createHouseholdNeedsTable(
 function createReliefSection(): Paragraph[] {
   return [
     createSectionHeader('סעדים'),
+    createBodyParagraph('מתבקש לפסוק מזונות זמנים.', { after: SPACING.LINE }),
     createNumberedItem(1, 'כבוד בית המשפט יפסוק מזונות לפי הפרמטרים שבפניו.'),
     createNumberedItem(
       2,
       'כמו כן, מתבקש בית המשפט לחייב עבור הוצאות שונות, לרבות, הוצאות חינוך והוצאות רפואיות בהתאם לפרמטרים שהובאו בפני כבוד בית המשפט.'
     ),
-    createNumberedItem(3, 'סעדים זמנים ככל שידרשו.'),
-    createNumberedItem(4, 'פסיקת מזונות זמנים.'),
+    createNumberedItem(3, 'סעדים זמניים ככל שידרשו.'),
+    createNumberedItem(4, 'פסיקת מזונות זמניים.'),
     createBodyParagraph('', { after: SPACING.SUBSECTION }),
   ];
 }

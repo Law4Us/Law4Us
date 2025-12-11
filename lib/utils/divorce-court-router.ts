@@ -1,14 +1,17 @@
 /**
  * Divorce Court Router
  * Determines whether a divorce case should go to:
- * - בית דין רבני (Rabbinical Court) - bundled divorce with custody/alimony/property
- * - בית משפט לענייני משפחה (Family Court) - separate claims
+ * - בית דין רבני (Rabbinical Court) - bundled divorce with custody/alimony/property (כריכה)
+ * - בית משפט לענייני משפחה (Family Court) - separate claims ONLY (NO divorce document!)
+ *
+ * IMPORTANT: According to Israeli law, divorce (גירושין) can ONLY happen at the Rabbinical Court.
+ * Family Court handles property, custody, and alimony claims separately, but NOT the divorce itself.
  *
  * Based on lawyer's guidance:
- * - Infidelity → Family Court
- * - Young children (under 6) → Family Court (more equality in custody)
- * - Large property/career disparity → Rabbinical Court
- * - Halachic grounds for divorce → Rabbinical Court
+ * - Infidelity → Family Court path (separate claims: property, custody, alimony)
+ * - Young children (under 6) → Family Court path (separate claims)
+ * - Large property/career disparity → Rabbinical Court (bundled divorce)
+ * - Halachic grounds for divorce → Rabbinical Court (bundled divorce)
  */
 
 export type DivorceCourtType = 'rabbinical' | 'family';
@@ -28,8 +31,11 @@ export interface DivorceRoutingResult {
   track: DivorceTrack;
   /** Claims to bundle with divorce (only for rabbinical court) */
   bundledClaims: BundledClaims;
-  /** Suggested additional claims for family court path */
-  suggestedClaims: string[];
+  /**
+   * For family court path: claims to AUTO-SELECT (not just suggest)
+   * Since divorce can't happen at family court, these are the claims that will be filed separately
+   */
+  selectedClaims: ('property' | 'custody' | 'alimony')[];
   /** Reasons for the routing decision (for internal use/debugging) */
   reasons: string[];
 }
@@ -68,7 +74,7 @@ export function determineCourtType(formData: FormData): DivorceRoutingResult {
       courtType: 'rabbinical', // Shalom Bayit always goes to rabbinical court
       track: 'shalomBayit',
       bundledClaims: { property: false, custody: false, alimony: false },
-      suggestedClaims: [],
+      selectedClaims: [],
       reasons
     };
   }
@@ -90,26 +96,26 @@ export function determineCourtType(formData: FormData): DivorceRoutingResult {
 
   // ========== STEP 3: Apply routing rules ==========
 
-  // RULE 1: Infidelity ALWAYS goes to family court
+  // RULE 1: Infidelity ALWAYS goes to family court path (separate claims, NO divorce document)
   if (hasInfidelity) {
-    reasons.push('Infidelity present - routing to Family Court');
+    reasons.push('Infidelity present - routing to Family Court path (separate claims only, no divorce document)');
     return {
       courtType: 'family',
-      track: 'divorce',
+      track: 'divorce', // Note: this track is informational only - no divorce document will be created
       bundledClaims: { property: false, custody: false, alimony: false },
-      suggestedClaims: buildSuggestions(hasChildrenDispute, needsSupport, hasPropertyDispute),
+      selectedClaims: buildSelectedClaims(hasChildrenDispute, needsSupport, hasPropertyDispute),
       reasons
     };
   }
 
-  // RULE 2: Young children (under 6) + no strong rabbinical factors → family court
+  // RULE 2: Young children (under 6) + no strong rabbinical factors → family court path
   if (hasYoungChildren && !hasSignificantProperty && !hasCareerDisparity && !hasHalachicGrounds) {
-    reasons.push('Young children under 6 with no strong rabbinical factors - routing to Family Court');
+    reasons.push('Young children under 6 with no strong rabbinical factors - routing to Family Court path (separate claims only)');
     return {
       courtType: 'family',
-      track: 'divorce',
+      track: 'divorce', // Note: this track is informational only - no divorce document will be created
       bundledClaims: { property: false, custody: false, alimony: false },
-      suggestedClaims: buildSuggestions(hasChildrenDispute, needsSupport, hasPropertyDispute),
+      selectedClaims: buildSelectedClaims(hasChildrenDispute, needsSupport, hasPropertyDispute),
       reasons
     };
   }
@@ -138,7 +144,7 @@ export function determineCourtType(formData: FormData): DivorceRoutingResult {
         custody: hasChildrenDispute,
         alimony: needsSupport
       },
-      suggestedClaims: [],
+      selectedClaims: [], // Rabbinical court uses bundledClaims instead
       reasons
     };
   }
@@ -153,32 +159,44 @@ export function determineCourtType(formData: FormData): DivorceRoutingResult {
       custody: hasChildrenDispute,
       alimony: needsSupport
     },
-    suggestedClaims: [],
+    selectedClaims: [], // Rabbinical court uses bundledClaims instead
     reasons
   };
 }
 
 /**
- * Builds suggestions for additional claims (used for family court path)
+ * Builds the list of claims to auto-select for family court path
+ * Since divorce can't happen at family court, these are the separate claims to file
  */
-function buildSuggestions(
+function buildSelectedClaims(
   hasChildrenDispute: boolean,
   needsSupport: boolean,
   hasPropertyDispute: boolean
-): string[] {
-  const suggestions: string[] = [];
+): ('property' | 'custody' | 'alimony')[] {
+  const claims: ('property' | 'custody' | 'alimony')[] = [];
 
+  // Always include custody if there are children disputes
   if (hasChildrenDispute) {
-    suggestions.push('תביעת משמורת');
-  }
-  if (needsSupport) {
-    suggestions.push('תביעת מזונות');
-  }
-  if (hasPropertyDispute) {
-    suggestions.push('תביעה רכושית');
+    claims.push('custody');
   }
 
-  return suggestions;
+  // Always include alimony if support is needed
+  if (needsSupport) {
+    claims.push('alimony');
+  }
+
+  // Always include property if there are property disputes
+  if (hasPropertyDispute) {
+    claims.push('property');
+  }
+
+  // If no specific disputes mentioned, suggest all three as default for divorce scenario
+  if (claims.length === 0) {
+    // Default to all three claims when going through family court path
+    return ['property', 'custody', 'alimony'];
+  }
+
+  return claims;
 }
 
 /**
