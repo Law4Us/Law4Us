@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Plus, Trash2 } from "lucide-react";
-import { Button } from "@/components/ui";
+import { Button, FileUploadBlob } from "@/components/ui";
 import { cn } from "@/lib/utils";
 
 export interface RepeaterField {
@@ -136,31 +136,13 @@ export function Repeater({
                   />
                 ) : field.type === "file" ? (
                   <div>
-                    <input
-                      id={`${row.__id}-${field.name}`}
-                      type="file"
-                      accept={field.accept || ".pdf,.jpg,.jpeg,.png"}
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          handleFieldChange(row.__id, field.name, file);
-                        }
-                      }}
-                      className={cn(
-                        "w-full px-4 py-3 rounded-lg bg-white",
-                        "border border-neutral transition-smooth",
-                        "focus:border-primary focus:ring-2 focus:ring-primary/20",
-                        "text-body-small text-neutral-darkest",
-                        "file:ml-2 file:py-1 file:px-3 file:rounded",
-                        "file:border-0 file:text-body-small file:font-medium",
-                        "file:bg-primary file:text-white file:cursor-pointer"
-                      )}
+                    <FileUploadBlob
+                      value={row[field.name]}
+                      onChange={(value) => handleFieldChange(row.__id, field.name, value)}
+                      accept={field.accept || ".pdf,.jpg,.jpeg,.png,.heic,.heif"}
+                      multiple={false}
+                      compressImages={true}
                     />
-                    {row[field.name] && (
-                      <p className="mt-1 text-caption text-neutral-dark">
-                        {row[field.name].name || "קובץ נבחר"}
-                      </p>
-                    )}
                     {field.helper && (
                       <p className="mt-1 text-caption text-neutral-dark">
                         {field.helper}
