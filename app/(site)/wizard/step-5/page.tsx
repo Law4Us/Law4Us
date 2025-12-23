@@ -85,7 +85,10 @@ export default function Step5FinalSubmission() {
     setErrorMessage("");
 
     try {
+      console.log("🚀 Starting submission...");
+
       // Convert all File objects to base64 before submission
+      // Images are automatically compressed during this step
       const convertedFormData = await convertFormDataFiles(formData);
 
       // Extract attachments for document generation
@@ -93,6 +96,8 @@ export default function Step5FinalSubmission() {
         ...convertedFormData,
         basicInfo,
       });
+
+      console.log(`📎 Attachments to submit: ${attachments.length}`);
 
       // Prepare data for submission
       const submissionData = {
@@ -109,22 +114,47 @@ export default function Step5FinalSubmission() {
         submittedAt: new Date().toISOString(),
       };
 
+      const payload = JSON.stringify(submissionData);
+      const payloadSizeMB = (payload.length / (1024 * 1024)).toFixed(2);
+      console.log(`📦 Payload size: ${payloadSizeMB} MB`);
+
+      // Warn if payload is large (Vercel limit is 4.5MB)
+      if (payload.length > 4 * 1024 * 1024) {
+        console.warn(`⚠️ Large payload detected: ${payloadSizeMB} MB (limit is 4.5 MB)`);
+      }
+
       // Submit to API
       const response = await fetch("/api/submit", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(submissionData),
+        body: payload,
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "שגיאה בשליחת הטופס");
+        // Handle 413 Payload Too Large specifically
+        if (response.status === 413) {
+          throw new Error(
+            "הקבצים שהעליתם גדולים מדי. אנא הקטינו את גודל הקבצים או העלו פחות קבצים ונסו שוב."
+          );
+        }
+
+        // Try to parse error response
+        let errorMessage = "שגיאה בשליחת הטופס";
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorData.message || errorMessage;
+        } catch {
+          // If response isn't JSON, use status text
+          errorMessage = `שגיאה ${response.status}: ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
       }
 
       // Success
       setSubmissionState("success");
+      console.log("✅ Submission successful!");
 
       // Clear localStorage after successful submission
       setTimeout(() => {
@@ -132,7 +162,7 @@ export default function Step5FinalSubmission() {
         reset();
       }, 2000);
     } catch (error: any) {
-      console.error("Submission error:", error);
+      console.error("❌ Submission error:", error);
       setSubmissionState("error");
       setErrorMessage(error.message || "שגיאה לא ידועה");
       setRetryCount((prev) => prev + 1);

@@ -2,6 +2,8 @@
  * File conversion utilities for handling file uploads
  */
 
+import { compressImage, isCompressibleImage } from './image-compression';
+
 const MIME_EXTENSION_MAP: Record<string, string> = {
   'application/pdf': 'pdf',
   'image/jpeg': 'jpg',
@@ -79,8 +81,19 @@ function parseFileSource(
 
 /**
  * Convert a File object to base64 string
+ * Images are automatically compressed before conversion
  */
 export async function fileToBase64(file: File): Promise<string> {
+  // Compress images before converting to base64
+  let processedFile = file;
+  if (isCompressibleImage(file)) {
+    try {
+      processedFile = await compressImage(file);
+    } catch (error) {
+      console.warn(`Failed to compress ${file.name}, using original:`, error);
+    }
+  }
+
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
@@ -88,7 +101,7 @@ export async function fileToBase64(file: File): Promise<string> {
       resolve(result);
     };
     reader.onerror = (error) => reject(error);
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(processedFile);
   });
 }
 

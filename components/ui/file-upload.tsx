@@ -20,7 +20,7 @@ export function FileUpload({
   onChange,
   accept,
   multiple = false,
-  maxSize = 10 * 1024 * 1024, // 10MB default
+  maxSize = 5 * 1024 * 1024, // 5MB default (will be compressed to ~500KB for images)
   error,
   disabled,
   className,

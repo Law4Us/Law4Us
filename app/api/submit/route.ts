@@ -1,9 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { POST as handleSubmission } from "@/app/api/submission/route";
 
+// Route segment config for App Router
+export const dynamic = 'force-dynamic';
+export const maxDuration = 60; // Max execution time in seconds
+
 /**
  * API route for form submission
  * Directly calls the submission handler (no HTTP fetch to avoid auth issues)
+ *
+ * Note: Vercel has a 4.5MB limit for serverless function payloads.
+ * Large file uploads should be compressed client-side or use direct cloud upload.
  */
 export async function POST(request: NextRequest) {
   try {
