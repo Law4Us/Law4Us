@@ -79,15 +79,34 @@ export default function Step2DynamicForm() {
     return schema;
   }, [selectedClaims]);
 
-  // Collect all questions (global + claim-specific)
+  // Collect all questions (global + claim-specific + bundled claims)
   const allQuestions = React.useMemo(() => {
     const questions: Question[] = [...GLOBAL_QUESTIONS];
+    const addedClaimKeys = new Set<string>();
 
-    // Add claim-specific questions
+    // Add claim-specific questions (including bundled claims)
     selectedClaims.forEach((claimKey) => {
-      const claimQuestions = CLAIM_QUESTIONS_MAP[claimKey];
-      if (claimQuestions) {
-        questions.push(...claimQuestions);
+      // Add main claim questions
+      if (!addedClaimKeys.has(claimKey)) {
+        const claimQuestions = CLAIM_QUESTIONS_MAP[claimKey];
+        if (claimQuestions) {
+          questions.push(...claimQuestions);
+        }
+        addedClaimKeys.add(claimKey);
+      }
+
+      // Check for bundled claims (e.g., divorceRabbinical includes custody, alimony, property)
+      const claimDef = CLAIMS.find(c => c.key === claimKey);
+      if (claimDef?.bundledClaims) {
+        claimDef.bundledClaims.forEach((bundledKey) => {
+          if (!addedClaimKeys.has(bundledKey)) {
+            const bundledQuestions = CLAIM_QUESTIONS_MAP[bundledKey];
+            if (bundledQuestions) {
+              questions.push(...bundledQuestions);
+            }
+            addedClaimKeys.add(bundledKey);
+          }
+        });
       }
     });
 

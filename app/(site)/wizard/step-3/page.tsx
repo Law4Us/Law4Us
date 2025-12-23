@@ -56,6 +56,18 @@ export default function Step3SignDocuments() {
       return 'לא צוין';
     };
 
+    // Helper to translate home type values to Hebrew
+    const translateHomeType = (val: string | undefined) => {
+      const translations: Record<string, string> = {
+        'jointOwnership': 'בעלות משותפת',
+        'applicantOwnership': `בבעלות ${basicInfo.fullName || 'המבקש/ת'}`,
+        'respondentOwnership': `בבעלות ${basicInfo.fullName2 || 'בן/בת הזוג'}`,
+        'rental': 'שכירות',
+        'other': 'אחר',
+      };
+      return val ? (translations[val] || val) : 'לא צוין';
+    };
+
     // Convert signature to HTML img tag if signature exists
     const signatureHTML = signature
       ? `<img src="${signature}" alt="חתימה" style="width: 250px; height: 125px; display: block; margin: 10px 0;" />`
@@ -107,8 +119,8 @@ export default function Step3SignDocuments() {
       applicantTitle,
       previousMarriages: yesNo(formData.marriedBefore),
       childrenFromPrevious: yesNo(formData.hadChildrenFromPrevious),
-      applicantHomeType: formData.applicantHomeType || 'לא צוין',
-      partnerHomeType: formData.partnerHomeType || 'לא צוין',
+      applicantHomeType: translateHomeType(formData.applicantHomeType),
+      partnerHomeType: translateHomeType(formData.partnerHomeType),
       protectionOrder: yesNo(formData.protectionOrderRequested),
       pastViolence: yesNo(formData.pastViolenceReported),
       otherCases: formData.otherFamilyCases?.length > 0 ? 'קיימים תיקים אחרים' : 'אין תיקים אחרים',
