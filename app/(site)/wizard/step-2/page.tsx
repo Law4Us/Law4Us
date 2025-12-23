@@ -133,16 +133,32 @@ export default function Step2DynamicForm() {
   // Watch all fields for conditional rendering and auto-save
   const watchedValues = watch();
 
-  // Group questions by sections
+  // Helper to check if a question is visible based on conditionals
+  const isQuestionVisible = React.useCallback(
+    (question: Question): boolean => {
+      if (!question.conditional) return true;
+
+      const { dependsOn, showWhen } = question.conditional;
+      const dependentValue = getValueByPath<string | undefined>(watchedValues, dependsOn);
+
+      if (Array.isArray(showWhen)) {
+        return dependentValue !== undefined && showWhen.includes(dependentValue);
+      }
+      return dependentValue === showWhen;
+    },
+    [watchedValues]
+  );
+
+  // Group questions by sections, filtering out sections with no visible questions
   const sections = React.useMemo(() => {
-    const result: { title: string; questions: Question[] }[] = [];
+    const allSections: { title: string; questions: Question[] }[] = [];
     let currentSection: { title: string; questions: Question[] } | null = null;
 
     processedQuestions.forEach((question) => {
       if (question.type === "heading") {
         // Start a new section
         if (currentSection) {
-          result.push(currentSection);
+          allSections.push(currentSection);
         }
         currentSection = { title: question.label, questions: [] };
       } else {
@@ -157,11 +173,14 @@ export default function Step2DynamicForm() {
 
     // Push the last section
     if (currentSection) {
-      result.push(currentSection);
+      allSections.push(currentSection);
     }
 
-    return result;
-  }, [processedQuestions]);
+    // Filter out sections with no visible questions
+    return allSections.filter((section) =>
+      section.questions.some(isQuestionVisible)
+    );
+  }, [processedQuestions, isQuestionVisible]);
 
   // Track current visible section (for mobile/sidebar navigation)
   const [currentSectionIndex, setCurrentSectionIndex] = React.useState(0);
@@ -229,21 +248,7 @@ export default function Step2DynamicForm() {
   const isSectionComplete = React.useCallback(
     (section: { title: string; questions: Question[] }): boolean => {
       // Get all questions that are currently visible (conditionals met)
-      const visibleQuestions = section.questions.filter((q) => {
-        // Check if question should be shown based on conditionals
-        if (q.conditional) {
-          const { dependsOn, showWhen } = q.conditional;
-          const dependentValue = getValueByPath<string | undefined>(watchedValues, dependsOn);
-
-          if (Array.isArray(showWhen)) {
-            if (!dependentValue || !showWhen.includes(dependentValue)) return false;
-          } else {
-            if (dependentValue !== showWhen) return false;
-          }
-        }
-
-        return true;
-      });
+      const visibleQuestions = section.questions.filter(isQuestionVisible);
 
       // Get required questions from visible questions
       const requiredQuestions = visibleQuestions.filter((q) => q.required);
@@ -265,31 +270,20 @@ export default function Step2DynamicForm() {
         return value !== undefined && value !== "" && value !== null && !hasError;
       });
     },
-    [watchedValues, errors]
+    [isQuestionVisible, watchedValues, errors]
   );
 
   // Check if all required sections are complete
   const allRequiredSectionsComplete = React.useMemo(() => {
     // Get all sections with at least one required field
     const sectionsWithRequired = sections.filter((section) => {
-      const visibleQuestions = section.questions.filter((q) => {
-        if (q.conditional) {
-          const { dependsOn, showWhen } = q.conditional;
-          const dependentValue = getValueByPath<string | undefined>(watchedValues, dependsOn);
-          if (Array.isArray(showWhen)) {
-            if (!dependentValue || !showWhen.includes(dependentValue)) return false;
-          } else {
-            if (dependentValue !== showWhen) return false;
-          }
-        }
-        return true;
-      });
+      const visibleQuestions = section.questions.filter(isQuestionVisible);
       return visibleQuestions.some((q) => q.required);
     });
 
     // All sections with required fields must be complete
     return sectionsWithRequired.every((section) => isSectionComplete(section));
-  }, [sections, isSectionComplete, watchedValues]);
+  }, [sections, isSectionComplete, isQuestionVisible]);
 
   const onSubmit = (data: any) => {
     // Sync form data fields (copy claim-specific narratives to shared fields)
