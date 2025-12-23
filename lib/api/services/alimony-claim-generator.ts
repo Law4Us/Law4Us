@@ -310,13 +310,13 @@ function createPartC(data: AlimonyClaimData): Paragraph[] {
 
   // Add children living arrangement in same paragraph (if specified)
   if (minorChildren.length > 0) {
-    const livingArrangement = data.formData.custodyLivingArrangement;
+    const livingArrangement = data.formData.custody?.currentLivingArrangement;
 
-    if (livingArrangement === 'with_applicant') {
+    if (livingArrangement === 'with_me' || livingArrangement === 'with_applicant') {
       relationshipText += `, כאשר הילדים מתגוררים עם ${data.basicInfo.fullName}.`;
-    } else if (livingArrangement === 'with_respondent') {
+    } else if (livingArrangement === 'with_partner' || livingArrangement === 'with_respondent') {
       relationshipText += `, כאשר הילדים מתגוררים עם ${data.basicInfo.fullName2}.`;
-    } else if (livingArrangement === 'split') {
+    } else if (livingArrangement === 'split' || livingArrangement === 'alternating') {
       relationshipText += `, כאשר המגורים חלוקים בצורה שוויונית בין ההורים.`;
     } else if (livingArrangement === 'together') {
       relationshipText += `, כאשר הילדים מתגוררים עם שני ההורים.`;
@@ -356,13 +356,16 @@ async function createAlimonyDetailsSection(data: AlimonyClaimData): Promise<Para
       )
     : [];
 
-  const hasVehicleInfo = alimony.hasVehicle || alimony.vehicleDetails;
+  // Get vehicles from property data (collected via property.vehicles repeater)
+  const vehicles = Array.isArray(data.formData.vehicles)
+    ? data.formData.vehicles.filter((v: any) => v && (v.make || v.model || v.plateNumber))
+    : [];
 
   const hasAnyDetails =
     relationshipDescription ||
     hasPreviousAlimonyInfo ||
     bankAccounts.length > 0 ||
-    hasVehicleInfo;
+    vehicles.length > 0;
 
   paragraphs.push(createSubsectionHeader('רקע'));
 
@@ -452,18 +455,19 @@ async function createAlimonyDetailsSection(data: AlimonyClaimData): Promise<Para
     );
   }
 
-  if (alimony.hasVehicle === 'yes' && alimony.vehicleDetails) {
+  // Display vehicle info from property data
+  if (vehicles.length > 0) {
+    const vehicleDescriptions = vehicles.map((v: any) => {
+      const parts = [v.make, v.model, v.year].filter(Boolean);
+      if (v.plateNumber) parts.push(`(${v.plateNumber})`);
+      return parts.join(' ') || 'רכב';
+    });
+
     paragraphs.push(
       createBodyParagraph(
-        `בבעלות ${applicantTitle} רכב: ${alimony.vehicleDetails}.`,
+        `בבעלות הצדדים ${vehicles.length === 1 ? 'רכב' : 'כלי רכב'}: ${vehicleDescriptions.join('; ')}.`,
         { after: SPACING.LINE }
       )
-    );
-  } else if (alimony.hasVehicle === 'no') {
-    paragraphs.push(
-      createBodyParagraph(`${applicantTitle} אינו/ה מחזיק/ה רכב בבעלות אישית.`, {
-        after: SPACING.LINE,
-      })
     );
   }
 
