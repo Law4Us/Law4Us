@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { del } from '@vercel/blob';
 import { generateDocument, DocumentGenerationOptions } from '@/lib/api/services/document-generator';
 import { uploadToDrive, createFolder, searchFolders, downloadFile } from '@/lib/api/services/google-drive';
 import { sendSubmissionConfirmation, sendSubmissionNotification } from '@/lib/services/email-service';
@@ -362,6 +363,79 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('🎉 Submission completed successfully!');
+
+    // ========== CLEANUP: Delete blob files after successful upload ==========
+    const blobUrlsToDelete: string[] = [];
+
+    // Helper to check if value is a blob URL
+    const isBlobUrl = (url: unknown): url is string =>
+      typeof url === 'string' && url.includes('blob.vercel-storage.com');
+
+    // Helper to extract blob URL from various formats
+    const extractBlobUrl = (value: any): string | null => {
+      if (!value) return null;
+      if (isBlobUrl(value)) return value;
+      if (typeof value === 'object' && isBlobUrl(value.url)) return value.url;
+      if (typeof value === 'object' && isBlobUrl(value.blobUrl)) return value.blobUrl;
+      return null;
+    };
+
+    // Collect blob URLs from attachments
+    if (submissionData.attachments) {
+      for (const att of submissionData.attachments) {
+        if (att.isBlob && att.blobUrl) {
+          blobUrlsToDelete.push(att.blobUrl);
+        }
+      }
+    }
+
+    // Collect blob URLs from formData.attachments
+    if (submissionData.formData.attachments && Array.isArray(submissionData.formData.attachments)) {
+      for (const att of submissionData.formData.attachments) {
+        const url = extractBlobUrl(att);
+        if (url) blobUrlsToDelete.push(url);
+      }
+    }
+
+    // Collect blob URLs from property section file fields
+    const property = submissionData.formData.property;
+    if (property) {
+      // Single file fields
+      const singleFileFields = ['applicantIncomeProof', 'respondentIncomeProof', 'courtDocument'];
+      for (const field of singleFileFields) {
+        const url = extractBlobUrl(property[field]);
+        if (url) blobUrlsToDelete.push(url);
+      }
+
+      // Array file fields
+      const arrayFileFields = ['applicantPaySlips', 'respondentPaySlips', 'apartments', 'vehicles', 'savings', 'benefits', 'properties', 'debts'];
+      for (const field of arrayFileFields) {
+        if (Array.isArray(property[field])) {
+          for (const item of property[field]) {
+            const url = extractBlobUrl(item) || extractBlobUrl(item?.proof) || extractBlobUrl(item?.attachment);
+            if (url) blobUrlsToDelete.push(url);
+          }
+        }
+      }
+    }
+
+    // Collect from divorceAgreement
+    if (submissionData.formData.divorceAgreement?.uploadedAgreement) {
+      const url = extractBlobUrl(submissionData.formData.divorceAgreement.uploadedAgreement);
+      if (url) blobUrlsToDelete.push(url);
+    }
+
+    // Delete all collected blob URLs
+    if (blobUrlsToDelete.length > 0) {
+      console.log(`🗑️  Cleaning up ${blobUrlsToDelete.length} blob file(s)...`);
+      try {
+        await del(blobUrlsToDelete);
+        console.log('✅ Blob files deleted successfully');
+      } catch (deleteError) {
+        // Don't fail submission if cleanup fails
+        console.error('⚠️  Failed to delete blob files:', deleteError);
+      }
+    }
 
     // Send confirmation email to user
     try {
