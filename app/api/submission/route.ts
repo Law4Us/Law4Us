@@ -18,11 +18,13 @@ interface SubmissionData {
   signature: string; // base64 - client signature
   lawyerSignature?: string; // base64 - lawyer signature with stamp
   attachments?: Array<{
-    file: string; // base64
+    file?: string;      // base64 data URL (legacy)
+    blobUrl?: string;   // Vercel Blob URL (new)
     name: string;
     mimeType: string;
     label: string;
     description?: string;
+    isBlob?: boolean;
   }>;
   paymentData: any;
   filledDocuments: any;
@@ -145,7 +147,7 @@ export async function POST(request: NextRequest) {
       divorceAgreement: 'הסכם-גירושין',
     };
 
-    // Process attachments if any - convert base64 to UploadedFile format
+    // Process attachments if any - handle both blob URLs and base64
     let processedAttachments: Array<{
       label: string;
       description: string;
@@ -157,25 +159,51 @@ export async function POST(request: NextRequest) {
 
       const { processAttachments } = await import('@/lib/api/services/pdf-converter');
 
-      const uploadedFiles = submissionData.attachments.map((att: any) => {
-        // Convert base64 to Buffer
-        const base64Data = att.file.split(',')[1] || att.file; // Remove data URL prefix if present
-        const buffer = Buffer.from(base64Data, 'base64');
+      const uploadedFiles: Array<{
+        file: { buffer: Buffer; originalname: string; mimetype: string; size: number };
+        label: string;
+        description: string;
+      }> = [];
 
-        return {
+      for (const att of submissionData.attachments) {
+        let buffer: Buffer;
+
+        if (att.isBlob && att.blobUrl) {
+          // Download from Vercel Blob
+          console.log(`☁️ Downloading from blob: ${att.name}`);
+          const response = await fetch(att.blobUrl);
+          if (!response.ok) {
+            console.error(`❌ Failed to download blob ${att.name}: ${response.status}`);
+            continue;
+          }
+          const arrayBuffer = await response.arrayBuffer();
+          buffer = Buffer.from(arrayBuffer);
+          console.log(`✅ Downloaded ${(buffer.length / 1024).toFixed(1)} KB`);
+        } else if (att.file) {
+          // Convert base64 to Buffer
+          const base64Data = att.file.split(',')[1] || att.file;
+          buffer = Buffer.from(base64Data, 'base64');
+        } else {
+          console.warn(`⚠️ Skipping attachment ${att.name}: no file data`);
+          continue;
+        }
+
+        uploadedFiles.push({
           file: {
             buffer,
             originalname: att.name,
             mimetype: att.mimeType,
             size: buffer.length,
-          } as any,
+          },
           label: att.label,
           description: att.description || '',
-        };
-      });
+        });
+      }
 
-      processedAttachments = await processAttachments(uploadedFiles);
-      console.log(`✅ Processed ${processedAttachments.length} attachments into ${processedAttachments.reduce((sum, att) => sum + att.images.length, 0)} pages`);
+      if (uploadedFiles.length > 0) {
+        processedAttachments = await processAttachments(uploadedFiles as any);
+        console.log(`✅ Processed ${processedAttachments.length} attachments into ${processedAttachments.reduce((sum, att) => sum + att.images.length, 0)} pages`);
+      }
     }
 
     // Generate documents for each selected claim
@@ -264,9 +292,25 @@ export async function POST(request: NextRequest) {
       console.log(`📎 Uploading ${submissionData.attachments.length} original user files to backup folder...`);
 
       for (const attachment of submissionData.attachments) {
-        // Convert base64 back to buffer
-        const base64Data = attachment.file.split(',')[1] || attachment.file;
-        const buffer = Buffer.from(base64Data, 'base64');
+        let buffer: Buffer;
+
+        if (attachment.isBlob && attachment.blobUrl) {
+          // Download from Vercel Blob
+          const response = await fetch(attachment.blobUrl);
+          if (!response.ok) {
+            console.error(`❌ Failed to download blob for backup: ${attachment.name}`);
+            continue;
+          }
+          const arrayBuffer = await response.arrayBuffer();
+          buffer = Buffer.from(arrayBuffer);
+        } else if (attachment.file) {
+          // Convert base64 back to buffer
+          const base64Data = attachment.file.split(',')[1] || attachment.file;
+          buffer = Buffer.from(base64Data, 'base64');
+        } else {
+          console.warn(`⚠️ Skipping backup for ${attachment.name}: no file data`);
+          continue;
+        }
 
         await uploadToDrive({
           fileName: attachment.name,
@@ -279,25 +323,42 @@ export async function POST(request: NextRequest) {
       console.log('✅ User files uploaded to backup folder');
     }
 
-    // Handle attachments if any - upload to parent folder
+    // Handle formData.attachments if any - upload to parent folder (handles both blob and base64)
     if (submissionData.formData.attachments && Array.isArray(submissionData.formData.attachments)) {
-      console.log('📎 Processing attachments...');
+      console.log('📎 Processing formData attachments...');
 
       for (const attachment of submissionData.formData.attachments) {
-        if (attachment.data && attachment.name) {
-          // Assuming attachment.data is base64
-          const buffer = Buffer.from(attachment.data, 'base64');
+        let buffer: Buffer | null = null;
+        let fileName = attachment.name || attachment.fileName || 'attachment';
+        let mimeType = attachment.mimeType || 'application/octet-stream';
 
+        // Handle BlobFile objects (from FileUploadBlob)
+        if (attachment.url && attachment.url.includes('blob.vercel-storage.com')) {
+          const response = await fetch(attachment.url);
+          if (response.ok) {
+            const arrayBuffer = await response.arrayBuffer();
+            buffer = Buffer.from(arrayBuffer);
+            fileName = attachment.fileName || fileName;
+            mimeType = attachment.mimeType || mimeType;
+          }
+        }
+        // Handle base64 data
+        else if (attachment.data) {
+          const base64Data = attachment.data.split(',')[1] || attachment.data;
+          buffer = Buffer.from(base64Data, 'base64');
+        }
+
+        if (buffer) {
           await uploadToDrive({
-            fileName: attachment.name,
-            mimeType: attachment.mimeType || 'application/octet-stream',
+            fileName,
+            mimeType,
             buffer,
-            folderId: parentFolderId, // Upload attachments to parent folder
+            folderId: parentFolderId,
           });
         }
       }
 
-      console.log('✅ Attachments uploaded to parent folder');
+      console.log('✅ FormData attachments uploaded to parent folder');
     }
 
     console.log('🎉 Submission completed successfully!');

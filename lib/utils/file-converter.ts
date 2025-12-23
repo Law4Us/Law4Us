@@ -1,8 +1,36 @@
 /**
  * File conversion utilities for handling file uploads
+ * Supports both legacy File objects (converted to base64) and
+ * BlobFile objects (from Vercel Blob, passed through as-is)
  */
 
 import { compressImage, isCompressibleImage } from './image-compression';
+
+/**
+ * BlobFile type from FileUploadBlob component
+ */
+export interface BlobFile {
+  url: string;
+  pathname: string;
+  fileName: string;
+  fileSize: number;
+  mimeType: string;
+}
+
+/**
+ * Check if a value is a BlobFile (uploaded to Vercel Blob)
+ */
+function isBlobFile(value: unknown): value is BlobFile {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'url' in value &&
+    'fileName' in value &&
+    'mimeType' in value &&
+    typeof (value as any).url === 'string' &&
+    (value as any).url.includes('blob.vercel-storage.com')
+  );
+}
 
 const MIME_EXTENSION_MAP: Record<string, string> = {
   'application/pdf': 'pdf',
@@ -22,12 +50,35 @@ function ensureExtension(name: string, extension: string) {
   return name.toLowerCase().endsWith(`.${normalized}`) ? name : `${name}.${normalized}`;
 }
 
+/**
+ * Parsed file source - can be either a data URL (base64) or a blob URL
+ */
+interface ParsedFileSource {
+  dataUrl?: string;      // For base64 data URLs
+  blobUrl?: string;      // For Vercel Blob URLs
+  mimeType: string;
+  name: string;
+  isBlob: boolean;
+}
+
 function parseFileSource(
   input: any,
   fallbackName: string,
   fallbackMime: string = 'application/octet-stream'
-): { dataUrl: string; mimeType: string; name: string } | null {
+): ParsedFileSource | null {
   if (!input) return null;
+
+  // Handle BlobFile objects (from Vercel Blob)
+  if (isBlobFile(input)) {
+    const extension =
+      MIME_EXTENSION_MAP[input.mimeType] || input.mimeType.split('/')[1] || 'bin';
+    return {
+      blobUrl: input.url,
+      mimeType: input.mimeType,
+      name: ensureExtension(input.fileName.replace(/\.[^./\\]+$/, ''), extension),
+      isBlob: true,
+    };
+  }
 
   let dataUrl: string | null = null;
   let inferredMime: string | undefined;
@@ -76,6 +127,7 @@ function parseFileSource(
     dataUrl,
     mimeType,
     name: ensureExtension(baseName, extension),
+    isBlob: false,
   };
 }
 
@@ -121,7 +173,9 @@ export async function convertFileField(
 }
 
 /**
- * Recursively convert all File objects in formData to base64
+ * Recursively process all file objects in formData
+ * - BlobFile objects are passed through as-is (already uploaded to Vercel Blob)
+ * - Legacy File objects are converted to base64 (for backwards compatibility)
  */
 export async function convertFormDataFiles(formData: any): Promise<any> {
   if (!formData || typeof formData !== 'object') {
@@ -129,18 +183,31 @@ export async function convertFormDataFiles(formData: any): Promise<any> {
   }
 
   const converted: any = Array.isArray(formData) ? [] : {};
+  let blobCount = 0;
   let fileCount = 0;
 
   for (const key in formData) {
     const value = formData[key];
 
-    // Check if value is a File object
-    if (value instanceof File) {
+    // Check if value is a BlobFile (already uploaded to Vercel Blob)
+    if (isBlobFile(value)) {
+      console.log(`☁️ BlobFile: ${key} -> ${value.fileName} (${value.url})`);
+      converted[key] = value; // Pass through as-is
+      blobCount++;
+    }
+    // Check if value is an array of BlobFiles
+    else if (Array.isArray(value) && value.length > 0 && isBlobFile(value[0])) {
+      console.log(`☁️ BlobFile array: ${key} -> ${value.length} files`);
+      converted[key] = value; // Pass through as-is
+      blobCount += value.length;
+    }
+    // Check if value is a File object (legacy path)
+    else if (value instanceof File) {
       console.log(`📎 Converting File: ${key} -> ${value.name} (${value.size} bytes, ${value.type})`);
       converted[key] = await fileToBase64(value);
       fileCount++;
     }
-    // Check if value is an array of Files
+    // Check if value is an array of Files (legacy path)
     else if (Array.isArray(value) && value.length > 0 && value[0] instanceof File) {
       console.log(`📎 Converting File array: ${key} -> ${value.length} files`);
       converted[key] = await Promise.all(value.map((file) => fileToBase64(file)));
@@ -156,39 +223,60 @@ export async function convertFormDataFiles(formData: any): Promise<any> {
     }
   }
 
+  if (blobCount > 0) {
+    console.log(`☁️ Passed through ${blobCount} BlobFile(s)`);
+  }
   if (fileCount > 0) {
-    console.log(`✅ Converted ${fileCount} file(s) to base64`);
+    console.log(`✅ Converted ${fileCount} File(s) to base64`);
   }
 
   return converted;
 }
 
 /**
- * Extract attachment files from formData and prepare them for document generation
- * Returns array in format expected by document generator
+ * Attachment format for document generation
+ * Supports both base64 data URLs and Vercel Blob URLs
  */
-export function extractAttachmentsFromFormData(formData: any): Array<{
+export interface ExtractedAttachment {
   label: string;
   description: string;
-  file: string; // base64
+  file?: string;       // base64 data URL (legacy)
+  blobUrl?: string;    // Vercel Blob URL (new)
   name: string;
   mimeType: string;
-}> {
+  isBlob: boolean;
+}
+
+/**
+ * Extract attachment files from formData and prepare them for document generation
+ * Returns array in format expected by document generator
+ * Supports both base64 data URLs and Vercel Blob URLs
+ */
+export function extractAttachmentsFromFormData(formData: any): ExtractedAttachment[] {
   console.log('🔍 Extracting attachments from formData...');
   console.log('📊 FormData keys:', Object.keys(formData));
 
-  const attachments: Array<{
-    label: string;
-    description: string;
-    file: string;
-    name: string;
-    mimeType: string;
-  }> = [];
+  const attachments: ExtractedAttachment[] = [];
 
   // Property section attachments
   if (formData.property) {
     const property = formData.property;
     console.log('📊 Property keys:', Object.keys(property));
+
+    // Helper to create attachment from parsed file source
+    const createAttachment = (
+      meta: ParsedFileSource,
+      label: string,
+      description: string
+    ): ExtractedAttachment => ({
+      label,
+      description,
+      file: meta.isBlob ? undefined : meta.dataUrl,
+      blobUrl: meta.isBlob ? meta.blobUrl : undefined,
+      name: meta.name,
+      mimeType: meta.mimeType,
+      isBlob: meta.isBlob,
+    });
 
     const pushProofAttachments = (
       collection: any[] | undefined,
@@ -225,13 +313,7 @@ export function extractAttachmentsFromFormData(formData: any): Array<{
             ? description
             : `${options.labelPrefix} - ${description}`;
 
-        attachments.push({
-          label,
-          description,
-          file: meta.dataUrl,
-          name: meta.name,
-          mimeType: meta.mimeType,
-        });
+        attachments.push(createAttachment(meta, label, description));
       });
     };
 
@@ -245,14 +327,12 @@ export function extractAttachmentsFromFormData(formData: any): Array<{
           'application/pdf'
         );
         if (meta) {
-          console.log(`  ✓ Adding applicant pay slip ${index + 1} (${meta.mimeType})`);
-          attachments.push({
-            label: `תלוש משכורת ${index + 1} - ${formData.basicInfo?.fullName || 'תובע/ת'}`,
-            description: 'תלוש משכורת',
-            file: meta.dataUrl,
-            name: meta.name,
-            mimeType: meta.mimeType,
-          });
+          console.log(`  ✓ Adding applicant pay slip ${index + 1} (${meta.mimeType})${meta.isBlob ? ' [blob]' : ''}`);
+          attachments.push(createAttachment(
+            meta,
+            `תלוש משכורת ${index + 1} - ${formData.basicInfo?.fullName || 'תובע/ת'}`,
+            'תלוש משכורת'
+          ));
         }
       });
     } else {
@@ -263,13 +343,11 @@ export function extractAttachmentsFromFormData(formData: any): Array<{
     if (property.applicantIncomeProof) {
       const meta = parseFileSource(property.applicantIncomeProof, 'income-proof-applicant', 'application/pdf');
       if (meta) {
-        attachments.push({
-          label: `אישור רו"ח - ${formData.basicInfo?.fullName || 'תובע/ת'}`,
-          description: 'אישור רואה חשבון על השתכרות',
-          file: meta.dataUrl,
-          name: meta.name,
-          mimeType: meta.mimeType,
-        });
+        attachments.push(createAttachment(
+          meta,
+          `אישור רו"ח - ${formData.basicInfo?.fullName || 'תובע/ת'}`,
+          'אישור רואה חשבון על השתכרות'
+        ));
       }
     }
 
@@ -282,13 +360,11 @@ export function extractAttachmentsFromFormData(formData: any): Array<{
           'application/pdf'
         );
         if (meta) {
-          attachments.push({
-            label: `תלוש משכורת ${index + 1} - ${formData.basicInfo?.fullName2 || 'נתבע/ת'}`,
-            description: 'תלוש משכורת',
-            file: meta.dataUrl,
-            name: meta.name,
-            mimeType: meta.mimeType,
-          });
+          attachments.push(createAttachment(
+            meta,
+            `תלוש משכורת ${index + 1} - ${formData.basicInfo?.fullName2 || 'נתבע/ת'}`,
+            'תלוש משכורת'
+          ));
         }
       });
     }
@@ -297,13 +373,11 @@ export function extractAttachmentsFromFormData(formData: any): Array<{
     if (property.respondentIncomeProof) {
       const meta = parseFileSource(property.respondentIncomeProof, 'income-proof-respondent', 'application/pdf');
       if (meta) {
-        attachments.push({
-          label: `אישור רו"ח - ${formData.basicInfo?.fullName2 || 'נתבע/ת'}`,
-          description: 'אישור רואה חשבון על השתכרות',
-          file: meta.dataUrl,
-          name: meta.name,
-          mimeType: meta.mimeType,
-        });
+        attachments.push(createAttachment(
+          meta,
+          `אישור רו"ח - ${formData.basicInfo?.fullName2 || 'נתבע/ת'}`,
+          'אישור רואה חשבון על השתכרות'
+        ));
       }
     }
 
@@ -311,13 +385,11 @@ export function extractAttachmentsFromFormData(formData: any): Array<{
     if (property.courtDocument) {
       const meta = parseFileSource(property.courtDocument, 'court-document', 'application/pdf');
       if (meta) {
-        attachments.push({
-          label: 'מסמך מבית המשפט',
-          description: 'מסמך קיים מבית המשפט',
-          file: meta.dataUrl,
-          name: meta.name,
-          mimeType: meta.mimeType,
-        });
+        attachments.push(createAttachment(
+          meta,
+          'מסמך מבית המשפט',
+          'מסמך קיים מבית המשפט'
+        ));
       }
     }
 
@@ -352,6 +424,21 @@ export function extractAttachmentsFromFormData(formData: any): Array<{
     });
   }
 
+  // Helper to create attachment (moved outside property block for reuse)
+  const createAttachmentGlobal = (
+    meta: ParsedFileSource,
+    label: string,
+    description: string
+  ): ExtractedAttachment => ({
+    label,
+    description,
+    file: meta.isBlob ? undefined : meta.dataUrl,
+    blobUrl: meta.isBlob ? meta.blobUrl : undefined,
+    name: meta.name,
+    mimeType: meta.mimeType,
+    isBlob: meta.isBlob,
+  });
+
   // Divorce agreement
   if (formData.divorceAgreement?.uploadedAgreement) {
     const meta = parseFileSource(
@@ -361,20 +448,31 @@ export function extractAttachmentsFromFormData(formData: any): Array<{
     );
     if (meta) {
       console.log('  ✓ Adding divorce agreement');
-      attachments.push({
-        label: 'הסכם גירושין קיים',
-        description: 'הסכם גירושין שהועלה',
-        file: meta.dataUrl,
-        name: meta.name,
-        mimeType: meta.mimeType,
-      });
+      attachments.push(createAttachmentGlobal(
+        meta,
+        'הסכם גירושין קיים',
+        'הסכם גירושין שהועלה'
+      ));
     }
   }
 
   if (Array.isArray(formData.attachments)) {
     formData.attachments.forEach((attachment: any, index: number) => {
+      // Handle BlobFile directly in attachments array
+      if (isBlobFile(attachment)) {
+        attachments.push({
+          label: attachment.fileName,
+          description: attachment.fileName,
+          blobUrl: attachment.url,
+          name: attachment.fileName,
+          mimeType: attachment.mimeType,
+          isBlob: true,
+        });
+        return;
+      }
+
       const meta = parseFileSource(
-        attachment?.data || attachment?.file || attachment?.content || attachment?.base64,
+        attachment?.data || attachment?.file || attachment?.content || attachment?.base64 || attachment,
         attachment?.name || `attachment-${index + 1}`,
         attachment?.mimeType || 'application/pdf'
       );
@@ -393,13 +491,7 @@ export function extractAttachmentsFromFormData(formData: any): Array<{
           ? attachment.description.trim()
           : label;
 
-      attachments.push({
-        label,
-        description,
-        file: meta.dataUrl,
-        name: meta.name,
-        mimeType: meta.mimeType,
-      });
+      attachments.push(createAttachmentGlobal(meta, label, description));
     });
   }
 

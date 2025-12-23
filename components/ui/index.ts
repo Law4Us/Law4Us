@@ -12,5 +12,6 @@ export { Radio, RadioGroup, type RadioProps, type RadioGroupProps } from "./radi
 export { Checkbox, type CheckboxProps } from "./checkbox";
 export { FormField, type FormFieldProps } from "./form-field";
 export { FileUpload, type FileUploadProps } from "./file-upload";
+export { FileUploadBlob, type FileUploadBlobProps, type BlobFile } from "./file-upload-blob";
 export { Skeleton, FormSkeleton, CardSkeleton, DocumentSkeleton } from "./skeleton";
 export { LoadingSpinner, PageLoading } from "./loading";

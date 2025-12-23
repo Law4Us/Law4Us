@@ -8,7 +8,7 @@ import {
   Textarea,
   Select,
   RadioGroup,
-  FileUpload,
+  FileUploadBlob,
 } from "@/components/ui";
 import { Repeater } from "@/components/wizard/repeater";
 import { Question } from "@/lib/constants/questions";
@@ -206,12 +206,13 @@ export function QuestionRenderer({
             name={fieldName}
             control={control}
             render={({ field }) => (
-              <FileUpload
+              <FileUploadBlob
                 value={field.value}
                 onChange={field.onChange}
                 accept={question.accept}
                 multiple={question.type === "fileList"}
                 error={!!errorMessage}
+                compressImages={true}
               />
             )}
           />
