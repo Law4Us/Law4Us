@@ -86,7 +86,7 @@ export function RoutingQuestions({ onComplete }: RoutingQuestionsProps) {
     // Default heavily weighted to Family Court
     familyScore += 5;
 
-    const court: RecommendedCourt = rabbinicalScore > familyScore ? "rabbinical" : "family";
+    const court: RecommendedCourt = rabbinicalScore >= familyScore ? "rabbinical" : "family";
 
     let claims: ClaimType[];
     let totalPrice: number;
