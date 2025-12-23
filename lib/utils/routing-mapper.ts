@@ -22,6 +22,14 @@ export function mapRoutingToFormData(
     return result;
   }
 
+  // Pre-fill divorce.currentSituation based on selected claims
+  // This is critical because many questions depend on this value
+  if (selectedClaims.includes('divorceRabbinical')) {
+    result['divorce.currentSituation'] = 'wantDivorce';
+  } else if (selectedClaims.includes('shalomBayit')) {
+    result['divorce.currentSituation'] = 'reconciliation';
+  }
+
   // Map infidelity (routing → divorce.infidelity)
   if (routing.hasInfidelity) {
     result['divorce.infidelity'] =
