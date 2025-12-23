@@ -292,15 +292,28 @@ export function QuestionsSections({
   const { formState: { errors } } = useFormContext();
   const [openSections, setOpenSections] = React.useState<Set<number>>(new Set([0]));
 
+  // Helper function to check if a question is visible based on conditionals
+  const isQuestionVisible = (question: Question): boolean => {
+    if (!question.conditional) return true;
+
+    const { dependsOn, showWhen } = question.conditional;
+    const dependentValue = getValueByPath<string | undefined>(watchFields, dependsOn);
+
+    if (Array.isArray(showWhen)) {
+      return dependentValue !== undefined && showWhen.includes(dependentValue);
+    }
+    return dependentValue === showWhen;
+  };
+
   // Group questions by headings
-  const sections: { title: string; questions: Question[] }[] = [];
+  const allSections: { title: string; questions: Question[] }[] = [];
   let currentSection: { title: string; questions: Question[] } | null = null;
 
   questions.forEach((question) => {
     if (question.type === "heading") {
       // Start a new section
       if (currentSection) {
-        sections.push(currentSection);
+        allSections.push(currentSection);
       }
       currentSection = { title: question.label, questions: [] };
     } else {
@@ -315,27 +328,19 @@ export function QuestionsSections({
 
   // Push the last section
   if (currentSection) {
-    sections.push(currentSection);
+    allSections.push(currentSection);
   }
+
+  // Filter out sections that have no visible questions
+  const sections = allSections.filter((section) => {
+    // Check if at least one question in this section is visible
+    return section.questions.some(isQuestionVisible);
+  });
 
   // Check if section is complete (all required fields filled and no errors)
   const isSectionComplete = (section: { title: string; questions: Question[] }): boolean => {
     // Get all questions that are currently visible (conditionals met)
-    const visibleQuestions = section.questions.filter((q) => {
-      // Check if question should be shown based on conditionals
-      if (q.conditional) {
-        const { dependsOn, showWhen } = q.conditional;
-        const dependentValue = getValueByPath<string | undefined>(watchFields, dependsOn);
-
-        if (Array.isArray(showWhen)) {
-          if (!dependentValue || !showWhen.includes(dependentValue)) return false;
-        } else {
-          if (dependentValue !== showWhen) return false;
-        }
-      }
-
-      return true;
-    });
+    const visibleQuestions = section.questions.filter(isQuestionVisible);
 
     // Get required questions from visible questions
     const requiredQuestions = visibleQuestions.filter((q) => q.required);
