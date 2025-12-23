@@ -81,6 +81,17 @@ export const CHILDREN_FIELDS: RepeaterField[] = [
     required: true,
   },
   {
+    id: "gender",
+    name: "gender",
+    label: "מין",
+    type: "select",
+    required: true,
+    options: [
+      { value: "male", label: "זכר" },
+      { value: "female", label: "נקבה" },
+    ],
+  },
+  {
     id: "idNumber",
     name: "idNumber",
     label: "תעודת זהות",

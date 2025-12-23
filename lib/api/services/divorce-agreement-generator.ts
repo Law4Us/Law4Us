@@ -23,7 +23,6 @@ import {
   createPageBreak,
   createSignatureImage,
   generatePowerOfAttorney,
-  generateAffidavit,
   generateAttachmentsSection,
 } from './shared-document-generators';
 import { transformToLegalLanguage, TransformContext } from './groq-service';
@@ -75,6 +74,34 @@ function formatHebrewDate(date: Date): string {
 function formatCurrency(amount: string | number): string {
   const num = typeof amount === 'string' ? parseFloat(amount) : amount;
   return `${num.toLocaleString('he-IL')} ₪`;
+}
+
+/**
+ * Generate standard visitation schedule for joint custody (50/50)
+ */
+function getJointCustodySchedule(childRef: string): string[] {
+  return [
+    `מוסכם על הצדדים, כי ${childRef} ${childRef === 'הילד/ה' ? 'יהיה/תהיה' : 'יהיו'} במשמורת משותפת של שני ההורים.`,
+    `הסדרי השהייה יהיו כדלקמן:`,
+    `שגרה שבועית: ${childRef} ${childRef === 'הילד/ה' ? 'ישהה/תשהה' : 'ישהו'} אצל האם מיום ראשון בבוקר עד יום רביעי בבוקר, ואצל האב מיום רביעי בבוקר עד יום ראשון בבוקר.`,
+    `חגים ומועדים: ראש השנה ויום כיפור - לסירוגין בין ההורים. סוכות - לסירוגין. חנוכה - מחצית ראשונה אצל הורה אחד, מחצית שנייה אצל ההורה השני. פסח (ליל הסדר) - בשנים זוגיות אצל האם, בשנים אי-זוגיות אצל האב. שבועות - לסירוגין.`,
+    `חופשות: חופשת הקיץ תחולק שווה בשווה - כל הורה יהיה זכאי לשלושה שבועות רצופים עם ${childRef}. מועדי החופשות יתואמו מראש בין ההורים.`,
+    `ימי הולדת: ${childRef === 'הילד/ה' ? 'הילד/ה ישהה/תשהה' : 'הילדים ישהו'} ביום ההולדת עם ההורה שאצלו נמצא/ת באותו יום על פי הסדרי השהייה הרגילים. ההורה השני יהיה רשאי לקיים חגיגה נפרדת.`,
+  ];
+}
+
+/**
+ * Generate standard visitation schedule for primary custody with one parent
+ */
+function getPrimaryCustodySchedule(childRef: string, custodialParent: string, otherParent: string): string[] {
+  return [
+    `מוסכם על הצדדים, כי ${childRef} ${childRef === 'הילד/ה' ? 'יהיה/תהיה' : 'יהיו'} במשמורת ${custodialParent}.`,
+    `הסדרי השהייה עם ${otherParent} יהיו כדלקמן:`,
+    `שגרה שבועית: ${childRef} ${childRef === 'הילד/ה' ? 'ישהה/תשהה' : 'ישהו'} אצל ${otherParent} בסופי שבוע לסירוגין - מיום שישי בשעה 16:00 עד יום ראשון בשעה 08:00, וכן ביום רביעי אחה"צ משעה 16:00 עד שעה 20:00.`,
+    `חגים ומועדים: ראש השנה ויום כיפור - לסירוגין בין ההורים. סוכות - לסירוגין. חנוכה - מחצית ראשונה אצל הורה אחד, מחצית שנייה אצל ההורה השני. פסח (ליל הסדר) - בשנים זוגיות אצל האם, בשנים אי-זוגיות אצל האב. שבועות - לסירוגין.`,
+    `חופשות: ${otherParent} יהיה/תהיה זכאי/ת לשלושה שבועות רצופים עם ${childRef} בחופשת הקיץ. מועדי החופשות יתואמו מראש בין ההורים.`,
+    `ימי הולדת: ${childRef === 'הילד/ה' ? 'הילד/ה ישהה/תשהה' : 'הילדים ישהו'} ביום ההולדת עם ההורה שאצלו נמצא/ת באותו יום על פי הסדרי השהייה הרגילים. ההורה השני יהיה רשאי לקיים חגיגה נפרדת.`,
+  ];
 }
 
 /**
@@ -237,7 +264,8 @@ export async function generateDivorceAgreement(data: DivorceAgreementData): Prom
 
   const divorceData = formData.divorceAgreement || {};
   const propertyData = formData.property || {};
-  const children = propertyData.children || [];
+  // Children are in formData.children, not propertyData.children
+  const children = formData.children || [];
   const minors = children.filter((child: any) => isMinor(child.birthDate));
 
   const today = new Date();
@@ -277,7 +305,7 @@ export async function generateDivorceAgreement(data: DivorceAgreementData): Prom
     new Paragraph({
       children: [
         new TextRun({
-          text: '\t\tבין:',
+          text: 'בין:',
           bold: true,
           size: 24,
           font: 'David',
@@ -295,7 +323,7 @@ export async function generateDivorceAgreement(data: DivorceAgreementData): Prom
     new Paragraph({
       children: [
         new TextRun({
-          text: `\t\t${wifeName}\tת.ז. ${wifeId}\t\tלהלן "האישה${minors.length > 0 ? ' ו/או האם' : ''}"`,
+          text: `${wifeName}    ת.ז. ${wifeId}    להלן "האישה${minors.length > 0 ? ' ו/או האם' : ''}"`,
           size: 24,
           font: 'David',
           rightToLeft: true,
@@ -329,7 +357,7 @@ export async function generateDivorceAgreement(data: DivorceAgreementData): Prom
     new Paragraph({
       children: [
         new TextRun({
-          text: '\t\tלבין:',
+          text: 'לבין:',
           bold: true,
           size: 24,
           font: 'David',
@@ -347,7 +375,7 @@ export async function generateDivorceAgreement(data: DivorceAgreementData): Prom
     new Paragraph({
       children: [
         new TextRun({
-          text: `\t\t${husbandName}\tת.ז. ${husbandId}\t\tלהלן "הבעל${minors.length > 0 ? ' ו/או האב' : ''}"`,
+          text: `${husbandName}    ת.ז. ${husbandId}    להלן "הבעל${minors.length > 0 ? ' ו/או האב' : ''}"`,
           size: 24,
           font: 'David',
           rightToLeft: true,
@@ -507,31 +535,17 @@ export async function generateDivorceAgreement(data: DivorceAgreementData): Prom
         )
       );
     } else if (custodyAgreement === 'applicantCustody') {
+      // Primary custody with applicant - use preset schedule
       const custodyParent = applicantIsWife ? 'האם' : 'האב';
       const otherParent = applicantIsWife ? 'האב' : 'האם';
-      paragraphs.push(
-        createBodyParagraph(
-          `מוסכם על הצדדים, כי ${childRef} ${minors.length === 1 ? 'יהיה/תהיה' : 'יהיו'} במשמורת מלאה של ${custodyParent}.`
-        )
-      );
-      paragraphs.push(
-        createBodyParagraph(
-          `${otherParent} יהיה/תהיה זכאי/ת להסדרי ראייה שיתואמו בהסכמה בין ההורים, תוך שמירה על טובת ${childRef}.`
-        )
-      );
+      const schedule = getPrimaryCustodySchedule(childRef, custodyParent, otherParent);
+      schedule.forEach(line => paragraphs.push(createBodyParagraph(line)));
     } else if (custodyAgreement === 'respondentCustody') {
+      // Primary custody with respondent - use preset schedule
       const custodyParent = applicantIsWife ? 'האב' : 'האם';
       const otherParent = applicantIsWife ? 'האם' : 'האב';
-      paragraphs.push(
-        createBodyParagraph(
-          `מוסכם על הצדדים, כי ${childRef} ${minors.length === 1 ? 'יהיה/תהיה' : 'יהיו'} במשמורת מלאה של ${custodyParent}.`
-        )
-      );
-      paragraphs.push(
-        createBodyParagraph(
-          `${otherParent} יהיה/תהיה זכאי/ת להסדרי ראייה שיתואמו בהסכמה בין ההורים, תוך שמירה על טובת ${childRef}.`
-        )
-      );
+      const schedule = getPrimaryCustodySchedule(childRef, custodyParent, otherParent);
+      schedule.forEach(line => paragraphs.push(createBodyParagraph(line)));
     } else if (custodyAgreement === 'custom' && divorceData.custodyCustom) {
       console.log('🤖 Transforming custody text with Groq...');
       const transformed = await transformToLegalLanguage(divorceData.custodyCustom, {
@@ -541,17 +555,9 @@ export async function generateDivorceAgreement(data: DivorceAgreementData): Prom
       });
       paragraphs.push(createBodyParagraph(transformed || divorceData.custodyCustom));
     } else {
-      // Default: joint custody
-      paragraphs.push(
-        createBodyParagraph(
-          `מוסכם על הצדדים, כי ${childRef} ${minors.length === 1 ? 'יהיה/תהיה' : 'יהיו'} במשמורת משותפת של שני ההורים.`
-        )
-      );
-      paragraphs.push(
-        createBodyParagraph(
-          `לעניין הסדרי השהייה של כל הורה עם ${childRef}, הבעל והאישה מתחייבים לנהוג בגמישות הדדית תוך התחשבות בעבודתו ונסיבות חייו של השני, ${minors.length === 1 ? 'בגילו/ה של הילד/ה' : 'בגילם של הילדים'}, צרכיהם ופעילותם החברתית והחינוכית.`
-        )
-      );
+      // Default: joint custody (50/50) - use preset schedule with days and holidays
+      const schedule = getJointCustodySchedule(childRef);
+      schedule.forEach(line => paragraphs.push(createBodyParagraph(line)));
     }
 
     // General custody provisions
@@ -682,7 +688,7 @@ export async function generateDivorceAgreement(data: DivorceAgreementData): Prom
     paragraphs.push(createSubsectionHeader('זכויות סוציאליות'));
     paragraphs.push(
       createBodyParagraph(
-        'בתוך 14 יום מאישור הסכם זה, יעבירו הצדדים זה לזה את המסמכים הרלוונטיים לצורך קיזוז בכל הקשור לזכויות שנצברו במהלך הנישואין. ככל שיהיה צורך לבצע תשלום בגין זכויות יתרות שצבר אחד מבני הזוג על האחר, יעביר הצד שצבר יותר את הכסף העודף מהזכויות שצריך להעביר עבור איזון המשאבים.'
+        'בתוך 30 יום מאישור הסכם זה, יעבירו הצדדים זה לזה את המסמכים הרלוונטיים לצורך קיזוז בכל הקשור לזכויות שנצברו במהלך הנישואין. ככל שיהיה צורך לבצע תשלום בגין זכויות יתרות שצבר אחד מבני הזוג על האחר, יעביר הצד שצבר יותר תשלומי איזון תוך 30 יום.'
       )
     );
   } else if (propertyAgreement === 'custom' && divorceData.propertyCustom) {
@@ -725,11 +731,11 @@ export async function generateDivorceAgreement(data: DivorceAgreementData): Prom
   );
   paragraphs.push(createEmptyLine());
 
-  // ==================== אישור בית המשפט ====================
-  paragraphs.push(createSectionHeader('אישור בית המשפט'));
+  // ==================== אישור הערכאה המוסמכת ====================
+  paragraphs.push(createSectionHeader('אישור הערכאה המוסמכת'));
   paragraphs.push(
     createBodyParagraph(
-      'הצדדים עותרים לבית המשפט לענייני משפחה, לאשר הסכם זה עפ"י הוראות חוק יחסי ממון בין בני זוג התשל"ג – 1973, חוק לתיקון דיני משפחה (מזונות) התשי"ט – 1959 וחוק הכשרות המשפטית והאפוטרופסות התשכ"ב – 1962 וליתן לו תוקף של פס"ד ע"פ כל דין.'
+      'הצדדים עותרים לערכאה המוסמכת לאשר הסכם זה עפ"י הוראות חוק יחסי ממון בין בני זוג התשל"ג – 1973, חוק לתיקון דיני משפחה (מזונות) התשי"ט – 1959 וחוק הכשרות המשפטית והאפוטרופסות התשכ"ב – 1962 וליתן לו תוקף של פס"ד ע"פ כל דין.'
     )
   );
 
@@ -841,14 +847,11 @@ export async function generateDivorceAgreement(data: DivorceAgreementData): Prom
     formData,
     applicantSignature,
     lawyerSignature,
-    'הסכם גירושין' as any
+    'הסכם גירושין'
   );
   paragraphs.push(...powerOfAttorneyParagraphs);
 
-  // ==================== AFFIDAVIT ====================
-  paragraphs.push(createPageBreak());
-  const affidavitParagraphs = generateAffidavit(basicInfo, formData, lawyerSignature);
-  paragraphs.push(...affidavitParagraphs);
+  // NOTE: No תצהיר (affidavit) needed for הסכם גירושין
 
   // ==================== ATTACHMENTS ====================
   if (attachments && attachments.length > 0) {

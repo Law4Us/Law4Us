@@ -162,8 +162,10 @@
 │   ├── generate-redirects.ts             # SEO redirects
 │   └── test-document-generation.ts       # Document testing
 │
-├── tests/                        # Test files
-│   ├── test-submission.js        # Submission testing
+├── tests/                        # Test files (USE THESE for claim testing)
+│   ├── test-claim-custody.js     # Custody claim test (תביעת משמורת)
+│   ├── test-claim-property.js    # Property claim test (תביעת רכוש) - if exists
+│   ├── test-submission.js        # General submission testing
 │   └── test-divorce-agreement-only.js
 │
 ├── docs/                         # Documentation
@@ -439,15 +441,26 @@ export async function generateNewClaim(formData: WizardFormData) {
 5. Post appears automatically on `/blog`
 
 ### Testing Document Generation Locally
+
+**IMPORTANT: Use the specific claim test files in `/tests/` folder:**
 ```bash
-# Run test script
+# Test custody claim (תביעת משמורת)
+node tests/test-claim-custody.js
+
+# Test property claim (תביעת רכוש)
+node tests/test-claim-property.js
+
+# Test alimony claim (תביעת מזונות)
+node tests/test-claim-alimony.js
+
+# Test divorce claim (תביעת גירושין)
+node tests/test-claim-divorce.js
+
+# General submission test
 node tests/test-submission.js
-
-# Or use the TypeScript version
-npx tsx scripts/test-document-generation.ts
-
-# Check output in /tmp/ folder
 ```
+
+These test files contain realistic wizard data that simulates actual user submissions. When asked to "send a test" or "run a test" for a specific claim type, always use the corresponding `test-claim-*.js` file.
 
 ### Deploying to Vercel
 ```bash

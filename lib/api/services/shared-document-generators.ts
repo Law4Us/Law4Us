@@ -903,7 +903,7 @@ export function generatePowerOfAttorney(
   formData: FormData,
   clientSignature?: string | Buffer,
   lawyerSignature?: string | Buffer,
-  claimType: 'רכושית' | 'משמורת' | 'מזונות' | 'גירושין' | 'שלום בית' = 'מזונות'
+  claimType: 'רכושית' | 'משמורת' | 'מזונות' | 'גירושין' | 'שלום בית' | 'הסכם גירושין' = 'מזונות'
 ): Paragraph[] {
   const paragraphs: Paragraph[] = [];
   const today = new Date().toLocaleDateString('he-IL');
@@ -916,6 +916,10 @@ export function generatePowerOfAttorney(
       ? 'תביעת משמורת'
       : claimType === 'גירושין'
       ? 'תביעת גירושין'
+      : claimType === 'שלום בית'
+      ? 'תביעה לשלום בית'
+      : claimType === 'הסכם גירושין'
+      ? 'הסכם גירושין'
       : 'תביעת מזונות';
 
   // Title

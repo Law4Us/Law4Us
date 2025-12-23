@@ -137,7 +137,7 @@ function getPartnerWillingnessText(value: string, defendant: GenderTerms): strin
   switch (value) {
     case 'yes': return `${defendant.title} הביע${defendant.pronoun === 'היא' ? 'ה' : ''} נכונות לנסות לשקם את הנישואין`;
     case 'maybe': return `${defendant.title} אינ${defendant.pronoun === 'היא' ? 'ה' : 'ו'} בטוח${defendant.pronoun === 'היא' ? 'ה' : ''} לגבי עמדת${defendant.pronoun === 'היא' ? 'ה' : 'ו'} אך לא שלל${defendant.pronoun === 'היא' ? 'ה' : ''} את האפשרות לשלום בית`;
-    case 'no': return `${defendant.title} הביע${defendant.pronoun === 'היא' ? 'ה' : ''} רצון להתגרש, אולם ${plaintiff.title} מאמינ${plaintiff.pronoun === 'היא' ? 'ה' : ''} כי ניתן לשנות עמדה זו`;
+    case 'no': return `${defendant.title} הביע${defendant.pronoun === 'היא' ? 'ה' : ''} רצון להתגרש, אולם ${plaintiff.title} מאמין${plaintiff.pronoun === 'היא' ? 'ה' : ''} כי ניתן לשנות עמדה זו`;
     case 'unknown': return `עמדת${defendant.pronoun === 'היא' ? 'ה' : 'ו'} של ${defendant.title} אינה ידועה בוודאות`;
     default: return value;
   }
@@ -161,12 +161,13 @@ function formatChildWithAge(child: Child): string {
 function createRabbinicalCourtHeader(city: string): Paragraph[] {
   const paragraphs: Paragraph[] = [];
 
-  // Line 1: בבית הדין הרבני + תיק מס'
+  // Line 1: בבית הדין הרבני + תיק מס' (80 spaces between)
+  const spaces80 = ' '.repeat(80);
   paragraphs.push(
     new Paragraph({
       children: [
         new TextRun({
-          text: 'בבית הדין הרבני\t\t\t\t\t\tתיק מס\'\t\t    ',
+          text: `בבית הדין הרבני${spaces80}תיק מס'`,
           size: 24,
           font: 'David',
           rightToLeft: true,
@@ -347,7 +348,7 @@ function createClaimTitle(text: string): Paragraph {
         text: ` ${text}`,
         bold: true,
         underline: { type: UnderlineType.SINGLE },
-        size: 24,
+        size: 40, // 20pt
         font: 'David',
         rightToLeft: true,
       }),
@@ -369,7 +370,7 @@ function createLetteredSectionHeader(letter: string, title: string): Paragraph {
         text: `${letter}.\t`,
         bold: true,
         underline: { type: UnderlineType.SINGLE },
-        size: 24,
+        size: 32, // 16pt
         font: 'David',
         rightToLeft: true,
       }),
@@ -377,7 +378,7 @@ function createLetteredSectionHeader(letter: string, title: string): Paragraph {
         text: `${title}:`,
         bold: true,
         underline: { type: UnderlineType.SINGLE },
-        size: 24,
+        size: 32, // 16pt
         font: 'David',
         rightToLeft: true,
       }),
@@ -389,13 +390,13 @@ function createLetteredSectionHeader(letter: string, title: string): Paragraph {
 }
 
 /**
- * Create numbered paragraph item - with TAB after number for proper spacing
+ * Create numbered paragraph item - with space after number for proper spacing
  */
 function createNumberedParagraph(num: number, text: string): Paragraph {
   return new Paragraph({
     children: [
       new TextRun({
-        text: `${num}.\t`,
+        text: `${num}.  `, // Two spaces after period
         size: 24,
         font: 'David',
         rightToLeft: true,
@@ -434,13 +435,14 @@ function createEmptyLine(): Paragraph {
 /**
  * Section א - כללי - רקע (General Background)
  * Based on lawyer template structure
+ * Returns paragraphs and last item number for continuous numbering
  */
 async function generateBackgroundSection(
   basicInfo: BasicInfo,
   formData: FormData,
   plaintiff: GenderTerms,
   defendant: GenderTerms
-): Promise<Paragraph[]> {
+): Promise<{ paragraphs: Paragraph[], lastItemNum: number }> {
   const paragraphs: Paragraph[] = [];
   const shalomBayitData = formData.shalomBayit || {};
   const children = formData.children || [];
@@ -486,24 +488,17 @@ async function generateBackgroundSection(
       crisisText = `המשבר הנוכחי בין הצדדים החל לפני ${getCrisisDurationText(crisisDuration)}.`;
     }
 
-    if (crisisReasons && typeof crisisReasons === 'string' && crisisReasons.trim()) {
-      try {
-        const context: TransformContext = {
-          claimType: 'תביעה לשלום בית',
-          applicantName: plaintiff.name,
-          respondentName: defendant.name,
-          fieldLabel: 'רקע למשבר',
-          additionalContext: 'יש לכתוב בגוף שלישי, בצורה עניינית, כפי שנכתב במסמך משפטי לבית דין רבני',
-        };
-        const transformed = await transformToLegalLanguage(crisisReasons, context);
-        crisisText += crisisText ? ' ' + transformed : transformed;
-      } catch {
-        crisisText += crisisText ? ' ' + crisisReasons : crisisReasons;
-      }
-    }
+    // For Shalom Bayit: Don't detail crisis reasons in accusatory way
+    // Instead, acknowledge crisis exists while expressing faith in reconciliation
+    // Use plaintiff.hebrewTitle (הבעל/האישה) after ל to avoid "להתובע"
+    const faithText = `חרף המשבר שפוקד את בני הזוג, ל${plaintiff.hebrewTitle} אמונה מלאה כי ניתן לאחות את השברים ולחבר את בני הזוג לחיים משותפים ככל בני הזוג.`;
 
-    if (crisisText) {
-      paragraphs.push(createNumberedParagraph(nextNum++, crisisText));
+    if (crisisDuration) {
+      // Just mention duration + faith, don't detail reasons in blaming way
+      paragraphs.push(createNumberedParagraph(nextNum++, crisisText + ' ' + faithText));
+    } else if (crisisReasons) {
+      // If no duration but reasons provided, just express faith without details
+      paragraphs.push(createNumberedParagraph(nextNum++, faithText));
     }
   }
 
@@ -539,7 +534,7 @@ async function generateBackgroundSection(
     }
   }
 
-  return paragraphs;
+  return { paragraphs, lastItemNum: nextNum - 1 };
 }
 
 /**
@@ -568,7 +563,7 @@ async function generateReconciliationSection(
 
   // Main argument - reconciliation hasn't been exhausted
   paragraphs.push(createNumberedParagraph(itemNum++,
-    `${plaintiff.title} ${believeVerb} כי ניסיון שלום הבית לא מוצה. בקשר בין בני זוג תמיד יש ותמיד יהיו עליות ומורדות, ועליהם לדעת להתמודד איתם. ${plaintiff.title} לא ${marriedVerb} כדי להתגרש, ו${plaintiff.pronoun} מאמינ${plaintiff.pronoun === 'היא' ? 'ה' : ''} בלב שלם כי ניתן לתקן הכל.`
+    `${plaintiff.title} ${believeVerb} כי ניסיון שלום הבית לא מוצה. בקשר בין בני זוג תמיד יש ותמיד יהיו עליות ומורדות, ועליהם לדעת להתמודד איתם. ${plaintiff.title} לא ${marriedVerb} כדי להתגרש, ו${plaintiff.pronoun} מאמין${plaintiff.pronoun === 'היא' ? 'ה' : ''} בלב שלם כי ניתן לתקן הכל.`
   ));
 
   // Children argument (like in the reference: "וכאשר בתווך מצויה ילדה...")
@@ -580,28 +575,15 @@ async function generateReconciliationSection(
     ));
   }
 
-  // Previous attempts
+  // Previous attempts - for Shalom Bayit, downplay failures and express optimism
   const previousAttempts = shalomBayitData.previousAttempts;
-  if (previousAttempts) {
+  if (previousAttempts === 'professional') {
+    // Don't detail what failed - express optimism about court-sponsored therapy
+    paragraphs.push(createNumberedParagraph(itemNum++,
+      `הצדדים ניסו לשקם את הקשר בעזרת איש מקצוע. ${plaintiff.title} סבור${plaintiff.pronoun === 'היא' ? 'ה' : ''} כי טיפול בחסות בית הדין, בוודאי יתן את פירותיו.`
+    ));
+  } else if (previousAttempts) {
     paragraphs.push(createNumberedParagraph(itemNum++, getPreviousAttemptsText(previousAttempts)));
-  }
-
-  // Counseling details
-  const counselingDetails = shalomBayitData.counselingDetails;
-  if (previousAttempts === 'professional' && counselingDetails) {
-    try {
-      const context: TransformContext = {
-        claimType: 'תביעה לשלום בית',
-        applicantName: plaintiff.name,
-        respondentName: defendant.name,
-        fieldLabel: 'פרטי הטיפול/ייעוץ',
-        additionalContext: 'יש לכתוב בגוף שלישי, כמסמך משפטי, ולציין כי הטיפול לא מוצה',
-      };
-      const transformed = await transformToLegalLanguage(counselingDetails, context);
-      paragraphs.push(createNumberedParagraph(itemNum++, transformed));
-    } catch {
-      paragraphs.push(createNumberedParagraph(itemNum++, `פרטי הטיפול: ${counselingDetails}`));
-    }
   }
 
   // Partner willingness
@@ -636,7 +618,7 @@ async function generateReconciliationSection(
 
   // No grounds for divorce
   paragraphs.push(createNumberedParagraph(itemNum++,
-    `יודגש כי לא קיימת כל עילת גירושין בין הצדדים אשר יש בה כדי למנוע את מיצוי הליך שלום הבית. ${plaintiff.title} מאמינ${plaintiff.pronoun === 'היא' ? 'ה' : ''} כי גם המשברים הקיימים הינם נפוצים, מצויים אצל זוגות רבים, וניתנים לתיקון.`
+    `יודגש כי לא קיימת כל עילת גירושין בין הצדדים אשר יש בה כדי למנוע את מיצוי הליך שלום הבית. ${plaintiff.title} מאמין${plaintiff.pronoun === 'היא' ? 'ה' : ''} כי גם המשברים הקיימים הינם נפוצים, מצויים אצל זוגות רבים, וניתנים לתיקון.`
   ));
 
   // Willingness to do everything
@@ -743,19 +725,11 @@ export async function generateShalomBayitClaim(data: ShalomBayitData): Promise<B
   sections.push(createClaimTitle('תביעה לשלום בית'));
 
   // Section א - Background
-  const backgroundSections = await generateBackgroundSection(basicInfo, formData, plaintiff, defendant);
-  sections.push(...backgroundSections);
-
-  // Count items in section א to continue numbering in section ב
-  // (We start from item 8 as a reasonable estimate, or we can track actual count)
-  const sectionAItemCount = backgroundSections.filter(p => {
-    // Count paragraphs that look like numbered items
-    const text = p.root?.[0]?.text || '';
-    return /^\d+\./.test(text);
-  }).length || 7;
+  const { paragraphs: backgroundParagraphs, lastItemNum } = await generateBackgroundSection(basicInfo, formData, plaintiff, defendant);
+  sections.push(...backgroundParagraphs);
 
   // Section ב - Reconciliation must be exhausted (continues numbering from section א)
-  sections.push(...await generateReconciliationSection(basicInfo, formData, plaintiff, defendant, sectionAItemCount + 1));
+  sections.push(...await generateReconciliationSection(basicInfo, formData, plaintiff, defendant, lastItemNum + 1));
 
   // Signature section
   sections.push(...generateSignatureSection(basicInfo, plaintiff, signature, lawyerSignature));

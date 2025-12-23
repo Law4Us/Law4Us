@@ -72,7 +72,7 @@ export function templateExists(claimType: ClaimType): boolean {
     'alimony',
     'divorceAgreement',
     'shalomBayit',
-    'divorceRabbinical', // Divorce only at בית הדין הרבני - no family court divorce
+    'divorceRabbinical', // Bundled divorce at בית הדין הרבני (only rabbinical - no family court)
   ];
   if (programmaticClaims.includes(claimType)) {
     return true;
@@ -293,7 +293,7 @@ export async function generateDocument(
         selectedClaims: options.selectedClaims,
       });
     } else if (claimType === 'divorceRabbinical') {
-      // Rabbinical bundled divorce - uses the same generator as rabbinical court divorce
+      // Rabbinical bundled divorce - תביעת גירושין כרוכה בבית הדין הרבני
       console.log('📝 Using Rabbinical Court bundled divorce generator...');
       documentBuffer = await generateDivorceClaim({
         basicInfo,

@@ -242,7 +242,6 @@ function createPartB(data: AlimonyClaimData): Paragraph[] {
 
     // 2. Relief requested - NUMBERED
     createNumberedHeader('2. פירוט הסעד המבוקש באופן תמציתי'),
-    createBodyParagraph('מתבקש לפסוק מזונות.', { after: SPACING.LINE }),
     createNumberedItem(1, 'כבוד בית המשפט יפסוק מזונות לפי הפרמטרים שבפניו.'),
     createNumberedItem(
       2,
@@ -1088,7 +1087,6 @@ function createHouseholdNeedsTable(
 function createReliefSection(): Paragraph[] {
   return [
     createSectionHeader('סעדים'),
-    createBodyParagraph('מתבקש לפסוק מזונות זמנים.', { after: SPACING.LINE }),
     createNumberedItem(1, 'כבוד בית המשפט יפסוק מזונות לפי הפרמטרים שבפניו.'),
     createNumberedItem(
       2,
