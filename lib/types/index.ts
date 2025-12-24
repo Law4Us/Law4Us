@@ -110,6 +110,14 @@ export interface RoutingAnswers {
   halachicGrounds?: "refusesRelations" | "cantHaveChildren" | "none" | "unsure";
 }
 
+/** Scheduled video call data for תצהיר בהיוועדות חזותית */
+export interface ScheduledCallData {
+  scheduled: boolean;
+  eventId?: string;
+  scheduledTime?: string; // ISO date string
+  meetingUrl?: string;
+}
+
 export interface WizardState {
   currentStep: number;
   maxReachedStep: number;
@@ -121,6 +129,7 @@ export interface WizardState {
     paid: boolean;
     date?: Date;
   };
+  scheduledCallData: ScheduledCallData;
   filledDocuments: {
     [key: string]: string;
   };

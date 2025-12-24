@@ -9,7 +9,8 @@ const steps = [
   { number: 2, label: "שאלון" },
   { number: 3, label: "חתימה" },
   { number: 4, label: "תשלום" },
-  { number: 5, label: "סיום" },
+  { number: 5, label: "קביעת שיחה" },
+  { number: 6, label: "סיום" },
 ];
 
 interface WizardHeaderProps {

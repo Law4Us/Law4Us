@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { ClaimType, BasicInfo, FormData, WizardState, WizardPath, RecommendedCourt, RoutingAnswers } from "../types";
+import type { ClaimType, BasicInfo, FormData, WizardState, WizardPath, RecommendedCourt, RoutingAnswers, ScheduledCallData } from "../types";
 
 const STORAGE_KEY = "law4us-wizard-v1";
 const AUTO_SAVE_DELAY = 2000; // 2 seconds
@@ -19,6 +19,7 @@ interface WizardStore extends WizardState {
   updateFormData: (data: Partial<FormData>) => void;
   setSignature: (signature: string) => void;
   setPaymentData: (data: { paid: boolean; date?: Date }) => void;
+  setScheduledCallData: (data: ScheduledCallData) => void;
   setFilledDocuments: (docs: { [key: string]: string }) => void;
   setSessionId: (sessionId: string) => void;
 
@@ -63,6 +64,9 @@ const initialState: WizardState = {
   paymentData: {
     paid: false,
   },
+  scheduledCallData: {
+    scheduled: false,
+  },
   filledDocuments: {},
   // Routing state
   wizardPath: null,
@@ -85,7 +89,7 @@ export const useWizardStore = create<WizardStore>((set, get) => ({
 
   nextStep: () =>
     set((state) => {
-      const next = Math.min(state.currentStep + 1, 4); // Max 4 (5 steps: 0-4)
+      const next = Math.min(state.currentStep + 1, 5); // Max 5 (6 steps: 0-5)
       return {
         currentStep: next,
         maxReachedStep: Math.max(state.maxReachedStep, next),
@@ -109,6 +113,12 @@ export const useWizardStore = create<WizardStore>((set, get) => ({
     // Special rule: Can't navigate back to payment step (step 3) once completed
     // This prevents users from double-paying or bypassing payment
     if (targetStep === 3 && state.paymentData.paid && state.currentStep > 3) {
+      return false;
+    }
+
+    // Special rule: Can't navigate back to scheduling step (step 4) once call is scheduled
+    // This prevents users from booking multiple calls
+    if (targetStep === 4 && state.scheduledCallData.scheduled && state.currentStep > 4) {
       return false;
     }
 
@@ -193,6 +203,11 @@ export const useWizardStore = create<WizardStore>((set, get) => ({
     scheduleAutoSave(get);
   },
 
+  setScheduledCallData: (data) => {
+    set({ scheduledCallData: data });
+    scheduleAutoSave(get);
+  },
+
   setFilledDocuments: (docs) => {
     set({ filledDocuments: docs });
     scheduleAutoSave(get);
@@ -248,6 +263,7 @@ export const useWizardStore = create<WizardStore>((set, get) => ({
         formData: state.formData,
         signature: state.signature,
         paymentData: state.paymentData,
+        scheduledCallData: state.scheduledCallData,
         filledDocuments: state.filledDocuments,
         sessionId: state.sessionId,
         wizardPath: state.wizardPath,
@@ -288,6 +304,7 @@ export const useWizardStore = create<WizardStore>((set, get) => ({
         formData: data.formData || {},
         signature: data.signature || "",
         paymentData: data.paymentData || { paid: false },
+        scheduledCallData: data.scheduledCallData || { scheduled: false },
         filledDocuments: data.filledDocuments || {},
         sessionId: data.sessionId,
         wizardPath: data.wizardPath || null,
