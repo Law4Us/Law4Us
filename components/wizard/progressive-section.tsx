@@ -58,17 +58,28 @@ export function ProgressiveSection({
   const contentRef = React.useRef<HTMLDivElement>(null);
   const [height, setHeight] = React.useState<number | undefined>(undefined);
 
-  // Auto-scroll to section when expanded
+  // Auto-scroll to section when expanded (only if not already visible)
   const sectionRef = React.useRef<HTMLDivElement>(null);
   React.useEffect(() => {
     if (isExpanded && sectionRef.current) {
-      // Small delay to allow animation to start
-      setTimeout(() => {
-        sectionRef.current?.scrollIntoView({
-          behavior: "smooth",
-          block: "nearest",
-        });
-      }, 150);
+      // Check if section is already mostly visible before scrolling
+      const rect = sectionRef.current.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const headerOffset = 120; // Account for fixed header + extra padding
+
+      // Only scroll if the top of the section is above viewport or below visible area
+      const isAboveViewport = rect.top < headerOffset;
+      const isBelowViewport = rect.top > viewportHeight - 150;
+
+      if (isAboveViewport || isBelowViewport) {
+        // Longer delay to let the expand animation complete
+        setTimeout(() => {
+          sectionRef.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        }, 350); // Match animation duration
+      }
     }
   }, [isExpanded]);
 
@@ -108,6 +119,7 @@ export function ProgressiveSection({
       ref={sectionRef}
       className={cn(
         "border-2 rounded-xl bg-white transition-all duration-300",
+        "scroll-mt-24", // Add scroll margin for fixed header
         isExpanded && "shadow-lg",
         isCompleted && !isExpanded && "border-green-200 bg-green-50/30",
         !isCompleted && isExpanded && "border-primary",

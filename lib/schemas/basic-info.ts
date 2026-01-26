@@ -57,10 +57,18 @@ export const basicInfoSchema = z
       .max(200, "כתובת ארוכה מדי"),
     phone2: z
       .string()
-      .refine(validateIsraeliPhone, "מספר טלפון לא תקין"),
+      .optional()
+      .refine(
+        (val) => !val || validateIsraeliPhone(val),
+        "מספר טלפון לא תקין"
+      ),
     email2: z
       .string()
-      .email("כתובת מייל לא תקינה"),
+      .optional()
+      .refine(
+        (val) => !val || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val),
+        "כתובת מייל לא תקינה"
+      ),
     birthDate2: z
       .string()
       .min(1, "יש למלא תאריך לידה")
@@ -95,6 +103,33 @@ export const basicInfoSchema = z
     {
       message: "תאריך נישואין נדרש",
       path: ["weddingDay"],
+    }
+  )
+  // Validate that ID numbers are different
+  .refine(
+    (data) => {
+      const cleanId1 = data.idNumber.replace(/\D/g, "");
+      const cleanId2 = data.idNumber2.replace(/\D/g, "");
+      return cleanId1 !== cleanId2;
+    },
+    {
+      message: "מספר הזהות שלך ושל הצד השני חייבים להיות שונים",
+      path: ["idNumber2"],
+    }
+  )
+  // Validate that phone numbers are different (only if phone2 is provided)
+  .refine(
+    (data) => {
+      // Skip validation if phone2 is empty (optional)
+      if (!data.phone2) return true;
+
+      const cleanPhone1 = data.phone.replace(/\D/g, "");
+      const cleanPhone2 = data.phone2.replace(/\D/g, "");
+      return cleanPhone1 !== cleanPhone2;
+    },
+    {
+      message: "מספר הטלפון שלך ושל הצד השני חייבים להיות שונים",
+      path: ["phone2"],
     }
   );
 

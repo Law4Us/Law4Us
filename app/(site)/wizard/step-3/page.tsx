@@ -11,12 +11,14 @@ import { useWizardStore } from "@/lib/stores/wizard-store";
 import {
   POWER_OF_ATTORNEY_TEMPLATE,
   FORM_3_TEMPLATE,
+  FEE_AGREEMENT_TEMPLATE,
   fillDocumentTemplate,
   generateChildrenBlock,
   formatClaimTypesList,
+  formatClaimServicesForFee,
   type DocumentData,
 } from "@/lib/constants/document-templates";
-import { CLAIMS } from "@/lib/constants/claims";
+import { CLAIMS, calculateTotal } from "@/lib/constants/claims";
 import { formatDate } from "@/lib/utils/format";
 
 export default function Step3SignDocuments() {
@@ -34,6 +36,7 @@ export default function Step3SignDocuments() {
   // Track document review state
   const [doc1Reviewed, setDoc1Reviewed] = React.useState(false);
   const [doc2Reviewed, setDoc2Reviewed] = React.useState(false);
+  const [doc3Reviewed, setDoc3Reviewed] = React.useState(false);
 
   // Check if should show Form 3 (only if claim includes non-alimony types)
   const shouldShowForm3 = React.useMemo(() => {
@@ -130,6 +133,9 @@ export default function Step3SignDocuments() {
       contactedMediation: yesNo(formData.contactedMediation),
       willingFamilyCounseling: yesNo(formData.willingToJoinFamilyCounseling),
       willingMediation: yesNo(formData.willingToJoinMediation),
+      // Fee agreement fields
+      claimServicesList: formatClaimServicesForFee(selectedClaims),
+      totalPrice: calculateTotal(selectedClaims).toLocaleString('he-IL'),
     } as any;
   }, [basicInfo, selectedClaims, formData, signature]);
 
@@ -144,17 +150,22 @@ export default function Step3SignDocuments() {
     [documentData]
   );
 
+  const feeAgreement = React.useMemo(
+    () => fillDocumentTemplate(FEE_AGREEMENT_TEMPLATE, documentData),
+    [documentData]
+  );
+
   const handleSignatureChange = (sig: string) => {
     setSignature(sig);
   };
 
-  // Check if can proceed - doc2 only required if Form 3 is shown
+  // Check if can proceed - doc2 only required if Form 3 is shown, doc3 (fee agreement) always required
   const canProceed = shouldShowForm3
-    ? (doc1Reviewed && doc2Reviewed && signature)
-    : (doc1Reviewed && signature);
+    ? (doc1Reviewed && doc2Reviewed && doc3Reviewed && signature)
+    : (doc1Reviewed && doc3Reviewed && signature);
 
   const handleNext = () => {
-    if (!doc1Reviewed || (shouldShowForm3 && !doc2Reviewed)) {
+    if (!doc1Reviewed || (shouldShowForm3 && !doc2Reviewed) || !doc3Reviewed) {
       alert("אנא קראו ואשרו את כל המסמכים לפני המשך");
       return;
     }
@@ -214,6 +225,17 @@ export default function Step3SignDocuments() {
             />
           </SlideInView>
         )}
+
+        <SlideInView direction="up" delay={shouldShowForm3 ? 300 : 200}>
+          <DocumentReviewCard
+            documentNumber={shouldShowForm3 ? 3 : 2}
+            title="הסכם שכר טרחה"
+            content={feeAgreement}
+            isReviewed={doc3Reviewed}
+            onReviewChange={setDoc3Reviewed}
+            renderAsHTML={true}
+          />
+        </SlideInView>
       </div>
 
       {/* Signature Section */}
@@ -221,7 +243,7 @@ export default function Step3SignDocuments() {
         <div
           className={cn(
             "bg-white rounded-xl border-2 p-8 transition-all duration-300",
-            doc1Reviewed && (!shouldShowForm3 || doc2Reviewed)
+            doc1Reviewed && (!shouldShowForm3 || doc2Reviewed) && doc3Reviewed
               ? "border-primary shadow-lg"
               : "border-neutral-light opacity-60"
           )}
@@ -230,27 +252,30 @@ export default function Step3SignDocuments() {
             <h2 className="text-h2 font-semibold mb-2">החתימה שלכם</h2>
             <p className="text-body text-neutral-dark">
               {shouldShowForm3
-                ? "חתימתכם תופיע על שני המסמכים שקראתם למעלה"
-                : "חתימתכם תופיע על ייפוי הכוח שקראתם למעלה"}
+                ? "חתימתכם תופיע על שלושת המסמכים שקראתם למעלה"
+                : "חתימתכם תופיע על שני המסמכים שקראתם למעלה"}
             </p>
           </div>
 
           {/* Signature disabled notice */}
-          {(!doc1Reviewed || (shouldShowForm3 && !doc2Reviewed)) && (
+          {(!doc1Reviewed || (shouldShowForm3 && !doc2Reviewed) || !doc3Reviewed) && (
             <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
               <p className="text-body font-medium text-amber-800">
                 יש לקרוא ולאשר את כל המסמכים לפני החתימה
               </p>
               <p className="text-body-small text-amber-700 mt-1">
                 {!doc1Reviewed && "✗ ייפוי כוח לא נקרא"}
-                {!doc1Reviewed && shouldShowForm3 && !doc2Reviewed && " • "}
+                {!doc1Reviewed && (shouldShowForm3 && !doc2Reviewed || !doc3Reviewed) && " • "}
                 {shouldShowForm3 && !doc2Reviewed && "✗ טופס 3 לא נקרא"}
+                {shouldShowForm3 && !doc2Reviewed && !doc3Reviewed && " • "}
+                {!shouldShowForm3 && !doc1Reviewed && !doc3Reviewed && ""}
+                {!doc3Reviewed && "✗ הסכם שכר טרחה לא נקרא"}
               </p>
             </div>
           )}
 
           {/* Signature Pad */}
-          <div className={cn(!doc1Reviewed || (shouldShowForm3 && !doc2Reviewed) ? "pointer-events-none" : "")}>
+          <div className={cn(!doc1Reviewed || (shouldShowForm3 && !doc2Reviewed) || !doc3Reviewed ? "pointer-events-none" : "")}>
             <SignaturePad value={signature} onChange={handleSignatureChange} />
           </div>
         </div>
@@ -266,6 +291,7 @@ export default function Step3SignDocuments() {
             <ul className="space-y-1 text-body-small text-red-600">
               {!doc1Reviewed && <li>✗ קראתם ואישרתם את ייפוי הכוח</li>}
               {shouldShowForm3 && !doc2Reviewed && <li>✗ קראתם ואישרתם את טופס 3</li>}
+              {!doc3Reviewed && <li>✗ קראתם ואישרתם את הסכם שכר הטרחה</li>}
               {!signature && <li>✗ חתמתם על המסמכים</li>}
             </ul>
           </div>

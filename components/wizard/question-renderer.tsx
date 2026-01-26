@@ -10,6 +10,7 @@ import {
   RadioGroup,
   FileUploadBlob,
 } from "@/components/ui";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Repeater } from "@/components/wizard/repeater";
 import { Question } from "@/lib/constants/questions";
 import { cn } from "@/lib/utils";
@@ -86,9 +87,38 @@ export function QuestionRenderer({
     );
   }
 
-  // Render text/number/date/email/tel inputs
+  // Render date input with custom DatePicker
+  if (question.type === "date") {
+    return (
+      <FormField
+        label={question.label}
+        htmlFor={fieldName}
+        required={question.required}
+        error={errorMessage}
+        helper={question.helper}
+      >
+        <Controller
+          name={fieldName}
+          control={control}
+          render={({ field }) => (
+            <DatePicker
+              id={fieldName}
+              value={field.value}
+              onChange={field.onChange}
+              onBlur={field.onBlur}
+              error={!!errorMessage}
+              maxDate={new Date()}
+              placeholder={question.placeholder || "בחר תאריך"}
+            />
+          )}
+        />
+      </FormField>
+    );
+  }
+
+  // Render text/number/email/tel inputs
   if (
-    ["text", "number", "date", "email", "tel"].includes(question.type)
+    ["text", "number", "email", "tel"].includes(question.type)
   ) {
     return (
       <FormField

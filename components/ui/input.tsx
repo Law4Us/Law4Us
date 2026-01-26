@@ -20,8 +20,8 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           // Focus state using design token shadows
           "focus-visible:outline-none focus-visible:shadow-input-focus",
           "disabled:cursor-not-allowed disabled:opacity-50",
-          // Error state using design token shadows
-          error && "shadow-input-error focus-visible:shadow-input-error",
+          // Error state using design token shadows with enhanced visibility
+          error && "shadow-input-error focus-visible:shadow-input-error bg-red-50/50",
           // RTL support for number and tel inputs
           (type === "tel" || type === "number") && "dir-rtl",
           className

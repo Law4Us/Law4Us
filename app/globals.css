@@ -10,7 +10,7 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     scroll-behavior: smooth;
-    scroll-padding-top: 80px; /* Header height (h-20 = 80px) */
+    scroll-padding-top: 100px; /* Header height + extra padding for better UX */
   }
 
   /* Set background for entire page - matches neutral-200 from design tokens */
@@ -448,6 +448,34 @@
   }
 }
 
+/* Error shake animation */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+  20%, 40%, 60%, 80% { transform: translateX(4px); }
+}
+
+@keyframes error-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
+  }
+}
+
+.animate-shake {
+  animation: shake 0.5s ease-in-out;
+}
+
+.animate-error-pulse {
+  animation: error-pulse 1s ease-in-out;
+}
+
+.error-highlight {
+  animation: shake 0.5s ease-in-out, error-pulse 1s ease-in-out;
+}
+
 @keyframes growFromRight {
   from {
     width: 0;
@@ -473,7 +501,10 @@
 
   .animate-fade-in-up,
   .animate-fade-in-down,
-  .animate-scale-in {
+  .animate-scale-in,
+  .animate-shake,
+  .animate-error-pulse,
+  .error-highlight {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;

@@ -2,10 +2,12 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { HelpCircle, ListChecks } from "lucide-react";
 import { Button, FormField, Input, Select } from "@/components/ui";
+import { DatePicker } from "@/components/ui/date-picker";
+import { scrollToFirstError } from "@/lib/utils/scroll-to-error";
 import { useWizardStore } from "@/lib/stores/wizard-store";
 import { basicInfoSchema, type BasicInfo } from "@/lib/schemas/basic-info";
 import { CLAIMS } from "@/lib/constants/claims";
@@ -78,6 +80,7 @@ export default function Step1ClaimPicker() {
     handleSubmit,
     watch,
     setValue,
+    control,
     formState: { errors, isValid },
   } = useForm<BasicInfo>({
     resolver: zodResolver(basicInfoSchema),
@@ -134,18 +137,17 @@ export default function Step1ClaimPicker() {
   }, [watch("fullName"), watch("idNumber"), watch("address"), watch("phone"), watch("email"), watch("birthDate"), watch("gender")]);
 
   // Check if section 2 is complete (defendant info)
+  // Note: phone2 and email2 are optional, so we don't require them
   const isSection2Complete = React.useMemo(() => {
-    const fields = watch([
+    const requiredFields = watch([
       "fullName2",
       "idNumber2",
       "address2",
-      "phone2",
-      "email2",
       "birthDate2",
       "gender2",
     ]);
-    return fields.every((field) => field && field !== "");
-  }, [watch("fullName2"), watch("idNumber2"), watch("address2"), watch("phone2"), watch("email2"), watch("birthDate2"), watch("gender2")]);
+    return requiredFields.every((field) => field && field !== "");
+  }, [watch("fullName2"), watch("idNumber2"), watch("address2"), watch("birthDate2"), watch("gender2")]);
 
   // Check if section 3 is complete (relationship)
   const isSection3Complete = React.useMemo(() => {
@@ -205,10 +207,15 @@ export default function Step1ClaimPicker() {
     router.push("/wizard/step-2");
   };
 
+  // Handle form errors - scroll to first error
+  const onError = (formErrors: typeof errors) => {
+    scrollToFirstError(formErrors as Record<string, unknown>);
+  };
+
   const canProceed = isValid && selectedClaims.length > 0;
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="max-w-4xl mx-auto">
+    <form onSubmit={handleSubmit(onSubmit, onError)} className="max-w-4xl mx-auto">
       <SlideInView direction="up" delay={0}>
         <div className="mb-8 text-center">
           <h1 className="text-h1 font-bold mb-2">פרטים בסיסיים</h1>
@@ -315,12 +322,22 @@ export default function Step1ClaimPicker() {
                 required
                 error={errors.birthDate?.message}
               >
-                <Input
-                  id="birthDate"
-                  type="date"
-                  {...register("birthDate")}
-                  onBlur={(e) => handleFieldBlur("birthDate", e.target.value)}
-                  error={!!errors.birthDate}
+                <Controller
+                  name="birthDate"
+                  control={control}
+                  render={({ field }) => (
+                    <DatePicker
+                      id="birthDate"
+                      value={field.value}
+                      onChange={(value) => {
+                        field.onChange(value);
+                        updateBasicInfo({ birthDate: value });
+                      }}
+                      onBlur={field.onBlur}
+                      error={!!errors.birthDate}
+                      maxDate={new Date()}
+                    />
+                  )}
                 />
               </FormField>
 
@@ -409,7 +426,7 @@ export default function Step1ClaimPicker() {
               <FormField
                 label="טלפון"
                 htmlFor="phone2"
-                required
+                optional
                 error={errors.phone2?.message}
               >
                 <Input
@@ -425,7 +442,7 @@ export default function Step1ClaimPicker() {
               <FormField
                 label="כתובת מייל"
                 htmlFor="email2"
-                required
+                optional
                 error={errors.email2?.message}
               >
                 <Input
@@ -444,12 +461,22 @@ export default function Step1ClaimPicker() {
                 required
                 error={errors.birthDate2?.message}
               >
-                <Input
-                  id="birthDate2"
-                  type="date"
-                  {...register("birthDate2")}
-                  onBlur={(e) => handleFieldBlur("birthDate2", e.target.value)}
-                  error={!!errors.birthDate2}
+                <Controller
+                  name="birthDate2"
+                  control={control}
+                  render={({ field }) => (
+                    <DatePicker
+                      id="birthDate2"
+                      value={field.value}
+                      onChange={(value) => {
+                        field.onChange(value);
+                        updateBasicInfo({ birthDate2: value });
+                      }}
+                      onBlur={field.onBlur}
+                      error={!!errors.birthDate2}
+                      maxDate={new Date()}
+                    />
+                  )}
                 />
               </FormField>
 
@@ -520,12 +547,22 @@ export default function Step1ClaimPicker() {
                   error={errors.weddingDay?.message}
                   className="md:col-span-2"
                 >
-                  <Input
-                    id="weddingDay"
-                    type="date"
-                    {...register("weddingDay")}
-                    onBlur={(e) => handleFieldBlur("weddingDay", e.target.value)}
-                    error={!!errors.weddingDay}
+                  <Controller
+                    name="weddingDay"
+                    control={control}
+                    render={({ field }) => (
+                      <DatePicker
+                        id="weddingDay"
+                        value={field.value}
+                        onChange={(value) => {
+                          field.onChange(value);
+                          updateBasicInfo({ weddingDay: value });
+                        }}
+                        onBlur={field.onBlur}
+                        error={!!errors.weddingDay}
+                        maxDate={new Date()}
+                      />
+                    )}
                   />
                 </FormField>
               )}
