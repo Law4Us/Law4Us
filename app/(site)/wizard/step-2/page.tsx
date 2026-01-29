@@ -441,6 +441,20 @@ export default function Step2DynamicForm() {
               </Button>
             </div>
           </div>
+
+          {/* Validation summary */}
+          {(!isValid || !allRequiredSectionsComplete) && Object.keys(errors).length > 0 && (
+            <div className="mt-4 text-center text-body-small text-neutral-dark">
+              <div className="space-y-1">
+                <p>יש לתקן את השדות הבאים:</p>
+                <ul className="text-red-600">
+                  {Object.entries(errors).map(([field, error]) => (
+                    <li key={field}>{(error as { message?: string })?.message || "שדה לא תקין"}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
         </SlideInView>
       </form>
     </FormProvider>

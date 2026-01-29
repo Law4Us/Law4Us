@@ -40,6 +40,19 @@ export function RoutingQuestions({ onComplete }: RoutingQuestionsProps) {
   // For "specific" flow - user selects claims manually
   const [specificClaims, setSpecificClaims] = useState<ClaimType[]>([]);
 
+  // Helper to format number with commas (15000 -> 15,000)
+  const formatWithCommas = (value: number | undefined): string => {
+    if (!value) return "";
+    return value.toLocaleString("he-IL");
+  };
+
+  // Helper to parse comma-formatted string back to number
+  const parseFormattedNumber = (value: string): number | undefined => {
+    const cleaned = value.replace(/,/g, "");
+    const num = Number(cleaned);
+    return isNaN(num) || num === 0 ? undefined : num;
+  };
+
   // Available claims for specific selection (exclude divorce-related bundle claims)
   const specificClaimOptions = CLAIMS.filter(
     c => c.key === "property" || c.key === "custody" || c.key === "alimony"
@@ -332,15 +345,15 @@ export function RoutingQuestions({ onComplete }: RoutingQuestionsProps) {
         return (
           <div className="space-y-4">
             <h3 className="text-h3 font-semibold text-neutral-darkest mb-4">מה ההכנסות החודשיות נטו?</h3>
-            <p className="text-sm text-neutral-dark mb-4">מידע זה עוזר לנו להמליץ על הערכאה המתאימה ביותר למצבכם.</p>
             <div className="space-y-4">
               <div>
                 <label className="block text-body font-medium text-neutral-darkest mb-2">ההכנסה שלך (ש&quot;ח)</label>
                 <input
-                  type="number"
-                  value={routingAnswers.applicantIncome || ""}
-                  onChange={(e) => updateRoutingAnswers({ applicantIncome: Number(e.target.value) || undefined })}
-                  placeholder="לדוגמה: 15000"
+                  type="text"
+                  inputMode="numeric"
+                  value={formatWithCommas(routingAnswers.applicantIncome)}
+                  onChange={(e) => updateRoutingAnswers({ applicantIncome: parseFormattedNumber(e.target.value) })}
+                  placeholder="לדוגמה: 15,000"
                   className="w-full px-4 py-3 rounded-lg border-2 border-neutral-light focus:border-primary focus:ring-4 focus:ring-primary/20 outline-none transition-all"
                   dir="ltr"
                 />
@@ -348,10 +361,11 @@ export function RoutingQuestions({ onComplete }: RoutingQuestionsProps) {
               <div>
                 <label className="block text-body font-medium text-neutral-darkest mb-2">ההכנסה של בן/בת הזוג (ש&quot;ח)</label>
                 <input
-                  type="number"
-                  value={routingAnswers.respondentIncome || ""}
-                  onChange={(e) => updateRoutingAnswers({ respondentIncome: Number(e.target.value) || undefined })}
-                  placeholder="לדוגמה: 12000"
+                  type="text"
+                  inputMode="numeric"
+                  value={formatWithCommas(routingAnswers.respondentIncome)}
+                  onChange={(e) => updateRoutingAnswers({ respondentIncome: parseFormattedNumber(e.target.value) })}
+                  placeholder="לדוגמה: 12,000"
                   className="w-full px-4 py-3 rounded-lg border-2 border-neutral-light focus:border-primary focus:ring-4 focus:ring-primary/20 outline-none transition-all"
                   dir="ltr"
                 />

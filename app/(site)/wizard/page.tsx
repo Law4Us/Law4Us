@@ -751,7 +751,17 @@ export default function Step1ClaimPicker() {
         {/* Validation summary */}
         {!canProceed && (
           <div className="mt-4 text-center text-body-small text-neutral-dark">
-            {!isValid && "אנא מלאו את כל השדות הנדרשים בצורה תקינה"}
+            {!isValid && Object.keys(errors).length > 0 && (
+              <div className="space-y-1">
+                <p>יש לתקן את השדות הבאים:</p>
+                <ul className="text-red-600">
+                  {Object.entries(errors).map(([field, error]) => (
+                    <li key={field}>{(error as { message?: string })?.message || "שדה לא תקין"}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {!isValid && Object.keys(errors).length === 0 && "אנא מלאו את כל השדות הנדרשים בצורה תקינה"}
             {isValid && selectedClaims.length === 0 && "אנא בחרו לפחות תביעה אחת"}
           </div>
         )}
