@@ -45,23 +45,19 @@ export function PageLoader({
     // Prevent scrolling while loading
     document.body.style.overflow = 'hidden';
 
-    // Wait for minimum duration and document ready
+    // Calculate total animation time
+    const fadeDelay = 100;
+    const fadeDuration = reducedMotion ? 0 : 400;
+
+    // Single timeout that handles the entire sequence
     const timer = setTimeout(() => {
       setIsLoading(false);
 
-      // Start fade out animation
-      const fadeTimer = setTimeout(() => {
+      // Schedule visibility change and scroll restore
+      setTimeout(() => {
         setIsVisible(false);
-
-        // Remove from DOM and restore scroll after fade completes
-        const removeTimer = setTimeout(() => {
-          document.body.style.overflow = '';
-        }, reducedMotion ? 0 : 400);
-
-        return () => clearTimeout(removeTimer);
-      }, 100);
-
-      return () => clearTimeout(fadeTimer);
+        document.body.style.overflow = '';
+      }, fadeDelay + fadeDuration);
     }, duration);
 
     return () => {

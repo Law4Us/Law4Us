@@ -13,7 +13,7 @@ export default function SiteLayout({
   return (
     <>
       <PageLoader
-        duration={1200}
+        duration={400}
         logoSrc="/law4uslogo-blac.svg"
         logoAlt="Law4Us - גירושין אונליין"
       />

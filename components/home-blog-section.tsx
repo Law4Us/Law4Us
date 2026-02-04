@@ -28,16 +28,26 @@ export function HomeBlogSection() {
 
   useEffect(() => {
     async function loadPosts() {
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 5000)
+
       try {
-        const response = await fetch('/api/blog/latest')
+        const response = await fetch('/api/blog/latest', {
+          signal: controller.signal
+        })
         if (!response.ok) {
           throw new Error('Failed to fetch posts')
         }
         const latestPosts = await response.json()
         setPosts(latestPosts)
       } catch (error) {
-        console.error('Failed to load blog posts:', error)
+        if (error instanceof Error && error.name === 'AbortError') {
+          console.error('Blog posts fetch timed out after 5s')
+        } else {
+          console.error('Failed to load blog posts:', error)
+        }
       } finally {
+        clearTimeout(timeout)
         setLoading(false)
       }
     }
