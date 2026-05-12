@@ -1,8 +1,5 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { cn } from '@/lib/utils/cn';
-
 interface SlideInViewProps {
   children: React.ReactNode;
   className?: string;
@@ -53,80 +50,17 @@ export function SlideInView({
   disableContainment = true,
   rootMargin = '0px 0px -50px 0px',
 }: SlideInViewProps) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [isVisible, setIsVisible] = useState(false);
-  const [hasAnimated, setHasAnimated] = useState(false);
-
-  useEffect(() => {
-    const element = ref.current;
-    if (!element) return;
-
-    // Check for reduced motion preference
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-    if (prefersReducedMotion) {
-      setIsVisible(true);
-      setHasAnimated(true);
-      return;
-    }
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          // Use requestAnimationFrame for smoother animation trigger
-          requestAnimationFrame(() => {
-            setIsVisible(true);
-            // Mark animation as complete after duration + delay
-            setTimeout(() => {
-              setHasAnimated(true);
-            }, duration + delay);
-          });
-          // Once visible, stop observing
-          observer.unobserve(element);
-        }
-      },
-      {
-        threshold,
-        rootMargin,
-      }
-    );
-
-    observer.observe(element);
-
-    return () => {
-      if (element) {
-        observer.unobserve(element);
-      }
-    };
-  }, [threshold, rootMargin, duration, delay]);
-
-  const getTransformOrigin = () => {
-    switch (direction) {
-      case 'up':
-        return 'translateY(15px)';
-      case 'down':
-        return 'translateY(-15px)';
-      case 'left':
-        return 'translateX(15px)';
-      case 'right':
-        return 'translateX(-15px)';
-      default:
-        return 'translateY(15px)';
-    }
-  };
+  void delay;
+  void direction;
+  void threshold;
+  void duration;
+  void rootMargin;
 
   return (
     <div
-      ref={ref}
-      className={cn('transition-all ease-out', className)}
+      className={className}
       style={{
-        opacity: isVisible ? 1 : 0,
-        transform: isVisible ? 'translate(0, 0)' : getTransformOrigin(),
-        transitionDuration: `${duration}ms`,
-        transitionDelay: `${delay}ms`,
         ...(disableContainment ? {} : { contain: 'layout style paint' }),
-        // Remove willChange after animation completes for better performance
-        willChange: hasAnimated ? 'auto' : 'opacity, transform',
       }}
     >
       {children}
