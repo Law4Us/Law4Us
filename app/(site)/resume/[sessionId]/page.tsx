@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Loader2, CheckCircle, XCircle, Clock, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui";
 import { useWizardStore } from "@/lib/stores/wizard-store";
-import { WizardSession } from "@/lib/services/wizard-session-service";
+import type { WizardSession } from "@/lib/services/wizard-session-service";
 
 type SessionStatus = 'loading' | 'found' | 'expired' | 'not_found' | 'error';
 
