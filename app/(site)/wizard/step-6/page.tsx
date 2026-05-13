@@ -33,6 +33,7 @@ export default function Step6Confirmation() {
     signature,
     paymentData,
     scheduledCallData,
+    sessionId,
     reset,
   } = useWizardStore();
 
@@ -114,6 +115,7 @@ export default function Step6Confirmation() {
         signature,
         paymentData,
         scheduledCallData,
+        sessionId,
         filledDocuments,
         attachments: attachments.length > 0 ? attachments : undefined,
         consents: {

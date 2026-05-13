@@ -27,6 +27,7 @@ interface SubmissionData {
     description?: string;
     isBlob?: boolean;
   }>;
+  sessionId?: string;
   paymentData: any;
   filledDocuments: any;
   submittedAt: string;
@@ -34,6 +35,17 @@ interface SubmissionData {
 
 // Cache lawyer signature in memory (per serverless function instance)
 let cachedLawyerSignature: string | null = null;
+
+function formatDriveTimestamp(date: Date): string {
+  const pad = (value: number) => String(value).padStart(2, '0');
+  const day = [
+    date.getFullYear(),
+    pad(date.getMonth() + 1),
+    pad(date.getDate()),
+  ].join('-');
+
+  return `${day} ${pad(date.getHours())}-${pad(date.getMinutes())}-${pad(date.getSeconds())}`;
+}
 
 /**
  * Load lawyer signature from Google Drive (with in-memory caching)
@@ -92,28 +104,14 @@ export async function POST(request: NextRequest) {
     // Parent folder: [Name] תביעות [date]
     // Subfolders: תביעה רכושית, תביעת מזונות, תביעת משמורת
 
-    const currentDate = new Date().toISOString().split('T')[0];
+    const now = new Date();
+    const currentDate = now.toISOString().split('T')[0];
+    const currentTimestamp = formatDriveTimestamp(now);
     const folderNameBase = submissionData.folderNameOverride || submissionData.basicInfo.fullName;
-    const parentFolderPattern = `${folderNameBase} תביעות`;
-
-    // Search for existing parent folder
-    console.log(`🔍 Searching for existing parent folder: "${parentFolderPattern}"`);
-    const existingFolders = await searchFolders(parentFolderPattern);
-
-    let parentFolderId: string;
-    let parentFolderName: string;
-
-    if (existingFolders.length > 0) {
-      // Reuse existing parent folder
-      parentFolderId = existingFolders[0].id;
-      parentFolderName = existingFolders[0].name;
-      console.log(`♻️  Reusing existing parent folder: ${parentFolderName} (${parentFolderId})`);
-    } else {
-      // Create new parent folder
-      parentFolderName = `${folderNameBase} תביעות ${currentDate}`;
-      parentFolderId = await createFolder(parentFolderName);
-      console.log(`📁 Created new parent folder: ${parentFolderName} (${parentFolderId})`);
-    }
+    const sessionSuffix = submissionData.sessionId ? ` ${submissionData.sessionId}` : '';
+    const parentFolderName = `${folderNameBase} תביעות ${currentTimestamp}${sessionSuffix}`;
+    const parentFolderId = await createFolder(parentFolderName);
+    console.log(`📁 Created new parent folder: ${parentFolderName} (${parentFolderId})`);
 
     // Load lawyer signature if not provided by client
     const lawyerSignature = submissionData.lawyerSignature || await loadLawyerSignature();
@@ -137,6 +135,8 @@ export async function POST(request: NextRequest) {
       property: 'תביעה רכושית',
       alimony: 'תביעת מזונות',
       divorceAgreement: 'הסכם גירושין',
+      shalomBayit: 'תביעת שלום בית',
+      divorceRabbinical: 'תביעת גירושין רבני',
     };
 
     // Hebrew filenames for documents
@@ -146,6 +146,8 @@ export async function POST(request: NextRequest) {
       property: 'תביעת-רכושית',
       alimony: 'תביעת-מזונות',
       divorceAgreement: 'הסכם-גירושין',
+      shalomBayit: 'תביעת-שלום-בית',
+      divorceRabbinical: 'תביעת-גירושין-רבני',
     };
 
     // Process attachments if any - handle both blob URLs and base64

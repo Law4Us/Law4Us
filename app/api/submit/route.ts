@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { POST as handleSubmission } from "@/app/api/submission/route";
+import { updateSessionSubmissionStatus } from "@/lib/services/wizard-session-service";
 
 // Route segment config for App Router
 export const dynamic = 'force-dynamic';
@@ -45,6 +46,14 @@ export async function POST(request: NextRequest) {
 
     if (!result.ok) {
       throw new Error(resultData.error || resultData.message || "Submission failed");
+    }
+
+    if (data.sessionId && resultData.folderId) {
+      try {
+        await updateSessionSubmissionStatus(data.sessionId, "submitted", resultData.folderId);
+      } catch (sessionError) {
+        console.warn("⚠️ Failed to update wizard session submission status:", sessionError);
+      }
     }
 
     // Log success
