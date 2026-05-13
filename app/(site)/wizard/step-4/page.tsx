@@ -1,15 +1,14 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CreditCard, Check, Shield, Lock, Award, Clock } from "lucide-react";
 import { Button } from "@/components/ui";
 import { SlideInView } from "@/components/animations/slide-in-view";
 import { useWizardStore } from "@/lib/stores/wizard-store";
-import { CLAIMS } from "@/lib/constants/claims";
+import { CLAIMS, calculateTotal } from "@/lib/constants/claims";
 import { formatCurrency } from "@/lib/utils/format";
-
-const PRICE_PER_CLAIM = 3900;
 
 export default function Step4Payment() {
   const router = useRouter();
@@ -26,9 +25,10 @@ export default function Step4Payment() {
   const [isProcessing, setIsProcessing] = React.useState(false);
   const [isPaid, setIsPaid] = React.useState(!!paymentData?.paid);
   const [sessionCreated, setSessionCreated] = React.useState(false);
+  const [legalConsentAccepted, setLegalConsentAccepted] = React.useState(false);
 
   // Calculate total
-  const totalAmount = selectedClaims.length * PRICE_PER_CLAIM;
+  const totalAmount = calculateTotal(selectedClaims);
 
   // Create session when component mounts (if not already created)
   React.useEffect(() => {
@@ -81,7 +81,14 @@ export default function Step4Payment() {
     .map((key) => CLAIMS.find((c) => c.key === key))
     .filter(Boolean);
 
+  const bundledClaim = selectedClaimDetails.find((claim) => claim?.isBundle);
+  const bundledClaimKeys = new Set(bundledClaim?.bundledClaims || []);
+
   const handlePayment = async () => {
+    if (!legalConsentAccepted) {
+      return;
+    }
+
     setIsProcessing(true);
 
     // Simulate payment processing (replace with actual payment integration)
@@ -165,24 +172,32 @@ export default function Step4Payment() {
                   תביעות שנבחרו
                 </h2>
                 <div className="space-y-3">
-                  {selectedClaimDetails.map((claim, index) => (
-                    <div
-                      key={claim?.key}
-                      className="flex justify-between items-center p-4 bg-neutral-lightest rounded-lg border border-neutral-light"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-caption font-bold">
-                          {index + 1}
+                  {selectedClaimDetails.map((claim, index) => {
+                    const isIncludedInBundle =
+                      !!bundledClaim &&
+                      !!claim &&
+                      claim.key !== bundledClaim.key &&
+                      bundledClaimKeys.has(claim.key);
+
+                    return (
+                      <div
+                        key={claim?.key}
+                        className="flex justify-between items-center p-4 bg-neutral-lightest rounded-lg border border-neutral-light"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-caption font-bold">
+                            {index + 1}
+                          </div>
+                          <span className="text-body font-medium text-neutral-darkest">
+                            {claim?.label}
+                          </span>
                         </div>
-                        <span className="text-body font-medium text-neutral-darkest">
-                          {claim?.label}
+                        <span className="text-body-large font-bold text-primary">
+                          {isIncludedInBundle ? "כלול בחבילה" : formatCurrency(claim?.price || 0)}
                         </span>
                       </div>
-                      <span className="text-body-large font-bold text-primary">
-                        {formatCurrency(PRICE_PER_CLAIM)}
-                      </span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
@@ -233,10 +248,28 @@ export default function Step4Payment() {
                 </div>
 
                 {/* Payment button */}
+                <label className="flex items-start gap-3 rounded-lg border border-neutral-light bg-white p-4 text-right text-body-small text-neutral-dark">
+                  <input
+                    type="checkbox"
+                    checked={legalConsentAccepted}
+                    onChange={(event) => setLegalConsentAccepted(event.target.checked)}
+                    className="mt-1 h-4 w-4 rounded border-neutral-light text-primary focus:ring-2 focus:ring-primary/20"
+                  />
+                  <span>
+                    קראתי ואני מאשר/ת את{" "}
+                    <Link href="/terms" className="text-primary hover:underline">תנאי הרכישה ותקנון האתר</Link>
+                    , את{" "}
+                    <Link href="/privacy" className="text-primary hover:underline">מדיניות הפרטיות</Link>
+                    {" "}ואת{" "}
+                    <Link href="/cancellation-policy" className="text-primary hover:underline">מדיניות הביטולים וההחזרים</Link>
+                    .
+                  </span>
+                </label>
+
                 <Button
                   onClick={handlePayment}
                   loading={isProcessing}
-                  disabled={isProcessing}
+                  disabled={isProcessing || !legalConsentAccepted}
                   size="lg"
                   className="w-full"
                 >

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AlertCircle, Home, Mail, Phone, Calendar, Video } from "lucide-react";
 import { Button } from "@/components/ui";
@@ -19,6 +20,7 @@ import {
 } from "@/lib/constants/document-templates";
 import { formatDate } from "@/lib/utils/format";
 import { convertFormDataFiles, extractAttachmentsFromFormData } from "@/lib/utils/file-converter";
+import { LEGAL_VERSION } from "@/lib/constants/legal";
 
 type SubmissionState = "confirming" | "submitting" | "success" | "error";
 
@@ -38,6 +40,7 @@ export default function Step6Confirmation() {
     React.useState<SubmissionState>("confirming");
   const [errorMessage, setErrorMessage] = React.useState("");
   const [retryCount, setRetryCount] = React.useState(0);
+  const [submissionConsentAccepted, setSubmissionConsentAccepted] = React.useState(false);
 
   // Prepare filled documents (for backend processing)
   const filledDocuments = React.useMemo(() => {
@@ -78,6 +81,10 @@ export default function Step6Confirmation() {
   }, [basicInfo, selectedClaims, formData, signature]);
 
   const handleSubmit = async () => {
+    if (!submissionConsentAccepted) {
+      return;
+    }
+
     setSubmissionState("submitting");
     setErrorMessage("");
 
@@ -109,6 +116,14 @@ export default function Step6Confirmation() {
         scheduledCallData,
         filledDocuments,
         attachments: attachments.length > 0 ? attachments : undefined,
+        consents: {
+          legalVersion: LEGAL_VERSION,
+          submittedAt: new Date().toISOString(),
+          acceptedTerms: true,
+          acceptedPrivacy: true,
+          acceptedCancellationPolicy: true,
+          confirmedInformationAccuracy: true,
+        },
         submittedAt: new Date().toISOString(),
       };
 
@@ -311,10 +326,29 @@ export default function Step6Confirmation() {
         {/* Submit Button */}
         <SlideInView direction="up" delay={250}>
           <div className="flex flex-col items-center gap-2">
+            <label className="mb-4 flex w-full items-start gap-3 rounded-lg border border-neutral-light bg-white p-4 text-right text-body-small text-neutral-dark">
+              <input
+                type="checkbox"
+                checked={submissionConsentAccepted}
+                onChange={(event) => setSubmissionConsentAccepted(event.target.checked)}
+                className="mt-1 h-4 w-4 rounded border-neutral-light text-primary focus:ring-2 focus:ring-primary/20"
+              />
+              <span>
+                אני מאשר/ת שהפרטים שמסרתי נכונים ומלאים לפי מיטב ידיעתי, ומסכים/ה לשליחת
+                המידע והמסמכים למשרד לצורך טיפול בתיק בהתאם ל
+                <Link href="/terms" className="text-primary hover:underline">תנאי השימוש</Link>
+                , ל
+                <Link href="/privacy" className="text-primary hover:underline">מדיניות הפרטיות</Link>
+                {" "}ול
+                <Link href="/cancellation-policy" className="text-primary hover:underline">מדיניות הביטולים וההחזרים</Link>
+                .
+              </span>
+            </label>
             <Button
               onClick={handleSubmit}
               variant="primary"
               size="lg"
+              disabled={!submissionConsentAccepted}
               className="w-full md:w-auto min-w-[300px]"
             >
               שלח תביעה

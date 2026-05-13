@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { Users, Calculator, Heart, Scale, Brain, Stethoscope, CheckCircle } from "lucide-react";
 import { SlideInView } from "@/components/animations/slide-in-view";
@@ -20,6 +21,7 @@ type HelpFormValues = {
   phone: string;
   email: string;
   message: string;
+  legalConsent: boolean;
 };
 
 const supportHighlights = [
@@ -114,6 +116,7 @@ export default function HelpPage() {
       phone: "",
       email: "",
       message: "",
+      legalConsent: false,
     },
   });
 
@@ -369,13 +372,21 @@ export default function HelpPage() {
                   <label className="flex items-start gap-3 cursor-pointer text-sm text-neutral-dark">
                     <input
                       type="checkbox"
+                      {...register("legalConsent", {
+                        required: "יש לאשר את מדיניות הפרטיות כדי לשלוח פנייה",
+                      })}
                       className="mt-1 h-4 w-4 rounded border-neutral-light text-primary focus:ring-2 focus:ring-primary/20"
-                      required
                     />
                     <span>
-                      אני מסכים/ה לקבל תקשורת מהמשרד לצורך מתן שירות ועדכונים רלוונטיים
+                      אני מסכים/ה שהמידע ישמש לטיפול בפנייה וליצירת קשר בהתאם ל
+                      <Link href="/privacy" className="text-primary hover:underline">מדיניות הפרטיות</Link>
+                      {" "}ול
+                      <Link href="/terms" className="text-primary hover:underline">תנאי השימוש</Link>
                     </span>
                   </label>
+                  {errors.legalConsent?.message && (
+                    <p className="mt-2 text-sm text-red-600">{errors.legalConsent.message}</p>
+                  )}
                 </div>
 
                 <Button type="submit" size="lg" className="w-full" loading={isSubmitting}>

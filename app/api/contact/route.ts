@@ -6,6 +6,7 @@ export interface ContactFormData {
   phone: string;
   email: string;
   message: string;
+  legalConsent?: boolean;
 }
 
 /**
@@ -21,6 +22,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: false,
         message: 'נא למלא את כל השדות הנדרשים',
+      }, { status: 400 });
+    }
+
+    if (!data.legalConsent) {
+      return NextResponse.json({
+        success: false,
+        message: 'יש לאשר את מדיניות הפרטיות ותנאי השימוש',
       }, { status: 400 });
     }
 

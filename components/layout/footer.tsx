@@ -15,6 +15,13 @@ const infoLinks = [
   { name: "שאלות ותשובות", href: "/#faq" },
 ];
 
+const legalLinks = [
+  { name: "תקנון ותנאי שימוש", href: "/terms" },
+  { name: "מדיניות פרטיות", href: "/privacy" },
+  { name: "ביטולים והחזרים", href: "/cancellation-policy" },
+  { name: "הצהרת נגישות", href: "/accessibility" },
+];
+
 const socialLinks = [
   { name: "Facebook", icon: Facebook, href: "#" },
   { name: "Instagram", icon: Instagram, href: "#" },
@@ -164,6 +171,17 @@ export function Footer() {
               <span className="text-body-small text-white/60">|</span>
               <span className="text-body-small text-white/60">Built and designed by</span>
             </div>
+          </div>
+          <div className="mt-6 flex flex-wrap justify-center gap-x-5 gap-y-2 text-center md:justify-start">
+            {legalLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`text-body-small text-white/60 ${animations.footerLinkHover}`}
+              >
+                {link.name}
+              </Link>
+            ))}
           </div>
         </div>
       </div>

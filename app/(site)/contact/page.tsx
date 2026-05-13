@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { MapPin, Phone, Mail, Clock, Copy, Check } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -16,6 +17,7 @@ type ContactFormValues = {
   phone: string;
   email: string;
   message: string;
+  legalConsent: boolean;
 };
 
 type ContactMethod = {
@@ -81,6 +83,7 @@ export default function ContactPage() {
       phone: "",
       email: "",
       message: "",
+      legalConsent: false,
     },
   });
 
@@ -443,6 +446,9 @@ export default function ContactPage() {
                       }}>
                         <input
                           type="checkbox"
+                          {...register("legalConsent", {
+                            required: "יש לאשר את מדיניות הפרטיות כדי לשלוח פנייה",
+                          })}
                           style={{
                             marginTop: spacing[1],
                             width: '16px',
@@ -451,12 +457,19 @@ export default function ContactPage() {
                             border: `1px solid ${colors.neutral[300]}`,
                             accentColor: colors.brand.primary.DEFAULT,
                           }}
-                          required
                         />
                         <span>
-                          אני מסכים/ה לקבל תקשורת מהמשרד לצורך מתן שירות ועדכונים רלוונטיים
+                          אני מסכים/ה שהמידע ישמש לטיפול בפנייה וליצירת קשר בהתאם ל
+                          <Link href="/privacy" className="text-primary hover:underline">מדיניות הפרטיות</Link>
+                          {" "}ול
+                          <Link href="/terms" className="text-primary hover:underline">תנאי השימוש</Link>
                         </span>
                       </label>
+                      {errors.legalConsent?.message && (
+                        <p className="mt-2 text-body-small text-red-600">
+                          {errors.legalConsent.message}
+                        </p>
+                      )}
                     </div>
 
                     <Button

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,6 +17,7 @@ import { ProgressiveSection, ProgressiveSections } from "@/components/wizard/pro
 import { ClaimCard } from "@/components/wizard/claim-card";
 import { SlideInView } from "@/components/animations/slide-in-view";
 import { RoutingQuestions } from "@/components/wizard/routing-questions";
+import { LEGAL_VERSION } from "@/lib/constants/legal";
 import type { ClaimType, RecommendedCourt, WizardPath } from "@/lib/types";
 
 export default function Step1ClaimPicker() {
@@ -159,6 +161,7 @@ export default function Step1ClaimPicker() {
 
   // Track if guided flow is complete
   const [guidedFlowComplete, setGuidedFlowComplete] = React.useState(false);
+  const [legalConsentAccepted, setLegalConsentAccepted] = React.useState(false);
 
   // Check if section 4 is complete (claims)
   // For guided path, need to complete the routing flow
@@ -202,6 +205,10 @@ export default function Step1ClaimPicker() {
   };
 
   const onSubmit = (data: BasicInfo) => {
+    if (!legalConsentAccepted) {
+      return;
+    }
+
     updateBasicInfo(data);
     nextStep();
     router.push("/wizard/step-2");
@@ -212,7 +219,7 @@ export default function Step1ClaimPicker() {
     scrollToFirstError(formErrors as Record<string, unknown>);
   };
 
-  const canProceed = isValid && selectedClaims.length > 0;
+  const canProceed = isValid && selectedClaims.length > 0 && legalConsentAccepted;
 
   return (
     <form onSubmit={handleSubmit(onSubmit, onError)} className="max-w-4xl mx-auto">
@@ -742,6 +749,25 @@ export default function Step1ClaimPicker() {
 
       {/* Navigation */}
       <SlideInView direction="up" delay={500}>
+        <div className="mt-8 rounded-xl border border-primary/20 bg-primary/5 p-5 text-right">
+          <label className="flex items-start gap-3 text-body-small text-neutral-dark">
+            <input
+              type="checkbox"
+              checked={legalConsentAccepted}
+              onChange={(event) => setLegalConsentAccepted(event.target.checked)}
+              className="mt-1 h-4 w-4 rounded border-neutral-light text-primary focus:ring-2 focus:ring-primary/20"
+            />
+            <span>
+              אני מאשר/ת שמסירת המידע נעשית מרצוני לצורך הכנת המסמכים והטיפול בפנייה,
+              וקראתי את{" "}
+              <Link href="/privacy" className="text-primary hover:underline">מדיניות הפרטיות</Link>
+              {" "}ואת{" "}
+              <Link href="/terms" className="text-primary hover:underline">תנאי השימוש</Link>
+              . גרסת מסמכים: {LEGAL_VERSION}.
+            </span>
+          </label>
+        </div>
+
         <div className="mt-8 flex justify-end">
           <Button type="submit" size="lg" disabled={!canProceed} className="text-white">
             המשך לשלב הבא
@@ -763,6 +789,7 @@ export default function Step1ClaimPicker() {
             )}
             {!isValid && Object.keys(errors).length === 0 && "אנא מלאו את כל השדות הנדרשים בצורה תקינה"}
             {isValid && selectedClaims.length === 0 && "אנא בחרו לפחות תביעה אחת"}
+            {isValid && selectedClaims.length > 0 && !legalConsentAccepted && "יש לאשר את תנאי השימוש ומדיניות הפרטיות"}
           </div>
         )}
       </SlideInView>

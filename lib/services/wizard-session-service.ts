@@ -1,5 +1,6 @@
 import { client } from '@/sanity/client';
 import { WizardState } from '@/lib/types';
+import { calculateTotal } from '@/lib/constants/claims';
 
 export interface WizardSession {
   _id?: string;
@@ -54,7 +55,7 @@ export async function createWizardSession(
   const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days
 
   // Calculate total amount based on selected claims
-  const totalAmount = wizardState.selectedClaims.length * 3900; // 3900 ₪ per claim
+  const totalAmount = calculateTotal(wizardState.selectedClaims);
 
   const session: any = {
     _type: 'wizardSession',
