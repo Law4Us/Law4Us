@@ -13,7 +13,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         type={type}
         className={cn(
           // Base styles using design tokens
-          "flex w-full rounded-input bg-neutral-100 px-4 py-3",
+          "flex w-full min-w-0 rounded-input bg-neutral-100 px-4 py-3 text-right",
           "text-body-sm font-medium text-neutral-900",
           "shadow-input transition-smooth",
           "placeholder:text-neutral-900/40 placeholder:font-normal",

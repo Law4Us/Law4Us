@@ -6,7 +6,7 @@ import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui";
 import { useWizardStore } from "@/lib/stores/wizard-store";
-import { QuestionsSections } from "@/components/wizard/question-renderer";
+import { QuestionsSections, hasMeaningfulValue } from "@/components/wizard/question-renderer";
 import { SectionsNav, SectionsNavMobile } from "@/components/wizard/sections-nav";
 import { SlideInView } from "@/components/animations/slide-in-view";
 import {
@@ -276,7 +276,7 @@ export default function Step2DynamicForm() {
       if (requiredQuestions.length === 0) {
         return visibleQuestions.some((q) => {
           const value = getValueByPath<unknown>(watchedValues, q.id);
-          return value !== undefined && value !== "" && value !== null;
+          return hasMeaningfulValue(value);
         });
       }
 
@@ -286,11 +286,28 @@ export default function Step2DynamicForm() {
         const hasError = getValueByPath<unknown>(errors, q.id);
 
         // Field must have a value and no errors
-        return value !== undefined && value !== "" && value !== null && !hasError;
+        return hasMeaningfulValue(value) && !hasError;
       });
     },
     [isQuestionVisible, watchedValues, errors]
   );
+
+  const incompleteRequiredFields = React.useMemo(() => {
+    return sections.flatMap((section, sectionIndex) => {
+      return section.questions
+        .filter((question) => question.required && isQuestionVisible(question))
+        .filter((question) => {
+          const value = getValueByPath<unknown>(watchedValues, question.id);
+          const hasError = getValueByPath<unknown>(errors, question.id);
+          return !hasMeaningfulValue(value) || Boolean(hasError);
+        })
+        .map((question) => ({
+          sectionTitle: section.title,
+          sectionIndex,
+          label: question.label.replace(/:$/, ""),
+        }));
+    });
+  }, [sections, isQuestionVisible, watchedValues, errors]);
 
   // Check if all required sections are complete
   const allRequiredSectionsComplete = React.useMemo(() => {
@@ -334,10 +351,15 @@ export default function Step2DynamicForm() {
   const handleSectionNavigate = (index: number) => {
     setCurrentSectionIndex(index);
     // Scroll to section
-    const sectionElement = document.querySelectorAll('[class*="rounded-xl border-2"]')[index];
-    if (sectionElement) {
-      sectionElement.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
+    window.requestAnimationFrame(() => {
+      const sectionElement = document.querySelector(
+        `[data-wizard-section-index="${index}"]`
+      );
+
+      if (sectionElement) {
+        sectionElement.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    });
   };
 
   return (
@@ -393,6 +415,8 @@ export default function Step2DynamicForm() {
               <QuestionsSections
                 questions={processedQuestions}
                 watchFields={watchedValues}
+                currentSectionIndex={currentSectionIndex}
+                onSectionChange={setCurrentSectionIndex}
               />
             </SlideInView>
           </div>
@@ -441,6 +465,21 @@ export default function Step2DynamicForm() {
               </Button>
             </div>
           </div>
+
+          {!allRequiredSectionsComplete && incompleteRequiredFields.length > 0 && (
+            <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-right">
+              <p className="text-body-small font-semibold text-amber-900">
+                כדי להמשיך יש להשלים את השדות המסומנים בכוכבית.
+              </p>
+              <ul className="mt-2 space-y-1 text-body-small text-amber-800">
+                {incompleteRequiredFields.slice(0, 5).map((field) => (
+                  <li key={`${field.sectionIndex}-${field.label}`}>
+                    {field.sectionTitle}: {field.label}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           {/* Validation summary */}
           {(!isValid || !allRequiredSectionsComplete) && Object.keys(errors).length > 0 && (

@@ -110,18 +110,26 @@ export function SectionsNavMobile({
 }: SectionsNavProps) {
   const scrollRef = React.useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to current section
+  // Keep the active tab centered without moving the page itself on mobile.
   React.useEffect(() => {
-    if (scrollRef.current) {
-      const currentButton = scrollRef.current.children[currentIndex] as HTMLElement;
-      if (currentButton) {
-        currentButton.scrollIntoView({
-          behavior: "smooth",
-          inline: "center",
-          block: "nearest",
-        });
-      }
+    const container = scrollRef.current;
+    const currentButton = container?.children[currentIndex] as HTMLElement | undefined;
+
+    if (!container || !currentButton) {
+      return;
     }
+
+    const containerRect = container.getBoundingClientRect();
+    const buttonRect = currentButton.getBoundingClientRect();
+    const centeredDelta =
+      buttonRect.left -
+      containerRect.left -
+      (containerRect.width - buttonRect.width) / 2;
+
+    container.scrollBy({
+      left: centeredDelta,
+      behavior: "smooth",
+    });
   }, [currentIndex]);
 
   return (
@@ -158,7 +166,7 @@ export function SectionsNavMobile({
               type="button"
               onClick={() => onNavigate(index)}
               className={cn(
-                "flex-shrink-0 snap-center px-4 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 min-w-[140px]",
+                "flex-shrink-0 snap-center px-4 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 min-w-[132px]",
                 isCurrent && "bg-primary text-white shadow-md",
                 !isCurrent && isComplete && "bg-green-50 border border-green-200",
                 !isCurrent && !isComplete && "bg-white border border-neutral-light"

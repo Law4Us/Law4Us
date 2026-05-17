@@ -34,6 +34,40 @@ const getValueByPath = <T = unknown>(source: unknown, path: string): T | undefin
     }, source) as T | undefined;
 };
 
+export function hasMeaningfulValue(value: unknown): boolean {
+  if (value === undefined || value === null) {
+    return false;
+  }
+
+  if (typeof value === "string") {
+    return value.trim().length > 0;
+  }
+
+  if (typeof value === "number") {
+    return Number.isFinite(value);
+  }
+
+  if (typeof value === "boolean") {
+    return true;
+  }
+
+  if (Array.isArray(value)) {
+    return value.length > 0 && value.some(hasMeaningfulValue);
+  }
+
+  if (value instanceof Date) {
+    return !Number.isNaN(value.getTime());
+  }
+
+  if (typeof value === "object") {
+    return Object.entries(value as Record<string, unknown>)
+      .filter(([key]) => key !== "__id")
+      .some(([, nestedValue]) => hasMeaningfulValue(nestedValue));
+  }
+
+  return true;
+}
+
 export function QuestionRenderer({
   question,
   watchFields = {},
@@ -70,11 +104,15 @@ export function QuestionRenderer({
   };
 
   const errorMessage = getNestedError(fieldName);
+  const questionBlockClassName = cn(
+    question.id === "property.respondentEmploymentStatus" &&
+      "mt-2 border-t border-neutral-light pt-6"
+  );
 
   // Render heading
   if (question.type === "heading") {
     return (
-      <div className="col-span-2 mt-6 mb-4 border-b border-neutral pb-2">
+      <div className="lg:col-span-2 mt-6 mb-4 border-b border-neutral pb-2">
         <h3 className="text-h3 font-semibold text-neutral-darkest">
           {question.label}
         </h3>
@@ -96,6 +134,7 @@ export function QuestionRenderer({
         required={question.required}
         error={errorMessage}
         helper={question.helper}
+        className={questionBlockClassName}
       >
         <Controller
           name={fieldName}
@@ -127,6 +166,7 @@ export function QuestionRenderer({
         required={question.required}
         error={errorMessage}
         helper={question.helper}
+        className={questionBlockClassName}
       >
         <Input
           id={fieldName}
@@ -143,7 +183,7 @@ export function QuestionRenderer({
   if (question.type === "textarea") {
     const currentValue = getValueByPath<string | undefined>(watchFields, fieldName) || "";
     return (
-      <div className="col-span-2">
+      <div className={cn("lg:col-span-2", questionBlockClassName)}>
         <FormField
           label={question.label}
           htmlFor={fieldName}
@@ -177,6 +217,7 @@ export function QuestionRenderer({
         required={question.required}
         error={errorMessage}
         helper={question.helper}
+        className={questionBlockClassName}
       >
         <Select
           id={fieldName}
@@ -196,7 +237,7 @@ export function QuestionRenderer({
   // Render radio group
   if (question.type === "radio") {
     return (
-      <div className="col-span-2">
+      <div className={cn("lg:col-span-2", questionBlockClassName)}>
         <FormField
           label={question.label}
           required={question.required}
@@ -225,7 +266,7 @@ export function QuestionRenderer({
   // Render file upload
   if (question.type === "file" || question.type === "fileList") {
     return (
-      <div className="col-span-2">
+      <div className={cn("lg:col-span-2", questionBlockClassName)}>
         <FormField
           label={question.label}
           required={question.required}
@@ -255,7 +296,7 @@ export function QuestionRenderer({
   if (question.type === "repeater" && question.repeaterConfig) {
     const config = question.repeaterConfig;
     return (
-      <div className="col-span-2">
+      <div className={cn("lg:col-span-2", questionBlockClassName)}>
         <FormField
           label={question.label}
           required={question.required}
@@ -291,6 +332,8 @@ interface QuestionsListProps {
   questions: Question[];
   watchFields?: Record<string, any>;
   namePrefix?: string;
+  currentSectionIndex?: number;
+  onSectionChange?: (index: number) => void;
 }
 
 export function QuestionsList({
@@ -319,6 +362,8 @@ export function QuestionsSections({
   questions,
   watchFields = {},
   namePrefix = "",
+  currentSectionIndex,
+  onSectionChange,
 }: QuestionsListProps) {
   const { formState: { errors } } = useFormContext();
   const [openSections, setOpenSections] = React.useState<Set<number>>(new Set([0]));
@@ -381,7 +426,7 @@ export function QuestionsSections({
       return visibleQuestions.some((q) => {
         const fieldName = namePrefix ? `${namePrefix}.${q.id}` : q.id;
         const value = getValueByPath<unknown>(watchFields, fieldName);
-        return value !== undefined && value !== "" && value !== null;
+        return hasMeaningfulValue(value);
       });
     }
 
@@ -392,9 +437,25 @@ export function QuestionsSections({
       const hasError = getValueByPath<unknown>(errors, fieldName);
 
       // Field must have a value and no errors
-      return value !== undefined && value !== "" && value !== null && !hasError;
+      return hasMeaningfulValue(value) && !hasError;
     });
   };
+
+  React.useEffect(() => {
+    if (currentSectionIndex === undefined) {
+      return;
+    }
+
+    setOpenSections((previous) => {
+      if (previous.has(currentSectionIndex)) {
+        return previous;
+      }
+
+      const next = new Set(previous);
+      next.add(currentSectionIndex);
+      return next;
+    });
+  }, [currentSectionIndex]);
 
   const toggleSection = (index: number) => {
     const newOpenSections = new Set(openSections);
@@ -402,6 +463,7 @@ export function QuestionsSections({
       newOpenSections.delete(index);
     } else {
       newOpenSections.add(index);
+      onSectionChange?.(index);
     }
     setOpenSections(newOpenSections);
   };
@@ -415,6 +477,7 @@ export function QuestionsSections({
         return (
           <div
             key={index}
+            data-wizard-section-index={index}
             className={cn(
               "bg-white rounded-xl border-2 overflow-hidden transition-all duration-300",
               isOpen && "shadow-lg",
@@ -429,7 +492,7 @@ export function QuestionsSections({
                 type="button"
                 onClick={() => toggleSection(index)}
                 className={cn(
-                  "w-full px-6 py-5 flex items-center gap-4 text-right transition-all duration-200",
+                  "w-full px-4 py-4 sm:px-6 sm:py-5 flex items-center gap-3 sm:gap-4 text-right transition-all duration-200",
                   isOpen && "bg-primary/5",
                   !isOpen && "hover:bg-neutral-lightest"
                 )}
@@ -438,7 +501,7 @@ export function QuestionsSections({
                 {/* Number/Status Icon */}
                 <div
                   className={cn(
-                    "flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center font-bold text-body-large transition-all duration-300",
+                    "flex-shrink-0 w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold text-body sm:text-body-large transition-all duration-300",
                     isComplete && "bg-green-500 text-white shadow-md",
                     !isComplete && isOpen && "bg-primary text-white ring-4 ring-primary/20 shadow-md",
                     !isComplete && !isOpen && "bg-neutral-light text-neutral-dark"
@@ -457,7 +520,7 @@ export function QuestionsSections({
                 <div className="flex-1 min-w-0">
                   <h3
                     className={cn(
-                      "text-h3 font-semibold transition-colors",
+                      "text-body-large sm:text-h3 font-semibold transition-colors",
                       isOpen && "text-primary",
                       isComplete && !isOpen && "text-green-700",
                       !isComplete && !isOpen && "text-neutral-darkest"
@@ -495,7 +558,7 @@ export function QuestionsSections({
                 isOpen ? "max-h-[10000px] opacity-100" : "max-h-0 opacity-0"
               )}
             >
-              <div className="p-6 pt-2">
+              <div className="p-4 pt-2 sm:p-6 sm:pt-2">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {section.questions.map((question) => (
                     <QuestionRenderer
