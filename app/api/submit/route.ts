@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { POST as handleSubmission } from "@/app/api/submission/route";
-import { updateSessionSubmissionStatus } from "@/lib/services/wizard-session-service";
+import {
+  getWizardSession,
+  updateSessionSubmissionStatus,
+} from "@/lib/services/wizard-session-service";
 
 // Route segment config for App Router
 export const dynamic = 'force-dynamic';
@@ -23,6 +26,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { success: false, error: "חסרים שדות חובה" },
         { status: 400 }
+      );
+    }
+
+    if (!data.sessionId) {
+      return NextResponse.json(
+        { success: false, error: "נדרש תשלום מאושר לפני שליחת התביעה" },
+        { status: 402 }
+      );
+    }
+
+    const session = await getWizardSession(data.sessionId);
+
+    if (!session || session.paymentStatus !== "paid") {
+      return NextResponse.json(
+        { success: false, error: "התשלום עדיין לא אושר. אנא המתינו מספר רגעים ונסו שוב." },
+        { status: 402 }
       );
     }
 

@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CreditCard, Check, Shield, Lock, Award, Clock } from "lucide-react";
+import { AlertCircle, CreditCard, Check, Shield, Lock, Award, Clock } from "lucide-react";
 import { Button } from "@/components/ui";
 import { SlideInView } from "@/components/animations/slide-in-view";
 import { useWizardStore } from "@/lib/stores/wizard-store";
@@ -16,16 +16,15 @@ export default function Step4Payment() {
     basicInfo,
     selectedClaims,
     paymentData,
-    setPaymentData,
-    nextStep,
     sessionId,
     setSessionId,
   } = useWizardStore();
 
   const [isProcessing, setIsProcessing] = React.useState(false);
-  const [isPaid, setIsPaid] = React.useState(!!paymentData?.paid);
+  const [isPaid] = React.useState(!!paymentData?.paid);
   const [sessionCreated, setSessionCreated] = React.useState(false);
   const [legalConsentAccepted, setLegalConsentAccepted] = React.useState(false);
+  const [paymentError, setPaymentError] = React.useState("");
 
   // Calculate total
   const totalAmount = calculateTotal(selectedClaims);
@@ -90,25 +89,44 @@ export default function Step4Payment() {
     }
 
     setIsProcessing(true);
+    setPaymentError("");
 
-    // Simulate payment processing (replace with actual payment integration)
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+      const activeSessionId = sessionId || useWizardStore.getState().sessionId;
 
-    // Mark as paid
-    const paymentInfo = {
-      paid: true,
-      date: new Date(),
-    };
+      if (!activeSessionId) {
+        setPaymentError("לא הצלחנו ליצור מזהה בקשה לתשלום. נסו שוב בעוד רגע.");
+        setIsProcessing(false);
+        return;
+      }
 
-    setPaymentData(paymentInfo);
-    setIsPaid(true);
-    setIsProcessing(false);
+      const response = await fetch("/api/payments/create-link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionId: activeSessionId,
+          fullName: basicInfo.fullName,
+          phone: basicInfo.phone,
+          email: basicInfo.email,
+          amount: totalAmount,
+          claimNames: selectedClaimDetails.map((claim) => claim?.label).filter(Boolean),
+        }),
+      });
 
-    // Auto-proceed to next step after short delay
-    setTimeout(() => {
-      nextStep();
-      router.push("/wizard/step-5");
-    }, 1000);
+      const data = await response.json();
+
+      if (!response.ok || !data.success || !data.paymentUrl) {
+        setPaymentError(data.message || "לא הצלחנו ליצור קישור תשלום. נסו שוב.");
+        setIsProcessing(false);
+        return;
+      }
+
+      window.location.href = data.paymentUrl;
+    } catch (error) {
+      console.error("Payment link creation failed:", error);
+      setPaymentError("אירעה שגיאה ביצירת קישור התשלום. נסו שוב.");
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -240,12 +258,18 @@ export default function Step4Payment() {
           ) : (
             <SlideInView direction="up" delay={200}>
               <div className="space-y-4">
-                {/* Payment simulation notice */}
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <p className="text-body text-blue-800">
-                    💳 <strong>שים לב:</strong> זהו סימולציה של תשלום. במימוש מלא יתווסף שער תשלום אמיתי.
+                    התשלום מתבצע בעמוד מאובטח של Grow. לאחר לחיצה ניצור עבורך קישור תשלום אישי.
                   </p>
                 </div>
+
+                {paymentError && (
+                  <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-red-800">
+                    <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0" />
+                    <p className="text-body-small">{paymentError}</p>
+                  </div>
+                )}
 
                 {/* Payment button */}
                 <label className="flex items-start gap-3 rounded-lg border border-neutral-light bg-white p-4 text-right text-body-small text-neutral-dark">
