@@ -1,4 +1,4 @@
-import { client } from '@/sanity/client';
+import { serverClient as client } from '@/sanity/server-client';
 import { WizardState } from '@/lib/types';
 import { calculateTotal } from '@/lib/constants/claims';
 
