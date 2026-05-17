@@ -12,18 +12,69 @@ type PaymentConfirmationBody = {
   statusCode?: string | number;
   amount?: number;
   sum?: number;
+  data?: unknown;
+  customFields?: unknown;
+  purchaseCustomField?: unknown;
 };
 
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {};
+}
+
+function readString(value: unknown): string {
+  return typeof value === 'string' || typeof value === 'number' ? String(value).trim() : '';
+}
+
+function pickString(record: Record<string, unknown>, keys: string[]): string {
+  for (const key of keys) {
+    const value = readString(record[key]);
+
+    if (value) {
+      return value;
+    }
+  }
+
+  return '';
+}
+
+function getCustomField1(body: PaymentConfirmationBody): string {
+  const data = asRecord(body.data);
+  const directCustomFields = asRecord(body.customFields);
+  const dataCustomFields = asRecord(data.customFields);
+  const directPurchaseFields = asRecord(body.purchaseCustomField);
+  const dataPurchaseFields = asRecord(data.purchaseCustomField);
+
+  return pickString(directCustomFields, ['cField1', 'c_field_1', 'field1', 'C field 1'])
+    || pickString(dataCustomFields, ['cField1', 'c_field_1', 'field1', 'C field 1'])
+    || pickString(directPurchaseFields, ['field1', 'cField1', 'c_field_1'])
+    || pickString(dataPurchaseFields, ['field1', 'cField1', 'c_field_1']);
+}
+
 function getSessionId(body: PaymentConfirmationBody): string {
-  return (body.sessionId || body.externalId || body.orderId || body.reference || '').trim();
+  const data = asRecord(body.data);
+
+  return pickString(body as Record<string, unknown>, ['sessionId', 'externalId', 'orderId', 'reference'])
+    || pickString(data, ['sessionId', 'externalId', 'orderId', 'reference'])
+    || getCustomField1(body);
 }
 
 function isPaidStatus(body: PaymentConfirmationBody): boolean {
-  const status = String(body.status || '').toLowerCase();
-  const statusCode = String(body.statusCode || '').toLowerCase();
+  const data = asRecord(body.data);
+  const status = (readString(body.status) || readString(data.status)).toLowerCase();
+  const statusCode = (readString(body.statusCode) || readString(data.statusCode)).toLowerCase();
 
-  return ['paid', 'success', 'successful', 'approved', 'completed'].includes(status)
-    || ['paid', 'success', 'successful', 'approved', 'completed', '0', '1'].includes(statusCode);
+  return ['paid', 'success', 'successful', 'approved', 'completed', 'שולם'].includes(status)
+    || ['paid', 'success', 'successful', 'approved', 'completed', '0', '1', '2'].includes(statusCode);
+}
+
+function getTransactionId(body: PaymentConfirmationBody): string | undefined {
+  const data = asRecord(body.data);
+
+  return pickString(body as Record<string, unknown>, ['transactionId', 'paymentIntentId', 'transactionCode', 'asmachta'])
+    || pickString(data, ['transactionId', 'paymentIntentId', 'transactionCode', 'asmachta'])
+    || undefined;
 }
 
 export async function POST(request: NextRequest) {
@@ -59,7 +110,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const transactionId = body.transactionId || body.paymentIntentId;
+    const transactionId = getTransactionId(body);
 
     await updateSessionPaymentStatus(sessionId, 'paid', transactionId);
 
