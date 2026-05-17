@@ -28,7 +28,7 @@ const FormField = React.forwardRef<HTMLDivElement, FormFieldProps>(
     ref
   ) => {
     return (
-      <div ref={ref} className={cn("flex flex-col gap-2", className)}>
+      <div ref={ref} className={cn("flex min-w-0 flex-col gap-2", className)}>
         {label && (
           <Label htmlFor={htmlFor} required={required} optional={optional}>
             {label}

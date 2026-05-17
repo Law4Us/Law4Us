@@ -9,7 +9,7 @@ export interface RadioProps
 const Radio = React.forwardRef<HTMLInputElement, RadioProps>(
   ({ className, label, id, ...props }, ref) => {
     return (
-      <div className="flex items-center">
+      <div className="flex min-w-0 items-center">
         <input
           type="radio"
           className={cn(
@@ -25,7 +25,7 @@ const Radio = React.forwardRef<HTMLInputElement, RadioProps>(
         />
         <label
           htmlFor={id}
-          className="mr-2 text-body-large cursor-pointer select-none"
+          className="mr-2 min-w-0 cursor-pointer select-none text-body sm:text-body-large leading-relaxed"
         >
           {label}
         </label>

@@ -73,6 +73,11 @@ export function FileUploadBlob({
     if (!value) return [];
     return Array.isArray(value) ? value : [value];
   }, [value]);
+  const uploadedFilesRef = React.useRef<BlobFile[]>(uploadedFiles);
+
+  React.useEffect(() => {
+    uploadedFilesRef.current = uploadedFiles;
+  }, [uploadedFiles]);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -223,8 +228,11 @@ export function FileUploadBlob({
       };
 
       if (multiple) {
-        onChange?.([...uploadedFiles, blobFile]);
+        const nextFiles = [...uploadedFilesRef.current, blobFile];
+        uploadedFilesRef.current = nextFiles;
+        onChange?.(nextFiles);
       } else {
+        uploadedFilesRef.current = [blobFile];
         onChange?.(blobFile);
       }
     } catch (err) {
@@ -248,8 +256,10 @@ export function FileUploadBlob({
   const handleRemoveFile = (url: string) => {
     if (multiple) {
       const newFiles = uploadedFiles.filter((f) => f.url !== url);
+      uploadedFilesRef.current = newFiles;
       onChange?.(newFiles.length > 0 ? newFiles : null);
     } else {
+      uploadedFilesRef.current = [];
       onChange?.(null);
     }
 
@@ -286,7 +296,7 @@ export function FileUploadBlob({
         onDrop={handleDrop}
         onClick={handleClick}
         className={cn(
-          "relative border-2 border-dashed rounded-lg p-8",
+          "relative border-2 border-dashed rounded-lg p-5 sm:p-8",
           "flex flex-col items-center justify-center gap-3",
           "transition-smooth cursor-pointer",
           isDragging && "border-primary bg-primary/5",
@@ -324,7 +334,7 @@ export function FileUploadBlob({
           )}
         </div>
 
-        <div className="text-center">
+        <div className="max-w-full text-center">
           <p className="text-body font-medium text-neutral-900 mb-1">
             {isUploading
               ? "מעלה קבצים..."
@@ -332,7 +342,7 @@ export function FileUploadBlob({
               ? "שחררו לצירוף הקובץ"
               : "גררו קובץ לכאן או לחצו לבחירה"}
           </p>
-          <p className="text-body-small text-neutral-700">
+          <p className="text-body-small text-neutral-700 break-words">
             {accept ? `קבצים נתמכים: ${accept}` : "תמונות ו-PDF נתמכים"}
             {" • "}
             עד {formatFileSize(maxSize)} לקובץ
@@ -350,7 +360,7 @@ export function FileUploadBlob({
               <div
                 key={uploadState.id}
                 className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-lg",
+                  "flex min-w-0 items-center gap-3 px-4 py-3 rounded-lg",
                   uploadState.status === "error" ? "bg-red-50" : "bg-neutral-100"
                 )}
               >
@@ -370,7 +380,7 @@ export function FileUploadBlob({
                     <FileIcon className="w-5 h-5 text-primary" />
                   )}
                 </div>
-                <div className="flex-1 min-w-0">
+                <div className="min-w-0 flex-1">
                   <p className="text-body font-medium text-neutral-900 truncate">
                     {uploadState.file.name}
                   </p>
@@ -425,7 +435,7 @@ export function FileUploadBlob({
           {uploadedFiles.map((file) => (
             <div
               key={file.url}
-              className="flex items-center gap-3 px-4 py-3 bg-green-50 rounded-lg"
+              className="flex min-w-0 items-center gap-3 px-4 py-3 bg-green-50 rounded-lg"
             >
               <div className="flex-shrink-0 w-10 h-10 rounded bg-green-100 flex items-center justify-center">
                 <CheckCircle className="w-5 h-5 text-green-600" />
