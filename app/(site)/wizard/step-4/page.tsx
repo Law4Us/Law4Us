@@ -26,13 +26,18 @@ export default function Step4Payment() {
   const [sessionCreated, setSessionCreated] = React.useState(false);
   const [legalConsentAccepted, setLegalConsentAccepted] = React.useState(false);
   const [paymentError, setPaymentError] = React.useState("");
+  const [serverSessionAmount, setServerSessionAmount] = React.useState<number | null>(null);
 
   // Calculate total
   const calculatedTotalAmount = calculateTotal(selectedClaims);
   const totalAmount =
-    typeof paymentOverrideAmount === "number" &&
-    Number.isFinite(paymentOverrideAmount) &&
-    paymentOverrideAmount > 0
+    typeof serverSessionAmount === "number" &&
+    Number.isFinite(serverSessionAmount) &&
+    serverSessionAmount > 0
+      ? serverSessionAmount
+      : typeof paymentOverrideAmount === "number" &&
+          Number.isFinite(paymentOverrideAmount) &&
+          paymentOverrideAmount > 0
       ? paymentOverrideAmount
       : calculatedTotalAmount;
 
@@ -81,6 +86,43 @@ export default function Step4Payment() {
 
     createSession();
   }, [sessionId, paymentData?.paid, basicInfo?.email, selectedClaims.length, sessionCreated, setSessionId, basicInfo.phone]);
+
+  React.useEffect(() => {
+    if (!sessionId) {
+      setServerSessionAmount(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    const fetchSessionAmount = async () => {
+      try {
+        const response = await fetch(`/api/sessions/${encodeURIComponent(sessionId)}`, {
+          cache: "no-store",
+        });
+        const data = await response.json();
+        const amount = Number(data.session?.totalAmount);
+
+        if (
+          !cancelled &&
+          response.ok &&
+          data.success &&
+          Number.isFinite(amount) &&
+          amount > 0
+        ) {
+          setServerSessionAmount(amount);
+        }
+      } catch (error) {
+        console.warn("Could not fetch saved payment amount:", error);
+      }
+    };
+
+    fetchSessionAmount();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionId]);
 
   // Get selected claim details
   const selectedClaimDetails = selectedClaims
