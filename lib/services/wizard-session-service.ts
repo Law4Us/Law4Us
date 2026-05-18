@@ -24,6 +24,10 @@ export interface WizardSession {
     };
   };
   paymentIntentId?: string;
+  paymentProvider?: string;
+  growPaymentProcessId?: string;
+  growPaymentProcessToken?: string;
+  paymentTransactionId?: string;
   paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
   submissionStatus: 'pending' | 'submitted' | 'failed';
   driveSubmissionId?: string;
@@ -183,12 +187,76 @@ export async function getWizardSessionByEmail(email: string): Promise<WizardSess
 }
 
 /**
+ * Get a wizard session by Grow payment link process reference.
+ */
+export async function getWizardSessionByGrowPaymentProcess(
+  growPaymentProcessId: string,
+  growPaymentProcessToken?: string
+): Promise<WizardSession | null> {
+  const processId = growPaymentProcessId.trim();
+  const processToken = growPaymentProcessToken?.trim();
+
+  if (!processId) {
+    return null;
+  }
+
+  const query = processToken
+    ? `*[
+        _type == "wizardSession" &&
+        growPaymentProcessId == $processId &&
+        growPaymentProcessToken == $processToken
+      ][0]`
+    : `*[
+        _type == "wizardSession" &&
+        growPaymentProcessId == $processId
+      ][0]`;
+
+  const result = await client.fetch(query, { processId, processToken });
+
+  return result ? decodeWizardSession(result) : null;
+}
+
+/**
+ * Save the Grow payment link process reference for later webhook confirmation.
+ */
+export async function updateSessionGrowPaymentReference(
+  sessionId: string,
+  growPaymentProcessId: string,
+  growPaymentProcessToken?: string
+): Promise<void> {
+  const session = await getWizardSession(sessionId);
+
+  if (!session || !session._id) {
+    throw new Error(`Session not found: ${sessionId}`);
+  }
+
+  const processId = growPaymentProcessId.trim();
+  const processToken = growPaymentProcessToken?.trim();
+
+  if (!processId) {
+    throw new Error('Missing Grow payment process ID');
+  }
+
+  await client
+    .patch(session._id)
+    .set({
+      paymentProvider: 'grow',
+      growPaymentProcessId: processId,
+      ...(processToken ? { growPaymentProcessToken: processToken } : {}),
+    })
+    .commit();
+
+  console.log(`✅ Stored Grow payment process for session ${sessionId}: ${processId}`);
+}
+
+/**
  * Update wizard session payment status
  */
 export async function updateSessionPaymentStatus(
   sessionId: string,
   paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded',
-  paymentIntentId?: string
+  paymentIntentId?: string,
+  paymentTransactionId?: string
 ): Promise<void> {
   const session = await getWizardSession(sessionId);
 
@@ -206,6 +274,10 @@ export async function updateSessionPaymentStatus(
 
   if (paymentIntentId) {
     updates.paymentIntentId = paymentIntentId;
+  }
+
+  if (paymentTransactionId) {
+    updates.paymentTransactionId = paymentTransactionId;
   }
 
   await client.patch(session._id).set(updates).commit();

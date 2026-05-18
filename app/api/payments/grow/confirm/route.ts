@@ -1,20 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { updateSessionPaymentStatus } from '@/lib/services/wizard-session-service';
+import {
+  getWizardSession,
+  getWizardSessionByGrowPaymentProcess,
+  updateSessionPaymentStatus,
+  type WizardSession,
+} from '@/lib/services/wizard-session-service';
 
 type PaymentConfirmationBody = {
   sessionId?: string;
-  externalId?: string;
-  orderId?: string;
-  reference?: string;
   transactionId?: string;
-  paymentIntentId?: string;
+  transactionToken?: string;
+  transactionCode?: string;
+  asmachta?: string;
+  paymentLinkProcessId?: string | number;
+  paymentLinkProcessToken?: string | number;
+  processId?: string | number;
+  processToken?: string | number;
   status?: string;
   statusCode?: string | number;
   amount?: number;
+  paymentSum?: number | string;
   sum?: number;
   data?: unknown;
   customFields?: unknown;
   purchaseCustomField?: unknown;
+};
+
+type GrowPaymentReference = {
+  processId: string;
+  processToken: string;
 };
 
 function asRecord(value: unknown): Record<string, unknown> {
@@ -39,6 +53,56 @@ function pickString(record: Record<string, unknown>, keys: string[]): string {
   return '';
 }
 
+function normalizeLookupKey(key: string): string {
+  return key.replace(/[\s_-]/g, '').toLowerCase();
+}
+
+function findStringByAliases(value: unknown, aliases: string[]): string {
+  const normalizedAliases = new Set(aliases.map(normalizeLookupKey));
+
+  const find = (currentValue: unknown): string => {
+    if (!currentValue || typeof currentValue !== 'object') {
+      return '';
+    }
+
+    if (Array.isArray(currentValue)) {
+      for (const item of currentValue) {
+        const nestedValue = find(item);
+
+        if (nestedValue) {
+          return nestedValue;
+        }
+      }
+
+      return '';
+    }
+
+    const record = currentValue as Record<string, unknown>;
+
+    for (const [key, nestedValue] of Object.entries(record)) {
+      if (normalizedAliases.has(normalizeLookupKey(key))) {
+        const stringValue = readString(nestedValue);
+
+        if (stringValue) {
+          return stringValue;
+        }
+      }
+    }
+
+    for (const nestedValue of Object.values(record)) {
+      const stringValue = find(nestedValue);
+
+      if (stringValue) {
+        return stringValue;
+      }
+    }
+
+    return '';
+  };
+
+  return find(value);
+}
+
 function getCustomField1(body: PaymentConfirmationBody): string {
   const data = asRecord(body.data);
   const directCustomFields = asRecord(body.customFields);
@@ -55,26 +119,94 @@ function getCustomField1(body: PaymentConfirmationBody): string {
 function getSessionId(body: PaymentConfirmationBody): string {
   const data = asRecord(body.data);
 
-  return pickString(body as Record<string, unknown>, ['sessionId', 'externalId', 'orderId', 'reference'])
-    || pickString(data, ['sessionId', 'externalId', 'orderId', 'reference'])
+  return pickString(body as Record<string, unknown>, ['sessionId'])
+    || pickString(data, ['sessionId'])
     || getCustomField1(body);
+}
+
+function getGrowPaymentReference(body: PaymentConfirmationBody): GrowPaymentReference {
+  const processId = findStringByAliases(body, [
+    'paymentLinkProcessId',
+    'payment_link_process_id',
+    'paymentLinkProcessID',
+    'Payment Link Process ID',
+    'processId',
+    'process_id',
+    'Process ID',
+  ]);
+  const processToken = findStringByAliases(body, [
+    'paymentLinkProcessToken',
+    'payment_link_process_token',
+    'Payment Link Process Token',
+    'processToken',
+    'process_token',
+    'Process Token',
+  ]);
+
+  return { processId, processToken };
 }
 
 function isPaidStatus(body: PaymentConfirmationBody): boolean {
   const data = asRecord(body.data);
-  const status = (readString(body.status) || readString(data.status)).toLowerCase();
-  const statusCode = (readString(body.statusCode) || readString(data.statusCode)).toLowerCase();
+  const statuses = [
+    readString(body.status),
+    readString(data.status),
+    readString(body.statusCode),
+    readString(data.statusCode),
+  ].map((value) => value.toLowerCase()).filter(Boolean);
 
-  return ['paid', 'success', 'successful', 'approved', 'completed', 'שולם'].includes(status)
-    || ['paid', 'success', 'successful', 'approved', 'completed', '0', '1', '2'].includes(statusCode);
+  return statuses.some((status) =>
+    ['paid', 'success', 'successful', 'approved', 'completed', 'שולם', '1', '2'].includes(status)
+  );
 }
 
 function getTransactionId(body: PaymentConfirmationBody): string | undefined {
   const data = asRecord(body.data);
 
-  return pickString(body as Record<string, unknown>, ['transactionId', 'paymentIntentId', 'transactionCode', 'asmachta'])
-    || pickString(data, ['transactionId', 'paymentIntentId', 'transactionCode', 'asmachta'])
+  return pickString(body as Record<string, unknown>, ['transactionId', 'transactionToken', 'transactionCode', 'asmachta'])
+    || pickString(data, ['transactionId', 'transactionToken', 'transactionCode', 'asmachta'])
     || undefined;
+}
+
+function getPaidAmount(body: PaymentConfirmationBody): number | null {
+  const data = asRecord(body.data);
+  const rawAmount =
+    readString(body.amount)
+    || readString(body.sum)
+    || readString(body.paymentSum)
+    || readString(data.amount)
+    || readString(data.sum)
+    || readString(data.paymentSum);
+  const amount = Number(rawAmount.replace(/[^\d.]/g, ''));
+
+  return Number.isFinite(amount) && amount > 0 ? amount : null;
+}
+
+async function resolvePaymentSession(
+  body: PaymentConfirmationBody
+): Promise<{ session: WizardSession; processReference: GrowPaymentReference | null } | null> {
+  const sessionId = getSessionId(body);
+
+  if (sessionId) {
+    const session = await getWizardSession(sessionId);
+
+    if (session) {
+      return { session, processReference: null };
+    }
+  }
+
+  const processReference = getGrowPaymentReference(body);
+
+  if (!processReference.processId) {
+    return null;
+  }
+
+  const session = await getWizardSessionByGrowPaymentProcess(
+    processReference.processId,
+    processReference.processToken || undefined
+  );
+
+  return session ? { session, processReference } : null;
 }
 
 export async function POST(request: NextRequest) {
@@ -93,11 +225,11 @@ export async function POST(request: NextRequest) {
     }
 
     const body = (await request.json()) as PaymentConfirmationBody;
-    const sessionId = getSessionId(body);
+    const resolvedSession = await resolvePaymentSession(body);
 
-    if (!sessionId) {
+    if (!resolvedSession) {
       return NextResponse.json(
-        { success: false, message: 'Missing session id' },
+        { success: false, message: 'Missing session id or Grow payment process reference' },
         { status: 400 }
       );
     }
@@ -110,13 +242,39 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    const { session, processReference } = resolvedSession;
+    const paidAmount = getPaidAmount(body);
+    const expectedAmount = Number(session.totalAmount);
+
+    if (
+      paidAmount !== null &&
+      Number.isFinite(expectedAmount) &&
+      expectedAmount > 0 &&
+      paidAmount < expectedAmount
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'Paid amount is lower than the session amount',
+          paidAmount,
+          expectedAmount,
+        },
+        { status: 400 }
+      );
+    }
+
     const transactionId = getTransactionId(body);
 
-    await updateSessionPaymentStatus(sessionId, 'paid', transactionId);
+    await updateSessionPaymentStatus(
+      session.sessionId,
+      'paid',
+      processReference?.processId ? `grow:${processReference.processId}` : session.paymentIntentId,
+      transactionId
+    );
 
     return NextResponse.json({
       success: true,
-      sessionId,
+      sessionId: session.sessionId,
       paymentStatus: 'paid',
     });
   } catch (error) {

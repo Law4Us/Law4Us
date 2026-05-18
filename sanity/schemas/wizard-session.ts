@@ -89,7 +89,31 @@ export const wizardSession = defineType({
       name: 'paymentIntentId',
       title: 'Payment Intent ID',
       type: 'string',
-      description: 'Meshulam transaction ID',
+      description: 'Legacy payment intent/transaction ID',
+    }),
+    defineField({
+      name: 'paymentProvider',
+      title: 'Payment Provider',
+      type: 'string',
+      description: 'Payment provider used for this session',
+    }),
+    defineField({
+      name: 'growPaymentProcessId',
+      title: 'Grow Payment Link Process ID',
+      type: 'string',
+      description: 'Grow PaymentLinks process ID returned when the payment link is created',
+    }),
+    defineField({
+      name: 'growPaymentProcessToken',
+      title: 'Grow Payment Link Process Token',
+      type: 'string',
+      description: 'Grow PaymentLinks process token returned when the payment link is created',
+    }),
+    defineField({
+      name: 'paymentTransactionId',
+      title: 'Payment Transaction ID',
+      type: 'string',
+      description: 'Transaction ID/asmachta received after successful payment',
     }),
     defineField({
       name: 'paymentStatus',

@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { calculateTotal, getClaimLabel } from '@/lib/constants/claims';
-import { getWizardSession } from '@/lib/services/wizard-session-service';
+import {
+  getWizardSession,
+  updateSessionGrowPaymentReference,
+} from '@/lib/services/wizard-session-service';
 import type { ClaimType } from '@/lib/types';
 
 type CreatePaymentLinkRequest = {
@@ -59,6 +62,83 @@ function findPaymentUrl(value: unknown): string | null {
   }
 
   return null;
+}
+
+function normalizeLookupKey(key: string): string {
+  return key.replace(/[\s_-]/g, '').toLowerCase();
+}
+
+function readString(value: unknown): string {
+  return typeof value === 'string' || typeof value === 'number' ? String(value).trim() : '';
+}
+
+function findStringByAliases(value: unknown, aliases: string[]): string {
+  const normalizedAliases = new Set(aliases.map(normalizeLookupKey));
+
+  const find = (currentValue: unknown): string => {
+    if (!currentValue || typeof currentValue !== 'object') {
+      return '';
+    }
+
+    if (Array.isArray(currentValue)) {
+      for (const item of currentValue) {
+        const nestedValue = find(item);
+
+        if (nestedValue) {
+          return nestedValue;
+        }
+      }
+
+      return '';
+    }
+
+    const record = currentValue as Record<string, unknown>;
+
+    for (const [key, nestedValue] of Object.entries(record)) {
+      if (normalizedAliases.has(normalizeLookupKey(key))) {
+        const stringValue = readString(nestedValue);
+
+        if (stringValue) {
+          return stringValue;
+        }
+      }
+    }
+
+    for (const nestedValue of Object.values(record)) {
+      const stringValue = find(nestedValue);
+
+      if (stringValue) {
+        return stringValue;
+      }
+    }
+
+    return '';
+  };
+
+  return find(value);
+}
+
+function getGrowPaymentProcessId(value: unknown): string {
+  return findStringByAliases(value, [
+    'paymentLinkProcessId',
+    'payment_link_process_id',
+    'paymentLinkProcessID',
+    'Payment Link Process ID',
+    'processId',
+    'process_id',
+    'Process ID',
+  ]);
+}
+
+function getGrowPaymentProcessToken(value: unknown): string {
+  return findStringByAliases(value, [
+    'paymentLinkProcessToken',
+    'payment_link_process_token',
+    'Payment Link Process Token',
+    'processToken',
+    'process_token',
+    'Process Token',
+  ]);
 }
 
 export async function POST(request: NextRequest) {
@@ -158,6 +238,8 @@ export async function POST(request: NextRequest) {
     }
 
     const paymentUrl = findPaymentUrl(responseBody);
+    const growPaymentProcessId = getGrowPaymentProcessId(responseBody);
+    const growPaymentProcessToken = getGrowPaymentProcessToken(responseBody);
 
     if (!paymentUrl) {
       return NextResponse.json(
@@ -170,9 +252,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (!growPaymentProcessId) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'Make did not return the Grow payment process ID',
+          makeResponse: responseBody,
+        },
+        { status: 502 }
+      );
+    }
+
+    await updateSessionGrowPaymentReference(
+      sessionId,
+      growPaymentProcessId,
+      growPaymentProcessToken || undefined
+    );
+
     return NextResponse.json({
       success: true,
       paymentUrl,
+      growPaymentProcessId,
+      growPaymentProcessToken,
       makeResponse: responseBody,
     });
   } catch (error) {
