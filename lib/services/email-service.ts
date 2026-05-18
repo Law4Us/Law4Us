@@ -2,7 +2,7 @@ import nodemailer from 'nodemailer';
 import type { Transporter } from 'nodemailer';
 
 // Email configuration from environment variables
-const emailPassword = (process.env.EMAIL_PASSWORD || '').replace(/\s+/g, '');
+const emailPassword = (process.env.EMAIL_PASSWORD || process.env.EMAIL_PASS || '').replace(/\s+/g, '');
 
 const EMAIL_CONFIG = {
   host: process.env.EMAIL_HOST || 'smtp.gmail.com',
