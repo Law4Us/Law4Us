@@ -110,7 +110,9 @@ function getCustomField1(body: PaymentConfirmationBody): string {
   const directPurchaseFields = asRecord(body.purchaseCustomField);
   const dataPurchaseFields = asRecord(data.purchaseCustomField);
 
-  return pickString(directCustomFields, ['cField1', 'c_field_1', 'field1', 'C field 1'])
+  return pickString(body as Record<string, unknown>, ['customField1', 'cField1', 'c_field_1', 'field1', 'C field 1'])
+    || pickString(data, ['customField1', 'cField1', 'c_field_1', 'field1', 'C field 1'])
+    || pickString(directCustomFields, ['cField1', 'c_field_1', 'field1', 'C field 1'])
     || pickString(dataCustomFields, ['cField1', 'c_field_1', 'field1', 'C field 1'])
     || pickString(directPurchaseFields, ['field1', 'cField1', 'c_field_1'])
     || pickString(dataPurchaseFields, ['field1', 'cField1', 'c_field_1']);
@@ -155,9 +157,13 @@ function isPaidStatus(body: PaymentConfirmationBody): boolean {
     readString(data.statusCode),
   ].map((value) => value.toLowerCase()).filter(Boolean);
 
-  return statuses.some((status) =>
-    ['paid', 'success', 'successful', 'approved', 'completed', 'שולם', '1', '2'].includes(status)
-  );
+  if (statuses.length > 0) {
+    return statuses.some((status) =>
+      ['paid', 'success', 'successful', 'approved', 'completed', 'שולם', '1', '2'].includes(status)
+    );
+  }
+
+  return Boolean(getTransactionId(body)) && getPaidAmount(body) !== null;
 }
 
 function getTransactionId(body: PaymentConfirmationBody): string | undefined {
@@ -185,28 +191,30 @@ function getPaidAmount(body: PaymentConfirmationBody): number | null {
 async function resolvePaymentSession(
   body: PaymentConfirmationBody
 ): Promise<{ session: WizardSession; processReference: GrowPaymentReference | null } | null> {
+  const processReference = getGrowPaymentReference(body);
+
+  if (processReference.processId) {
+    const session = await getWizardSessionByGrowPaymentProcess(
+      processReference.processId,
+      processReference.processToken || undefined
+    );
+
+    if (session) {
+      return { session, processReference };
+    }
+  }
+
   const sessionId = getSessionId(body);
 
   if (sessionId) {
     const session = await getWizardSession(sessionId);
 
     if (session) {
-      return { session, processReference: null };
+      return { session, processReference: processReference.processId ? processReference : null };
     }
   }
 
-  const processReference = getGrowPaymentReference(body);
-
-  if (!processReference.processId) {
-    return null;
-  }
-
-  const session = await getWizardSessionByGrowPaymentProcess(
-    processReference.processId,
-    processReference.processToken || undefined
-  );
-
-  return session ? { session, processReference } : null;
+  return null;
 }
 
 export async function POST(request: NextRequest) {
@@ -228,8 +236,18 @@ export async function POST(request: NextRequest) {
     const resolvedSession = await resolvePaymentSession(body);
 
     if (!resolvedSession) {
+      const processReference = getGrowPaymentReference(body);
+
       return NextResponse.json(
-        { success: false, message: 'Missing session id or Grow payment process reference' },
+        {
+          success: false,
+          message: 'Missing session id or Grow payment process reference',
+          received: {
+            hasSessionId: Boolean(getSessionId(body)),
+            hasGrowPaymentProcessId: Boolean(processReference.processId),
+            hasGrowPaymentProcessToken: Boolean(processReference.processToken),
+          },
+        },
         { status: 400 }
       );
     }
