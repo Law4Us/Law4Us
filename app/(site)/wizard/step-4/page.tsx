@@ -16,6 +16,7 @@ export default function Step4Payment() {
     basicInfo,
     selectedClaims,
     paymentData,
+    paymentOverrideAmount,
     sessionId,
     setSessionId,
   } = useWizardStore();
@@ -27,7 +28,13 @@ export default function Step4Payment() {
   const [paymentError, setPaymentError] = React.useState("");
 
   // Calculate total
-  const totalAmount = calculateTotal(selectedClaims);
+  const calculatedTotalAmount = calculateTotal(selectedClaims);
+  const totalAmount =
+    typeof paymentOverrideAmount === "number" &&
+    Number.isFinite(paymentOverrideAmount) &&
+    paymentOverrideAmount > 0
+      ? paymentOverrideAmount
+      : calculatedTotalAmount;
 
   // Create session when component mounts (if not already created)
   React.useEffect(() => {

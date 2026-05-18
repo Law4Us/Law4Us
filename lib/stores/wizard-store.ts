@@ -19,6 +19,7 @@ interface WizardStore extends WizardState {
   updateFormData: (data: Partial<FormData>) => void;
   setSignature: (signature: string) => void;
   setPaymentData: (data: { paid: boolean; date?: Date }) => void;
+  setPaymentOverrideAmount: (amount?: number) => void;
   setScheduledCallData: (data: ScheduledCallData) => void;
   setFilledDocuments: (docs: { [key: string]: string }) => void;
   setSessionId: (sessionId: string) => void;
@@ -203,6 +204,11 @@ export const useWizardStore = create<WizardStore>((set, get) => ({
     scheduleAutoSave(get);
   },
 
+  setPaymentOverrideAmount: (amount) => {
+    set({ paymentOverrideAmount: amount });
+    scheduleAutoSave(get);
+  },
+
   setScheduledCallData: (data) => {
     set({ scheduledCallData: data });
     scheduleAutoSave(get);
@@ -263,6 +269,7 @@ export const useWizardStore = create<WizardStore>((set, get) => ({
         formData: state.formData,
         signature: state.signature,
         paymentData: state.paymentData,
+        paymentOverrideAmount: state.paymentOverrideAmount,
         scheduledCallData: state.scheduledCallData,
         filledDocuments: state.filledDocuments,
         sessionId: state.sessionId,
@@ -304,6 +311,7 @@ export const useWizardStore = create<WizardStore>((set, get) => ({
         formData: data.formData || {},
         signature: data.signature || "",
         paymentData: data.paymentData || { paid: false },
+        paymentOverrideAmount: data.paymentOverrideAmount,
         scheduledCallData: data.scheduledCallData || { scheduled: false },
         filledDocuments: data.filledDocuments || {},
         sessionId: data.sessionId,

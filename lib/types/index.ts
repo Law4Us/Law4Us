@@ -129,6 +129,7 @@ export interface WizardState {
     paid: boolean;
     date?: Date;
   };
+  paymentOverrideAmount?: number;
   scheduledCallData: ScheduledCallData;
   filledDocuments: {
     [key: string]: string;

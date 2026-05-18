@@ -89,6 +89,10 @@ export default function ResumeSessionPage() {
       wizardStore.setPaymentData(session.wizardData.paymentData);
     }
 
+    if (typeof session.totalAmount === 'number' && Number.isFinite(session.totalAmount) && session.totalAmount > 0) {
+      wizardStore.setPaymentOverrideAmount(session.totalAmount);
+    }
+
     // Navigate to appropriate step based on session status
     if (session.paymentStatus === 'paid' && session.submissionStatus === 'pending') {
       // Paid but not submitted - go to final step

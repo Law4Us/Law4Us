@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { calculateTotal, getClaimLabel } from '@/lib/constants/claims';
+import { getWizardSession } from '@/lib/services/wizard-session-service';
+import type { ClaimType } from '@/lib/types';
 
 type CreatePaymentLinkRequest = {
   sessionId?: string;
@@ -70,14 +73,47 @@ export async function POST(request: NextRequest) {
     }
 
     const body = (await request.json()) as CreatePaymentLinkRequest;
-    const fullName = body.fullName?.trim();
-    const email = body.email?.trim();
-    const phone = body.phone ? normalizeIsraeliPhone(body.phone) : '';
-    const amount = Number(body.amount);
-    const claimNames = Array.isArray(body.claimNames) ? body.claimNames : [];
     const sessionId = body.sessionId?.trim();
 
-    if (!sessionId || !fullName || !email || !phone || !Number.isFinite(amount) || amount <= 0) {
+    if (!sessionId) {
+      return NextResponse.json(
+        { success: false, message: 'Missing required payment link fields' },
+        { status: 400 }
+      );
+    }
+
+    const session = await getWizardSession(sessionId);
+
+    if (!session) {
+      return NextResponse.json(
+        { success: false, message: 'Payment session was not found' },
+        { status: 404 }
+      );
+    }
+
+    if (session.paymentStatus === 'paid') {
+      return NextResponse.json(
+        { success: false, message: 'Payment session is already paid' },
+        { status: 409 }
+      );
+    }
+
+    const basicInfo = session.wizardData.basicInfo || {};
+    const selectedClaims = (session.wizardData.selectedClaims || []) as ClaimType[];
+    const savedAmount = Number(session.totalAmount);
+    const fallbackAmount = calculateTotal(selectedClaims);
+    const amount =
+      Number.isFinite(savedAmount) && savedAmount > 0 ? savedAmount : fallbackAmount;
+    const fullName = (session.fullName || basicInfo.fullName || body.fullName || '').trim();
+    const email = (session.email || basicInfo.email || body.email || '').trim();
+    const rawPhone = session.phone || basicInfo.phone || body.phone || '';
+    const phone = rawPhone ? normalizeIsraeliPhone(rawPhone) : '';
+    const claimNames =
+      Array.isArray(body.claimNames) && body.claimNames.length > 0
+        ? body.claimNames
+        : selectedClaims.map((claim) => getClaimLabel(claim));
+
+    if (!fullName || !email || !phone || !Number.isFinite(amount) || amount <= 0) {
       return NextResponse.json(
         { success: false, message: 'Missing required payment link fields' },
         { status: 400 }
