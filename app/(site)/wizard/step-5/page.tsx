@@ -10,11 +10,13 @@ import { CalEmbed, type BookingData } from "@/components/wizard/cal-embed";
 
 // Cal.com link - should be set via environment variable
 const CAL_LINK = process.env.NEXT_PUBLIC_CAL_LINK || "law4us/video-verification";
+type PaymentAccessStatus = "checking" | "verified";
 
 export default function Step5Scheduling() {
   const router = useRouter();
   const {
     basicInfo,
+    sessionId,
     scheduledCallData,
     setScheduledCallData,
     nextStep,
@@ -22,6 +24,44 @@ export default function Step5Scheduling() {
 
   const [infoExpanded, setInfoExpanded] = React.useState(false);
   const [isScheduled, setIsScheduled] = React.useState(!!scheduledCallData?.scheduled);
+  const [paymentAccessStatus, setPaymentAccessStatus] = React.useState<PaymentAccessStatus>("checking");
+
+  React.useEffect(() => {
+    let cancelled = false;
+
+    const verifyPayment = async () => {
+      if (!sessionId) {
+        router.replace("/wizard/step-4");
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/sessions/${encodeURIComponent(sessionId)}`, {
+          cache: "no-store",
+        });
+        const data = await response.json();
+
+        if (cancelled) {
+          return;
+        }
+
+        if (response.ok && data.success && data.session?.paymentStatus === "paid") {
+          setPaymentAccessStatus("verified");
+          return;
+        }
+      } catch (error) {
+        console.warn("Could not verify payment before scheduling:", error);
+      }
+
+      router.replace("/wizard/step-4");
+    };
+
+    verifyPayment();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [router, sessionId]);
 
   // Handle successful booking
   const handleBookingSuccess = React.useCallback((data: BookingData) => {
@@ -42,6 +82,14 @@ export default function Step5Scheduling() {
       router.push("/wizard/step-6");
     }, 2000);
   }, [setScheduledCallData, nextStep, router]);
+
+  if (paymentAccessStatus !== "verified") {
+    return (
+      <div className="mx-auto flex min-h-[50vh] max-w-2xl items-center justify-center px-6 py-16 text-center">
+        <p className="text-body-large text-neutral-dark">בודקים את אישור התשלום...</p>
+      </div>
+    );
+  }
 
   // If already scheduled, show confirmation and proceed button
   if (isScheduled && scheduledCallData?.scheduled) {

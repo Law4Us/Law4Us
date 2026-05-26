@@ -159,6 +159,21 @@ export const wizardSession = defineType({
       description: 'Total payment amount in shekels',
     }),
     defineField({
+      name: 'pricingBreakdown',
+      title: 'Pricing Breakdown (פירוט תשלום)',
+      type: 'object',
+      description: 'Snapshot of fee, VAT and court fee used for this payment',
+      fields: [
+        { name: 'serviceFeePerProcedure', type: 'number', title: 'Service Fee Per Procedure' },
+        { name: 'billableProcedureCount', type: 'number', title: 'Billable Procedures' },
+        { name: 'serviceSubtotal', type: 'number', title: 'Service Subtotal' },
+        { name: 'vatRate', type: 'number', title: 'VAT Rate' },
+        { name: 'vatAmount', type: 'number', title: 'VAT Amount' },
+        { name: 'courtFeeTotal', type: 'number', title: 'Court Fee Total' },
+        { name: 'total', type: 'number', title: 'Total' },
+      ],
+    }),
+    defineField({
       name: 'createdAt',
       title: 'Created At (נוצר ב)',
       type: 'datetime',

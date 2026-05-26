@@ -9,7 +9,7 @@ const companyLinks = [
 ];
 
 const infoLinks = [
-  { name: "סרטון", href: "/#video" },
+  { name: "סרטונים", href: "/videos" },
   { name: "איך זה עובד", href: "/#how" },
   { name: "סוגי תביעות", href: "/#claim-types" },
   { name: "שאלות ותשובות", href: "/#faq" },

@@ -28,6 +28,7 @@ import {
 import { transformToLegalLanguage } from '../../../lib/services/groq-service';
 import { mapFormDataToForm4Data } from './form4-filler';
 import { BasicInfo, FormData } from '@/lib/api/types';
+import { COURT_FEES_BY_PROCEDURE } from '@/lib/constants/claims';
 import {
   FONT_SIZES,
   SPACING,
@@ -161,7 +162,7 @@ function createClaimTitle(data: AlimonyClaimData): Paragraph[] {
       { after: SPACING.PARAGRAPH }
     ),
     createBodyParagraph(
-      'סכום אגרת בית משפט: 361 ₪ לפי סעיף 6ב לתוספת הראשונה לתקנות בית המשפט לענייני משפחה (אגרות), תשנ"ו-1995.',
+      `סכום אגרת בית משפט: ${COURT_FEES_BY_PROCEDURE.alimony} ₪ לפי סעיף 6ב לתוספת הראשונה לתקנות בית המשפט לענייני משפחה (אגרות), תשנ"ו-1995.`,
       { after: SPACING.SUBSECTION }
     ),
   ];
@@ -1150,6 +1151,7 @@ async function createForm4Section(data: AlimonyClaimData): Promise<Paragraph[]> 
         new Paragraph({
           children: [
             new ImageRun({
+              type: 'png',
               data: images[i],
               transformation: {
                 width: 595,  // Full A4 width (8.27 inches at 72 DPI)

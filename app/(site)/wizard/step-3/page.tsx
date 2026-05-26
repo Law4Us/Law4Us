@@ -18,7 +18,7 @@ import {
   formatClaimServicesForFee,
   type DocumentData,
 } from "@/lib/constants/document-templates";
-import { CLAIMS, calculateTotal } from "@/lib/constants/claims";
+import { CLAIMS, calculatePricing } from "@/lib/constants/claims";
 import { formatDate } from "@/lib/utils/format";
 
 export default function Step3SignDocuments() {
@@ -40,8 +40,8 @@ export default function Step3SignDocuments() {
 
   // Check if should show Form 3 (only if claim includes non-alimony types)
   const shouldShowForm3 = React.useMemo(() => {
-    // Show Form 3 if there's ANY claim OTHER than alimony
-    return selectedClaims.some(claim => claim !== 'alimony');
+    // Form 1 replaces Form 3 for a dispute-resolution request.
+    return selectedClaims.some(claim => claim !== 'alimony' && claim !== 'disputeResolution');
   }, [selectedClaims]);
 
   // Prepare document data
@@ -95,6 +95,8 @@ export default function Step3SignDocuments() {
         ).join('\n\n')
       : 'אין ילדים';
 
+    const pricing = calculatePricing(selectedClaims);
+
     return {
       fullName: basicInfo.fullName || "",
       firstName,
@@ -119,6 +121,7 @@ export default function Step3SignDocuments() {
       lawyerName: "עו\"ד אריאל דרור",
       signature: signatureHTML,
       date: formatDate(new Date()),
+      powerOfAttorneyMatter: formatClaimServicesForFee(selectedClaims),
       applicantTitle,
       previousMarriages: yesNo(formData.marriedBefore),
       childrenFromPrevious: yesNo(formData.hadChildrenFromPrevious),
@@ -135,7 +138,11 @@ export default function Step3SignDocuments() {
       willingMediation: yesNo(formData.willingToJoinMediation),
       // Fee agreement fields
       claimServicesList: formatClaimServicesForFee(selectedClaims),
-      totalPrice: calculateTotal(selectedClaims).toLocaleString('he-IL'),
+      serviceSubtotal: pricing.serviceSubtotal.toLocaleString('he-IL'),
+      vatRate: String(Math.round(pricing.vatRate * 100)),
+      vatAmount: pricing.vatAmount.toLocaleString('he-IL'),
+      courtFeeTotal: pricing.courtFeeTotal.toLocaleString('he-IL'),
+      totalPrice: pricing.total.toLocaleString('he-IL'),
     } as any;
   }, [basicInfo, selectedClaims, formData, signature]);
 
@@ -205,7 +212,7 @@ export default function Step3SignDocuments() {
         <SlideInView direction="up" delay={100}>
           <DocumentReviewCard
             documentNumber={1}
-            title="ייפוי כוח לייצוג משפטי"
+            title={selectedClaims.includes("disputeResolution") ? "ייפוי כוח - בקשה ליישוב סכסוך" : "ייפוי כוח לייצוג משפטי"}
             content={powerOfAttorney}
             isReviewed={doc1Reviewed}
             onReviewChange={setDoc1Reviewed}

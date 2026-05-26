@@ -227,7 +227,7 @@ export default function Step1ClaimPicker() {
         <div className="mb-8 text-center">
           <h1 className="text-h1 font-bold mb-2">פרטים בסיסיים</h1>
           <p className="text-body text-neutral-dark">
-            מלאו את הפרטים שלכם ושל בן/בת הזוג, ובחרו את סוגי התביעות הרלוונטיים
+            מלאו את הפרטים שלכם ושל הצד השני, ובחרו את סוג ההליך הרלוונטי
           </p>
         </div>
       </SlideInView>
@@ -377,7 +377,7 @@ export default function Step1ClaimPicker() {
           <ProgressiveSection
             number={2}
             title="פרטי הצד השני"
-            description="מלאו את הפרטים של בן/בת הזוג"
+            description="מלאו את פרטי המשיב/ה או הצד השני לבקשה"
             isExpanded={expandedSection === 2}
             isCompleted={isSection2Complete}
             canExpand={isSection1Complete}
@@ -516,7 +516,7 @@ export default function Step1ClaimPicker() {
           <ProgressiveSection
             number={3}
             title="פרטי הקשר ביניכם"
-            description="מלאו את הפרטים על מצב הזוגיות"
+            description="מלאו את סוג הקשר, ואם רלוונטי את מועד הנישואין"
             isExpanded={expandedSection === 3}
             isCompleted={isSection3Complete}
             canExpand={isSection2Complete}
@@ -524,7 +524,7 @@ export default function Step1ClaimPicker() {
           >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField
-                label="סטטוס זוגי"
+                label="סטטוס הקשר"
                 htmlFor="relationshipType"
                 required
                 error={errors.relationshipType?.message}

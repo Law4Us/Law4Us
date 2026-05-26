@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendEmail } from '@/lib/services/email-service';
 
+// This endpoint performs an external side effect and must never run during static generation.
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/test-email
  * Test endpoint to verify email configuration is working

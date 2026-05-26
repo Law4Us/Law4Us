@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   getWizardSession,
-  updateSessionPaymentStatus,
-  updateSessionSubmissionStatus,
   updateWizardData,
 } from '@/lib/services/wizard-session-service';
 import { WizardState } from '@/lib/types';
@@ -86,21 +84,19 @@ export async function PATCH(
 
     console.log('📝 Updating session:', id);
 
-    // Update payment status if provided
-    if (data.paymentStatus) {
-      await updateSessionPaymentStatus(
-        id,
-        data.paymentStatus,
-        data.paymentIntentId
-      );
-    }
-
-    // Update submission status if provided
-    if (data.submissionStatus) {
-      await updateSessionSubmissionStatus(
-        id,
-        data.submissionStatus,
-        data.driveSubmissionId
+    if (
+      data.paymentStatus ||
+      data.paymentIntentId ||
+      data.paymentTransactionId ||
+      data.submissionStatus ||
+      data.driveSubmissionId
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'Payment and submission statuses can only be updated by verified server workflows',
+        },
+        { status: 403 }
       );
     }
 

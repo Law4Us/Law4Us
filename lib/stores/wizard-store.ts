@@ -155,7 +155,7 @@ export const useWizardStore = create<WizardStore>((set, get) => ({
       }
 
       // Exclusive claims - these clear all other claims when selected
-      const exclusiveClaims: ClaimType[] = ['divorceAgreement', 'shalomBayit'];
+      const exclusiveClaims: ClaimType[] = ['disputeResolution', 'divorceAgreement', 'shalomBayit'];
       if (exclusiveClaims.includes(claim)) {
         return { selectedClaims: [claim] };
       }

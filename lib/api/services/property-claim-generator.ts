@@ -21,6 +21,7 @@ import {
   convertInchesToTwip,
 } from 'docx';
 import { BasicInfo, FormData, Child } from '@/lib/api/types';
+import { COURT_FEES_BY_PROCEDURE } from '@/lib/constants/claims';
 import {
   FONT_SIZES,
   SPACING,
@@ -592,7 +593,7 @@ export async function generatePropertyClaimDocument(
             
               }),
               new TextRun({
-                text: ' 590₪. לפי תקנה א2 לתוספת הראשונה לתקנות בית המשפט לענייני משפחה (אגרות), תשנ"ו-1995.\u200F',
+                text: ` ${COURT_FEES_BY_PROCEDURE.property}₪. לפי תקנה א2 לתוספת הראשונה לתקנות בית המשפט לענייני משפחה (אגרות), תשנ"ו-1995.\u200F`,
                 size: FONT_SIZES.BODY,
                 font: 'David',
             
@@ -1130,4 +1131,3 @@ function estimatePageCount(formData: any): {
 
   return { mainClaim, form3, powerOfAttorney, affidavit, tocPage };
 }
-

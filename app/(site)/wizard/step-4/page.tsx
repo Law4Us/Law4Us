@@ -7,7 +7,7 @@ import { AlertCircle, CreditCard, Check, Shield, Lock, Award, Clock } from "luci
 import { Button } from "@/components/ui";
 import { SlideInView } from "@/components/animations/slide-in-view";
 import { useWizardStore } from "@/lib/stores/wizard-store";
-import { CLAIMS, calculateTotal } from "@/lib/constants/claims";
+import { CLAIMS, calculatePricing, type PricingBreakdown } from "@/lib/constants/claims";
 import { formatCurrency } from "@/lib/utils/format";
 
 export default function Step4Payment() {
@@ -15,21 +15,23 @@ export default function Step4Payment() {
   const {
     basicInfo,
     selectedClaims,
-    paymentData,
     paymentOverrideAmount,
     sessionId,
     setSessionId,
   } = useWizardStore();
 
   const [isProcessing, setIsProcessing] = React.useState(false);
-  const [isPaid] = React.useState(!!paymentData?.paid);
+  const [isPaid, setIsPaid] = React.useState(false);
   const [sessionCreated, setSessionCreated] = React.useState(false);
   const [legalConsentAccepted, setLegalConsentAccepted] = React.useState(false);
   const [paymentError, setPaymentError] = React.useState("");
   const [serverSessionAmount, setServerSessionAmount] = React.useState<number | null>(null);
+  const [serverPricingBreakdown, setServerPricingBreakdown] = React.useState<PricingBreakdown | null>(null);
+  const sessionCreationStartedRef = React.useRef(false);
+  const paymentRequestInFlightRef = React.useRef(false);
 
-  // Calculate total
-  const calculatedTotalAmount = calculateTotal(selectedClaims);
+  const calculatedPricing = calculatePricing(selectedClaims);
+  const pricingBreakdown = serverPricingBreakdown || calculatedPricing;
   const totalAmount =
     typeof serverSessionAmount === "number" &&
     Number.isFinite(serverSessionAmount) &&
@@ -39,13 +41,13 @@ export default function Step4Payment() {
           Number.isFinite(paymentOverrideAmount) &&
           paymentOverrideAmount > 0
       ? paymentOverrideAmount
-      : calculatedTotalAmount;
+      : pricingBreakdown.total;
 
   // Create session when component mounts (if not already created)
   React.useEffect(() => {
     const createSession = async () => {
-      // Skip if already have a session or already paid
-      if (sessionId || paymentData?.paid || sessionCreated) {
+      // Effects can run twice in development; one wizard must create one session.
+      if (sessionId || sessionCreated || sessionCreationStartedRef.current) {
         return;
       }
 
@@ -54,6 +56,8 @@ export default function Step4Payment() {
         console.warn('Cannot create session: missing email or claims');
         return;
       }
+
+      sessionCreationStartedRef.current = true;
 
       try {
         console.log('📝 Creating wizard session...');
@@ -78,18 +82,22 @@ export default function Step4Payment() {
           console.log('📧 Recovery email sent to:', basicInfo.email);
         } else {
           console.error('Failed to create session:', data.message);
+          sessionCreationStartedRef.current = false;
         }
       } catch (error) {
         console.error('Error creating session:', error);
+        sessionCreationStartedRef.current = false;
       }
     };
 
     createSession();
-  }, [sessionId, paymentData?.paid, basicInfo?.email, selectedClaims.length, sessionCreated, setSessionId, basicInfo.phone]);
+  }, [sessionId, basicInfo?.email, selectedClaims.length, sessionCreated, setSessionId, basicInfo.phone]);
 
   React.useEffect(() => {
     if (!sessionId) {
+      setIsPaid(false);
       setServerSessionAmount(null);
+      setServerPricingBreakdown(null);
       return;
     }
 
@@ -103,17 +111,33 @@ export default function Step4Payment() {
         const data = await response.json();
         const amount = Number(data.session?.totalAmount);
 
-        if (
-          !cancelled &&
+        if (!cancelled) {
+          setIsPaid(response.ok && data.success && data.session?.paymentStatus === "paid");
+        }
+
+        const savedPricing = data.session?.pricingBreakdown as PricingBreakdown | undefined;
+        const hasValidPricingSnapshot =
           response.ok &&
           data.success &&
+          savedPricing &&
+          Number(savedPricing.total) === amount &&
           Number.isFinite(amount) &&
-          amount > 0
-        ) {
+          amount > 0;
+
+        if (!cancelled && hasValidPricingSnapshot) {
           setServerSessionAmount(amount);
+          setServerPricingBreakdown(savedPricing);
+        } else if (!cancelled) {
+          // Older unpaid sessions are re-priced at checkout using today's centralized schedule.
+          setServerSessionAmount(null);
+          setServerPricingBreakdown(null);
         }
       } catch (error) {
         console.warn("Could not fetch saved payment amount:", error);
+
+        if (!cancelled) {
+          setIsPaid(false);
+        }
       }
     };
 
@@ -133,10 +157,11 @@ export default function Step4Payment() {
   const bundledClaimKeys = new Set(bundledClaim?.bundledClaims || []);
 
   const handlePayment = async () => {
-    if (!legalConsentAccepted) {
+    if (!legalConsentAccepted || paymentRequestInFlightRef.current) {
       return;
     }
 
+    paymentRequestInFlightRef.current = true;
     setIsProcessing(true);
     setPaymentError("");
 
@@ -146,6 +171,7 @@ export default function Step4Payment() {
       if (!activeSessionId) {
         setPaymentError("לא הצלחנו ליצור מזהה בקשה לתשלום. נסו שוב בעוד רגע.");
         setIsProcessing(false);
+        paymentRequestInFlightRef.current = false;
         return;
       }
 
@@ -167,6 +193,7 @@ export default function Step4Payment() {
       if (!response.ok || !data.success || !data.paymentUrl) {
         setPaymentError(data.message || "לא הצלחנו ליצור קישור תשלום. נסו שוב.");
         setIsProcessing(false);
+        paymentRequestInFlightRef.current = false;
         return;
       }
 
@@ -175,6 +202,7 @@ export default function Step4Payment() {
       console.error("Payment link creation failed:", error);
       setPaymentError("אירעה שגיאה ביצירת קישור התשלום. נסו שוב.");
       setIsProcessing(false);
+      paymentRequestInFlightRef.current = false;
     }
   };
 
@@ -260,7 +288,16 @@ export default function Step4Payment() {
                           </span>
                         </div>
                         <span className="text-body-large font-bold text-primary">
-                          {isIncludedInBundle ? "כלול בחבילה" : formatCurrency(claim?.price || 0)}
+                          {isIncludedInBundle ? (
+                            "כלול בחבילה"
+                          ) : (
+                            <>
+                              <span className="block">שירות: {formatCurrency(claim?.price || 0)}</span>
+                              <span className="block text-body-small text-neutral-dark">
+                                אגרה: {formatCurrency(claim?.courtFee || 0)}
+                              </span>
+                            </>
+                          )}
                         </span>
                       </div>
                     );
@@ -268,8 +305,27 @@ export default function Step4Payment() {
                 </div>
               </div>
 
-              {/* Total */}
+              {/* VAT is charged on legal service fees only, never on filing fees. */}
               <div className="pt-6 border-t-2 border-neutral-light bg-primary/5 -mx-8 px-8 pb-8 -mb-8 rounded-b-xl">
+                <div className="mb-5 space-y-3 text-body">
+                  <div className="flex justify-between gap-4">
+                    <span className="text-neutral-dark">מחיר שירות:</span>
+                    <span className="font-semibold">{formatCurrency(pricingBreakdown.serviceSubtotal)}</span>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <span className="text-neutral-dark">
+                      מע&quot;מ על השירות ({Math.round(pricingBreakdown.vatRate * 100)}%):
+                    </span>
+                    <span className="font-semibold">{formatCurrency(pricingBreakdown.vatAmount)}</span>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <span className="text-neutral-dark">אגרת בית משפט / אגרה ממשלתית בנפרד:</span>
+                    <span className="font-semibold">{formatCurrency(pricingBreakdown.courtFeeTotal)}</span>
+                  </div>
+                  <p className="text-body-small text-neutral-dark">
+                    האגרה אינה חייבת במע&quot;מ.
+                  </p>
+                </div>
                 <div className="flex justify-between items-center">
                   <span className="text-h2 font-bold text-neutral-darkest">
                     סה"כ לתשלום:
@@ -279,7 +335,7 @@ export default function Step4Payment() {
                   </span>
                 </div>
                 <p className="text-body-small text-neutral-dark mt-2">
-                  תשלום חד-פעמי ללא עלויות נוספות
+                  תשלום חד-פעמי לפי הפירוט המוצג לעיל
                 </p>
               </div>
             </div>

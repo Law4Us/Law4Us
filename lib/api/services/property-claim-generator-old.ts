@@ -18,6 +18,7 @@ import {
   BorderStyle,
 } from 'docx';
 import { BasicInfo, FormData } from '@/lib/api/types';
+import { COURT_FEES_BY_PROCEDURE } from '@/lib/constants/claims';
 
 // Font sizes (in half-points)
 const FONT_SIZES = {
@@ -491,7 +492,7 @@ export async function generatePropertyClaimDocument(
             spacing: { after: 100 },
           }),
           new Paragraph({
-            text: 'סכום אגרת בית משפט: 590₪. לפי תקנה א2 לתוספת הראשונה לתקנות בית המשפט לענייני משפחה (אגרות), תשנ"ו-1995.',
+            text: `סכום אגרת בית משפט: ${COURT_FEES_BY_PROCEDURE.property}₪. לפי תקנה א2 לתוספת הראשונה לתקנות בית המשפט לענייני משפחה (אגרות), תשנ"ו-1995.`,
             alignment: AlignmentType.RIGHT,
             spacing: { after: 200 },
           }),

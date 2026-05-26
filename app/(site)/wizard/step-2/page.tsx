@@ -61,7 +61,9 @@ export default function Step2DynamicForm() {
 
   // Build dynamic schema based on selected claims
   const dynamicSchema = React.useMemo(() => {
-    let schema = globalQuestionsSchema;
+    const isDisputeResolutionOnly =
+      selectedClaims.length === 1 && selectedClaims.includes("disputeResolution");
+    let schema = isDisputeResolutionOnly ? z.object({}) : globalQuestionsSchema;
 
     // Add schemas for each selected claim
     selectedClaims.forEach((claimKey) => {
@@ -81,7 +83,9 @@ export default function Step2DynamicForm() {
 
   // Collect all questions (global + claim-specific + bundled claims)
   const allQuestions = React.useMemo(() => {
-    const questions: Question[] = [...GLOBAL_QUESTIONS];
+    const isDisputeResolutionOnly =
+      selectedClaims.length === 1 && selectedClaims.includes("disputeResolution");
+    const questions: Question[] = isDisputeResolutionOnly ? [] : [...GLOBAL_QUESTIONS];
     const addedClaimKeys = new Set<string>();
 
     // Add claim-specific questions (including bundled claims)

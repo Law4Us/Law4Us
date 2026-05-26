@@ -6,7 +6,7 @@ import { Check, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useWizardStore } from "@/lib/stores/wizard-store";
 import { formatCurrency } from "@/lib/utils/format";
-import { CLAIMS } from "@/lib/constants/claims";
+import { CLAIMS, calculatePricing } from "@/lib/constants/claims";
 import type { RoutingAnswers, RecommendedCourt, ClaimType } from "@/lib/types";
 
 interface RoutingQuestionsProps {
@@ -111,22 +111,22 @@ export function RoutingQuestions({ onComplete }: RoutingQuestionsProps) {
     if (court === "rabbinical") {
       // Rabbinical court - bundled divorce with all claims included
       claims = ["divorceRabbinical"];
-      totalPrice = 3900;
+      totalPrice = calculatePricing(claims).total;
     } else {
       // Family court path - separate claims only (NO divorce document!)
       // Divorce itself happens at Rabbinical Court - Family Court handles only separate claims
       if (hasChildren) {
         // Has children: custody + alimony (children) + property
         claims = ["custody", "alimony", "property"];
-        totalPrice = 3900 * 3; // 11,700
+        totalPrice = calculatePricing(claims).total;
       } else if (applicantIsFemale) {
         // No children + female applicant: property + alimony (spousal/מזונות אישה)
         claims = ["alimony", "property"];
-        totalPrice = 3900 * 2; // 7,800
+        totalPrice = calculatePricing(claims).total;
       } else {
         // No children + male applicant: property only
         claims = ["property"];
-        totalPrice = 3900; // 3,900
+        totalPrice = calculatePricing(claims).total;
       }
     }
 
@@ -140,7 +140,7 @@ export function RoutingQuestions({ onComplete }: RoutingQuestionsProps) {
     switch (current) {
       case "situation":
         // If agreement or shalomBayit, go straight to result with that selection
-        if (answers.situation === "agreement" || answers.situation === "shalomBayit" || answers.situation === "specific") {
+        if (answers.situation === "disputeResolution" || answers.situation === "agreement" || answers.situation === "shalomBayit" || answers.situation === "specific") {
           return "result";
         }
         // For divorce/defense, ask about infidelity
@@ -187,7 +187,7 @@ export function RoutingQuestions({ onComplete }: RoutingQuestionsProps) {
       case "halachic":
         return "property";
       case "result":
-        if (routingAnswers.situation === "agreement" || routingAnswers.situation === "shalomBayit" || routingAnswers.situation === "specific") {
+        if (routingAnswers.situation === "disputeResolution" || routingAnswers.situation === "agreement" || routingAnswers.situation === "shalomBayit" || routingAnswers.situation === "specific") {
           return "situation";
         }
         return routingAnswers.hasInfidelity !== "yes" ? "halachic" : "property";
@@ -200,10 +200,12 @@ export function RoutingQuestions({ onComplete }: RoutingQuestionsProps) {
     const nextStep = getNextStep(currentStep);
     if (nextStep === "result") {
       // Handle special cases
-      if (routingAnswers.situation === "agreement") {
-        setRecommendation({ court: null, claims: ["divorceAgreement"], totalPrice: 3900 });
+      if (routingAnswers.situation === "disputeResolution") {
+        setRecommendation({ court: "family", claims: ["disputeResolution"], totalPrice: calculatePricing(["disputeResolution"]).total });
+      } else if (routingAnswers.situation === "agreement") {
+        setRecommendation({ court: null, claims: ["divorceAgreement"], totalPrice: calculatePricing(["divorceAgreement"]).total });
       } else if (routingAnswers.situation === "shalomBayit") {
-        setRecommendation({ court: null, claims: ["shalomBayit"], totalPrice: 3900 });
+        setRecommendation({ court: null, claims: ["shalomBayit"], totalPrice: calculatePricing(["shalomBayit"]).total });
       } else if (routingAnswers.situation === "specific") {
         // Let user pick specific claims - show result with empty selection
         setRecommendation({ court: "family", claims: [], totalPrice: 0 });
@@ -280,6 +282,7 @@ export function RoutingQuestions({ onComplete }: RoutingQuestionsProps) {
             <h3 className="text-h3 font-semibold text-neutral-darkest mb-4">מה הסיטואציה שלך?</h3>
             <div className="space-y-3">
               {[
+                { value: "disputeResolution", label: "אני רוצה להתחיל ביישוב סכסוך", description: "בקשה רשמית להפניה ליחידת הסיוע לפני תביעה" },
                 { value: "agreement", label: "אנחנו רוצים להתגרש בהסכמה", description: "נסדר את כל הפרטים יחד בהסכם מוסכם" },
                 { value: "shalomBayit", label: "אני רוצה לנסות להציל את הנישואין", description: "הגשת תביעה לשלום בית בבית הדין הרבני" },
                 { value: "divorce", label: "אני רוצה להגיש תביעת גירושין", description: "תביעה יזומה לגירושין" },
@@ -463,7 +466,7 @@ export function RoutingQuestions({ onComplete }: RoutingQuestionsProps) {
             );
           };
 
-          const totalPrice = specificClaims.length * 3900;
+          const totalPrice = calculatePricing(specificClaims).total;
 
           return (
             <div className="space-y-6">
@@ -501,7 +504,9 @@ export function RoutingQuestions({ onComplete }: RoutingQuestionsProps) {
                         <p className="text-sm text-neutral-dark mt-1">{claim.description}</p>
                       </div>
                       <div className="flex items-center gap-3">
-                        <span className="text-body font-medium text-neutral-dark">{formatCurrency(claim.price)}</span>
+                        <span className="text-body font-medium text-neutral-dark">
+                          {formatCurrency(claim.price)} + אגרה {formatCurrency(claim.courtFee)}
+                        </span>
                         <div className={cn(
                           "w-6 h-6 rounded-md border-2 flex items-center justify-center flex-shrink-0",
                           specificClaims.includes(claim.key) ? "bg-primary border-primary" : "border-neutral"
@@ -535,9 +540,14 @@ export function RoutingQuestions({ onComplete }: RoutingQuestionsProps) {
           );
         }
 
-        // Special case: agreement or shalomBayit
-        if (routingAnswers.situation === "agreement" || routingAnswers.situation === "shalomBayit") {
-          const label = routingAnswers.situation === "agreement" ? "הסכם גירושין" : "תביעת שלום בית";
+        // Special case: single preliminary/agreement procedures
+        if (routingAnswers.situation === "disputeResolution" || routingAnswers.situation === "agreement" || routingAnswers.situation === "shalomBayit") {
+          const label =
+            routingAnswers.situation === "disputeResolution"
+              ? "בקשה ליישוב סכסוך"
+              : routingAnswers.situation === "agreement"
+              ? "הסכם גירושין"
+              : "תביעת שלום בית";
           return (
             <div className="space-y-6">
               <div className="bg-primary/5 rounded-2xl p-6">
@@ -550,7 +560,7 @@ export function RoutingQuestions({ onComplete }: RoutingQuestionsProps) {
                   <div className="border-t border-neutral-light pt-4 mt-4">
                     <div className="flex justify-between items-center">
                       <span className="text-body font-medium text-neutral-dark">סה&quot;כ</span>
-                      <span className="text-2xl font-bold text-primary">{formatCurrency(3900)}</span>
+                      <span className="text-2xl font-bold text-primary">{formatCurrency(recommendation.totalPrice)}</span>
                     </div>
                   </div>
                 </div>
@@ -564,6 +574,7 @@ export function RoutingQuestions({ onComplete }: RoutingQuestionsProps) {
 
         // Map claim types to Hebrew labels
         const claimLabels: Record<ClaimType, string> = {
+          disputeResolution: "בקשה ליישוב סכסוך",
           custody: "תביעת משמורת",
           alimony: "תביעת מזונות",
           property: "תביעת רכושית",
@@ -623,7 +634,9 @@ export function RoutingQuestions({ onComplete }: RoutingQuestionsProps) {
                           <Check className="w-4 h-4 text-primary" />
                           <span className="text-body text-neutral-darkest">{claimLabels[claimKey]}</span>
                         </div>
-                        <span className="text-body text-neutral-dark">{formatCurrency(3900)}</span>
+                        <span className="text-body text-neutral-dark">
+                          {formatCurrency(CLAIMS.find((claim) => claim.key === claimKey)?.price || 0)}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -634,8 +647,16 @@ export function RoutingQuestions({ onComplete }: RoutingQuestionsProps) {
                     <span className="text-body font-medium text-neutral-dark">סה&quot;כ ({recommendation.claims.length} תביעות)</span>
                     <span className="text-2xl font-bold text-primary">{formatCurrency(recommendation.totalPrice)}</span>
                   </div>
+                  <p className="mt-2 text-sm text-neutral-dark">הסכום כולל מע&quot;מ על השירות ואגרות לפי סוג ההליך.</p>
                   {isRabbinical && (
-                    <p className="text-sm text-green-600 mt-2">חיסכון של {formatCurrency(15600 - 3900)} לעומת בית המשפט לענייני משפחה</p>
+                    <p className="text-sm text-green-600 mt-2">
+                      חיסכון של{" "}
+                      {formatCurrency(
+                        calculatePricing(["custody", "alimony", "property"]).total -
+                          calculatePricing(["divorceRabbinical"]).total
+                      )}{" "}
+                      לעומת הגשת שלוש תביעות נפרדות
+                    </p>
                   )}
                 </div>
               </div>

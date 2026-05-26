@@ -47,11 +47,12 @@ export function ClaimCard({ claim, isSelected, onToggle }: ClaimCardProps) {
           </h3>
           <span
             className={cn(
-              "text-body font-bold flex-shrink-0 transition-colors",
+              "text-body-small flex-shrink-0 text-left transition-colors",
               isSelected ? "text-primary" : "text-neutral-dark"
             )}
           >
-            {formatCurrency(claim.price)}
+            <span className="block font-bold">שירות: {formatCurrency(claim.price)}</span>
+            <span className="block">אגרה: {formatCurrency(claim.courtFee)}</span>
           </span>
         </div>
 

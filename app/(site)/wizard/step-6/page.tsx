@@ -14,6 +14,7 @@ import {
   fillDocumentTemplate,
   generateChildrenBlock,
   formatClaimTypesList,
+  formatClaimServicesForFee,
   POWER_OF_ATTORNEY_TEMPLATE,
   FORM_3_TEMPLATE,
   type DocumentData,
@@ -70,6 +71,7 @@ export default function Step6Confirmation() {
       lawyerName: "עו\"ד אריאל דרור",
       signature: signature || "",
       date: formatDate(new Date()),
+      powerOfAttorneyMatter: formatClaimServicesForFee(selectedClaims),
     };
 
     return {

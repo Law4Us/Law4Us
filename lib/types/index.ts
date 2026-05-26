@@ -3,6 +3,7 @@
  */
 
 export type ClaimType =
+  | "disputeResolution"
   | "divorceAgreement"
   | "shalomBayit"
   | "divorceRabbinical"
@@ -15,6 +16,8 @@ export interface Claim {
   label: string;
   description?: string;
   price: number;
+  /** Court/government filing fee for this procedure, charged without VAT */
+  courtFee: number;
   /** If true, this is a bundled package (price includes multiple claims) */
   isBundle?: boolean;
   /** For bundles, which claims are included */
@@ -100,7 +103,7 @@ export type RecommendedCourt = "family" | "rabbinical" | null;
 
 /** Routing answers from guided flow */
 export interface RoutingAnswers {
-  situation?: "agreement" | "shalomBayit" | "divorce" | "defense" | "specific";
+  situation?: "disputeResolution" | "agreement" | "shalomBayit" | "divorce" | "defense" | "specific";
   hasInfidelity?: "yes" | "no" | "preferNotToSay";
   youngestChildAge?: "none" | "under6" | "6to12" | "over12";
   applicantIncome?: number;

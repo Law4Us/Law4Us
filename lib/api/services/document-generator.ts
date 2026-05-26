@@ -19,6 +19,7 @@ import { generateAlimonyClaim } from './alimony-claim-generator';
 import { generateDivorceClaim } from './divorce-claim-generator';
 import { generateDivorceAgreement } from './divorce-agreement-generator';
 import { generateShalomBayitClaim } from './shalombayit-claim-generator';
+import { generateDisputeResolutionDocument } from './dispute-resolution-generator';
 import {
   ClaimType,
   BasicInfo,
@@ -72,6 +73,7 @@ export function templateExists(claimType: ClaimType): boolean {
     'divorceAgreement',
     'shalomBayit',
     'divorceRabbinical', // Bundled divorce at בית הדין הרבני (only rabbinical - no family court)
+    'disputeResolution',
   ];
   if (programmaticClaims.includes(claimType)) {
     return true;
@@ -301,6 +303,14 @@ export async function generateDocument(
         lawyerSignature: options.lawyerSignature,
         attachments: options.attachments,
         selectedClaims: options.selectedClaims,
+      });
+    } else if (claimType === 'disputeResolution') {
+      console.log('📝 Using dispute resolution Form 1 and power-of-attorney generator...');
+      documentBuffer = await generateDisputeResolutionDocument({
+        basicInfo,
+        formData,
+        signature: options.signature,
+        lawyerSignature: options.lawyerSignature,
       });
     } else {
       // Step 1: Prepare data with AI transformation

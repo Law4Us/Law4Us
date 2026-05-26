@@ -57,11 +57,11 @@ export function HeroSection() {
         {/* CTA Buttons - Full width on mobile, side-by-side on tablet+ */}
         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center mb-10 sm:mb-12 max-w-2xl mx-auto">
           <Link
-            href="/divorce"
+            href="/intro-call"
             className={`w-full sm:w-auto inline-flex items-center justify-center touch-target ${animations.secondaryCTAHover}`}
             style={CTA_STYLES.secondary}
           >
-            מהו הליך הגירושין?
+            לתיאום שיחת היכרות
           </Link>
           <MagneticButton
             href="/wizard"

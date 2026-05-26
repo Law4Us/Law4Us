@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { calculateTotal, getClaimLabel } from '@/lib/constants/claims';
+import { calculatePricing, getClaimLabel } from '@/lib/constants/claims';
 import {
   getWizardSession,
   updateSessionGrowPaymentReference,
+  updateSessionPricingSnapshot,
 } from '@/lib/services/wizard-session-service';
 import type { ClaimType } from '@/lib/types';
 
@@ -14,6 +15,26 @@ type CreatePaymentLinkRequest = {
   amount?: number;
   claimNames?: string[];
 };
+
+function getPaymentReturnBaseUrl(): URL | null {
+  const configuredUrl =
+    process.env.PAYMENT_RETURN_BASE_URL ||
+    process.env.NEXT_PUBLIC_BASE_URL ||
+    'https://www.law-4-us.co.il';
+
+  try {
+    const url = new URL(configuredUrl);
+    const localHosts = new Set(['localhost', '127.0.0.1', '::1']);
+
+    if (url.protocol !== 'https:' || localHosts.has(url.hostname)) {
+      return null;
+    }
+
+    return url;
+  } catch {
+    return null;
+  }
+}
 
 function normalizeIsraeliPhone(phone: string): string {
   const digits = phone.replace(/\D/g, '');
@@ -152,6 +173,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Grow rejects localhost/non-HTTPS redirect URLs. Fail before creating an
+    // external payment attempt, and use a public preview URL for live tests.
+    const paymentReturnBaseUrl = getPaymentReturnBaseUrl();
+
+    if (!paymentReturnBaseUrl) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            'לתשלום חי ב-Grow יש להגדיר PAYMENT_RETURN_BASE_URL עם כתובת HTTPS ציבורית; localhost אינו נתמך.',
+        },
+        { status: 400 }
+      );
+    }
+
     const body = (await request.json()) as CreatePaymentLinkRequest;
     const sessionId = body.sessionId?.trim();
 
@@ -181,9 +217,21 @@ export async function POST(request: NextRequest) {
     const basicInfo = session.wizardData.basicInfo || {};
     const selectedClaims = (session.wizardData.selectedClaims || []) as ClaimType[];
     const savedAmount = Number(session.totalAmount);
-    const fallbackAmount = calculateTotal(selectedClaims);
-    const amount =
-      Number.isFinite(savedAmount) && savedAmount > 0 ? savedAmount : fallbackAmount;
+    const fallbackPricing = calculatePricing(selectedClaims);
+    const hasValidPricingSnapshot =
+      Boolean(session.pricingBreakdown) &&
+      Number(session.pricingBreakdown?.total) === savedAmount &&
+      Number.isFinite(savedAmount) &&
+      savedAmount > 0;
+    const pricingBreakdown = hasValidPricingSnapshot
+      ? session.pricingBreakdown!
+      : fallbackPricing;
+    const amount = pricingBreakdown.total;
+
+    if (!hasValidPricingSnapshot) {
+      await updateSessionPricingSnapshot(sessionId, pricingBreakdown);
+    }
+
     const fullName = (session.fullName || basicInfo.fullName || body.fullName || '').trim();
     const email = (session.email || basicInfo.email || body.email || '').trim();
     const rawPhone = session.phone || basicInfo.phone || body.phone || '';
@@ -192,6 +240,9 @@ export async function POST(request: NextRequest) {
       Array.isArray(body.claimNames) && body.claimNames.length > 0
         ? body.claimNames
         : selectedClaims.map((claim) => getClaimLabel(claim));
+    const successUrl = new URL('/payment/success', paymentReturnBaseUrl);
+    successUrl.searchParams.set('sessionId', sessionId);
+    const cancelUrl = new URL('/wizard/step-4', paymentReturnBaseUrl);
 
     if (!fullName || !email || !phone || !Number.isFinite(amount) || amount <= 0) {
       return NextResponse.json(
@@ -212,10 +263,14 @@ export async function POST(request: NextRequest) {
         phone,
         email,
         amount,
+        serviceAmount: pricingBreakdown.serviceSubtotal,
+        vatRate: pricingBreakdown.vatRate,
+        vatAmount: pricingBreakdown.vatAmount,
+        courtFeeAmount: pricingBreakdown.courtFeeTotal,
         claimNames,
         description: `Law4Us - ${claimNames.join(', ') || 'תשלום עבור שירות משפטי'}`,
-        successUrl: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://www.law-4-us.co.il'}/payment/success?sessionId=${encodeURIComponent(sessionId)}`,
-        cancelUrl: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://www.law-4-us.co.il'}/wizard/step-4`,
+        successUrl: successUrl.toString(),
+        cancelUrl: cancelUrl.toString(),
       }),
     });
 

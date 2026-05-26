@@ -23,6 +23,19 @@ export const childFullSchema = z.object({
   details: z.string().optional(),
 });
 
+export const disputeResolutionSchema = z.object({
+  courtType: z.enum(["familyCourt", "rabbinicalCourt"], {
+    required_error: "יש לבחור ערכאה",
+  }),
+  courtCity: z.string().min(2, "יש למלא את עיר הערכאה"),
+  relationshipToRespondent: z.enum(["spouse", "parentOfChild", "child", "father", "mother"], {
+    required_error: "יש לבחור את הקשר למשיב/ה",
+  }),
+  noPendingApplication: z.literal("yes", {
+    errorMap: () => ({ message: "לא ניתן להגיש בקשה חדשה כל עוד קיימת בקשה תלויה ועומדת" }),
+  }),
+});
+
 // Divorce Agreement schema
 export const divorceAgreementSchema = z.object({
   children: z.array(childSimpleSchema).optional(),
@@ -117,6 +130,7 @@ export const alimonyClaimSchema = z.object({
 
 // Combined claim schemas type
 export type DivorceAgreement = z.infer<typeof divorceAgreementSchema>;
+export type DisputeResolution = z.infer<typeof disputeResolutionSchema>;
 export type DivorceClaim = z.infer<typeof divorceClaimSchema>;
 export type PropertyClaim = z.infer<typeof propertyClaimSchema>;
 export type CustodyClaim = z.infer<typeof custodyClaimSchema>;
@@ -124,6 +138,7 @@ export type AlimonyClaim = z.infer<typeof alimonyClaimSchema>;
 
 // Union type for all claim data
 export type ClaimData = {
+  disputeResolution?: DisputeResolution;
   divorceAgreement?: DivorceAgreement;
   divorce?: DivorceClaim;
   property?: PropertyClaim;

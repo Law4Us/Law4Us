@@ -100,6 +100,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const hasDisputeResolution = submissionData.selectedClaims.includes('disputeResolution');
+    const hasClaimsAlongsideDisputeResolution = submissionData.selectedClaims.some(
+      (claim) => claim !== 'disputeResolution'
+    );
+
+    if (hasDisputeResolution && hasClaimsAlongsideDisputeResolution) {
+      return NextResponse.json(
+        {
+          error: 'בקשה ליישוב סכסוך מוגשת כהליך נפרד ואינה ניתנת לבחירה יחד עם תביעות אחרות',
+          message: 'Dispute resolution must be selected alone',
+        },
+        { status: 400 }
+      );
+    }
+
     // HIERARCHICAL FOLDER STRUCTURE:
     // Parent folder: [Name] תביעות [date]
     // Subfolders: תביעה רכושית, תביעת מזונות, תביעת משמורת
@@ -137,6 +152,7 @@ export async function POST(request: NextRequest) {
       divorceAgreement: 'הסכם גירושין',
       shalomBayit: 'תביעת שלום בית',
       divorceRabbinical: 'תביעת גירושין רבני',
+      disputeResolution: 'יישוב סכסוך',
     };
 
     // Hebrew filenames for documents
@@ -148,6 +164,7 @@ export async function POST(request: NextRequest) {
       divorceAgreement: 'הסכם-גירושין',
       shalomBayit: 'תביעת-שלום-בית',
       divorceRabbinical: 'תביעת-גירושין-רבני',
+      disputeResolution: 'בקשה-ליישוב-סכסוך',
     };
 
     // Process attachments if any - handle both blob URLs and base64

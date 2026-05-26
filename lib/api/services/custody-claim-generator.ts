@@ -18,6 +18,7 @@ import {
   convertInchesToTwip,
 } from 'docx';
 import { BasicInfo, FormData } from '@/lib/api/types';
+import { COURT_FEES_BY_PROCEDURE } from '@/lib/constants/claims';
 import { transformToLegalLanguage, TransformContext } from './groq-service';
 import {
   FONT_SIZES,
@@ -238,7 +239,7 @@ export async function generateCustodyClaim(data: CustodyClaimData): Promise<Buff
                 rightToLeft: true,
               }),
               new TextRun({
-                text: '388₪ לפי סעיף 6ב לתוספת הראשונה לתקנות בית המשפט לענייני משפחה (אגרות), תשנ"ו-1995.',
+                text: `${COURT_FEES_BY_PROCEDURE.custody}₪ לפי סעיף 6ב לתוספת הראשונה לתקנות בית המשפט לענייני משפחה (אגרות), תשנ"ו-1995.`,
                 size: FONT_SIZES.BODY,
                 font: 'David',
                 rightToLeft: true,

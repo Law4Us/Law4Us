@@ -178,6 +178,7 @@ export async function batchTransformToLegalLanguage(
  */
 export function getClaimTypeInHebrew(claimType: string): string {
   const claimTypes: Record<string, string> = {
+    disputeResolution: "בקשה ליישוב סכסוך",
     divorceAgreement: "הסכם גירושין",
     divorce: "תביעת גירושין",
     property: "תביעה רכושית",

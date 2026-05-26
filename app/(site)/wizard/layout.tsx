@@ -11,16 +11,21 @@ export default function WizardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const { currentStep, maxReachedStep, goToStep } = useWizardStore();
+  const { currentStep, maxReachedStep, canNavigateToStep, goToStep } = useWizardStore();
 
   // Handle step navigation
   const handleStepClick = (step: number) => {
+    if (!canNavigateToStep(step)) {
+      return;
+    }
+
+    goToStep(step);
+
     if (step === 0) {
       router.push("/wizard");
     } else {
       router.push(`/wizard/step-${step + 1}`);
     }
-    goToStep(step);
   };
 
   return (

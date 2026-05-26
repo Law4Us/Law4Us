@@ -1,6 +1,6 @@
 import { serverClient as client } from '@/sanity/server-client';
 import { WizardState } from '@/lib/types';
-import { calculateTotal } from '@/lib/constants/claims';
+import { calculatePricing, type PricingBreakdown } from '@/lib/constants/claims';
 
 const ENCODED_KEY_PREFIX = '__key_';
 const SANITY_SAFE_KEY_PATTERN = /^\$?[a-zA-Z0-9_-]+$/;
@@ -32,6 +32,7 @@ export interface WizardSession {
   submissionStatus: 'pending' | 'submitted' | 'failed';
   driveSubmissionId?: string;
   totalAmount?: number;
+  pricingBreakdown?: PricingBreakdown;
   createdAt: string;
   paidAt?: string;
   submittedAt?: string;
@@ -134,8 +135,9 @@ export async function createWizardSession(
   const now = new Date();
   const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days
 
-  // Calculate total amount based on selected claims
-  const totalAmount = calculateTotal(wizardState.selectedClaims);
+  // Persist the exact displayed pricing snapshot used by Grow and its webhook.
+  const pricingBreakdown = calculatePricing(wizardState.selectedClaims);
+  const totalAmount = pricingBreakdown.total;
 
   const session: any = {
     _type: 'wizardSession',
@@ -154,6 +156,7 @@ export async function createWizardSession(
     paymentStatus: 'pending',
     submissionStatus: 'pending',
     totalAmount,
+    pricingBreakdown,
     createdAt: now.toISOString(),
     expiresAt: expiresAt.toISOString(),
     remindersSent: 0,
@@ -247,6 +250,30 @@ export async function updateSessionGrowPaymentReference(
     .commit();
 
   console.log(`✅ Stored Grow payment process for session ${sessionId}: ${processId}`);
+}
+
+/**
+ * Persist the pricing snapshot used to create a payment link.
+ * This upgrades unpaid sessions created before the current pricing model so
+ * display, provider charge and webhook validation all use the same amount.
+ */
+export async function updateSessionPricingSnapshot(
+  sessionId: string,
+  pricingBreakdown: PricingBreakdown
+): Promise<void> {
+  const session = await getWizardSession(sessionId);
+
+  if (!session || !session._id) {
+    throw new Error(`Session not found: ${sessionId}`);
+  }
+
+  await client
+    .patch(session._id)
+    .set({
+      totalAmount: pricingBreakdown.total,
+      pricingBreakdown,
+    })
+    .commit();
 }
 
 /**

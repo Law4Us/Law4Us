@@ -25,7 +25,7 @@ export interface DocumentData {
  * Get template path for a specific claim type
  */
 function getTemplatePath(claimType: ClaimType): string {
-  const templates: Record<ClaimType, string> = {
+  const templates: Partial<Record<ClaimType, string>> = {
     property: "תביעת רכושית.docx",
     custody: "תביעת משמורת.docx",
     alimony: "תביעת מזונות.docx",
@@ -35,6 +35,9 @@ function getTemplatePath(claimType: ClaimType): string {
   };
 
   const filename = templates[claimType];
+  if (!filename) {
+    throw new Error(`No legacy DOCX template configured for claim type: ${claimType}`);
+  }
   return path.join(process.cwd(), "templates", filename);
 }
 

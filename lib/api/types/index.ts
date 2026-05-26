@@ -2,7 +2,7 @@
  * Type definitions for Law4Us API
  */
 
-export type ClaimType = "divorceAgreement" | "shalomBayit" | "divorceRabbinical" | "divorce" | "property" | "custody" | "alimony";
+export type ClaimType = "disputeResolution" | "divorceAgreement" | "shalomBayit" | "divorceRabbinical" | "divorce" | "property" | "custody" | "alimony";
 
 export interface BasicInfo {
   fullName: string;

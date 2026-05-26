@@ -392,6 +392,57 @@ export const GLOBAL_QUESTIONS: Question[] = [
 // CLAIM-SPECIFIC QUESTIONS
 // ============================================================================
 
+// Request for dispute resolution (בקשה ליישוב סכסוך - טופס 1)
+export const DISPUTE_RESOLUTION_QUESTIONS: Question[] = [
+  {
+    id: "heading-dispute-resolution",
+    type: "heading",
+    label: "בקשה ליישוב סכסוך",
+    helper: "פרטים אלה ימולאו בטופס 1 הרשמי שיוגש ליחידת הסיוע.",
+  },
+  {
+    id: "disputeResolution.courtType",
+    type: "radio",
+    label: "לאיזו ערכאה תרצו להגיש את הבקשה?",
+    required: true,
+    options: [
+      { value: "familyCourt", label: "בית המשפט לענייני משפחה" },
+      { value: "rabbinicalCourt", label: "בית הדין הרבני האזורי" },
+    ],
+  },
+  {
+    id: "disputeResolution.courtCity",
+    type: "text",
+    label: "באיזו עיר נמצאת הערכאה?",
+    placeholder: "לדוגמה: תל אביב",
+    required: true,
+  },
+  {
+    id: "disputeResolution.relationshipToRespondent",
+    type: "radio",
+    label: "מה הקשר בינך לבין המשיב/ה?",
+    required: true,
+    options: [
+      { value: "spouse", label: "בן/בת זוג" },
+      { value: "parentOfChild", label: "הורה של ילדי" },
+      { value: "child", label: "ילד/ה שלי" },
+      { value: "father", label: "אבי" },
+      { value: "mother", label: "אמי" },
+    ],
+  },
+  {
+    id: "disputeResolution.noPendingApplication",
+    type: "radio",
+    label: "האם למיטב ידיעתך אין בקשה אחרת ליישוב סכסוך בינך לבין המשיב/ה שתלויה ועומדת?",
+    helper: "ניתן להפיק את טופס 1 רק אם אין בקשה מקבילה תלויה ועומדת בערכאה כלשהי.",
+    required: true,
+    options: [
+      { value: "yes", label: "כן, אין בקשה תלויה ועומדת" },
+      { value: "no", label: "לא / אינני בטוח/ה" },
+    ],
+  },
+];
+
 // Divorce Agreement (הסכם גירושין)
 export const DIVORCE_AGREEMENT_QUESTIONS: Question[] = [
   {
@@ -1841,6 +1892,7 @@ export const SHALOMBAYIT_QUESTIONS: Question[] = [
 
 // Map claim keys to their questions
 export const CLAIM_QUESTIONS_MAP: Record<string, Question[]> = {
+  disputeResolution: DISPUTE_RESOLUTION_QUESTIONS,
   divorceAgreement: DIVORCE_AGREEMENT_QUESTIONS,
   divorce: DIVORCE_QUESTIONS,
   divorceRabbinical: DIVORCE_QUESTIONS,  // Uses same questions as divorce

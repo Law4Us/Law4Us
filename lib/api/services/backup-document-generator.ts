@@ -133,6 +133,7 @@ function formatValue(value: any): string {
  */
 function getClaimLabel(claimType: ClaimType): string {
   const labels: Record<ClaimType, string> = {
+    disputeResolution: 'בקשה ליישוב סכסוך',
     property: 'תביעה רכושית',
     custody: 'תביעת משמורת',
     alimony: 'תביעת מזונות',

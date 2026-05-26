@@ -369,9 +369,12 @@ export function createNumberedHeader(text: string): Paragraph {
 /**
  * Create body paragraph with proper line spacing
  */
+type ParagraphAlignment = (typeof AlignmentType)[keyof typeof AlignmentType];
+
 export function createBodyParagraph(
   text: string,
-  spacing: { before?: number; after?: number } = {}
+  spacing: { before?: number; after?: number } = {},
+  alignment: ParagraphAlignment = AlignmentType.START
 ): Paragraph {
   return new Paragraph({
     children: [
@@ -382,7 +385,7 @@ export function createBodyParagraph(
         rightToLeft: true,
       }),
     ],
-    alignment: AlignmentType.START,
+    alignment,
     spacing: {
       before: spacing.before || 0,
       after: spacing.after || SPACING.LINE,
@@ -417,7 +420,11 @@ export function createBulletPoint(text: string): Paragraph {
 /**
  * Create numbered list item
  */
-export function createNumberedItem(number: number, text: string): Paragraph {
+export function createNumberedItem(
+  number: number,
+  text: string,
+  alignment: ParagraphAlignment = AlignmentType.START
+): Paragraph {
   return new Paragraph({
     children: [
       new TextRun({
@@ -427,7 +434,7 @@ export function createNumberedItem(number: number, text: string): Paragraph {
         rightToLeft: true,
       }),
     ],
-    alignment: AlignmentType.START,
+    alignment,
     spacing: { after: SPACING.MINIMAL },
     indent: {
       right: convertInchesToTwip(0.25),
@@ -555,6 +562,7 @@ export function createSignatureImage(
   return new Paragraph({
     children: [
       new ImageRun({
+        type: 'png',
         data: uint8Array,
         transformation: {
           width,
@@ -903,7 +911,7 @@ export function generatePowerOfAttorney(
   formData: FormData,
   clientSignature?: string | Buffer,
   lawyerSignature?: string | Buffer,
-  claimType: 'רכושית' | 'משמורת' | 'מזונות' | 'גירושין' | 'שלום בית' | 'הסכם גירושין' = 'מזונות'
+  claimType: 'רכושית' | 'משמורת' | 'מזונות' | 'גירושין' | 'שלום בית' | 'הסכם גירושין' | 'יישוב סכסוך' = 'מזונות'
 ): Paragraph[] {
   const paragraphs: Paragraph[] = [];
   const today = new Date().toLocaleDateString('he-IL');
@@ -920,6 +928,8 @@ export function generatePowerOfAttorney(
       ? 'תביעה לשלום בית'
       : claimType === 'הסכם גירושין'
       ? 'הסכם גירושין'
+      : claimType === 'יישוב סכסוך'
+      ? 'בקשה ליישוב סכסוך'
       : 'תביעת מזונות';
 
   // Title
@@ -928,13 +938,17 @@ export function generatePowerOfAttorney(
   // Opening
   paragraphs.push(
     createBodyParagraph(
-      `אני החתום מטה תז ${basicInfo.idNumber}, ${basicInfo.fullName} ממנה בזאת את עוה"ד אריאל דרור להיות ב"כ בענין הכנת ${claimTypeText}.`
+      `אני החתום מטה תז ${basicInfo.idNumber}, ${basicInfo.fullName} ממנה בזאת את עוה"ד אריאל דרור להיות ב"כ בענין הכנת ${claimTypeText}.`,
+      {},
+      AlignmentType.RIGHT
     )
   );
 
   paragraphs.push(
     createBodyParagraph(
-      'מבלי לפגוע בכלליות המינוי הנ"ל יהיו באי כחי רשאים לעשות ולפעול בשמי ובמקומי בכל הפעולות הבאות, כולן או מקצתן הכל בקשר לעניין הנ"ל ולכל הנובע ממנו כדלקמן:'
+      'מבלי לפגוע בכלליות המינוי הנ"ל יהיו באי כחי רשאים לעשות ולפעול בשמי ובמקומי בכל הפעולות הבאות, כולן או מקצתן הכל בקשר לעניין הנ"ל ולכל הנובע ממנו כדלקמן:',
+      {},
+      AlignmentType.RIGHT
     )
   );
 
@@ -958,14 +972,18 @@ export function generatePowerOfAttorney(
   ];
 
   powers.forEach((power, index) => {
-    paragraphs.push(createNumberedItem(index + 1, power));
+    paragraphs.push(createNumberedItem(index + 1, power, AlignmentType.RIGHT));
   });
 
   paragraphs.push(
-    createBodyParagraph('הכתוב דלעיל ביחיד יכלול את הרבים ולהפך.', { before: SPACING.SECTION })
+    createBodyParagraph(
+      'הכתוב דלעיל ביחיד יכלול את הרבים ולהפך.',
+      { before: SPACING.SECTION },
+      AlignmentType.RIGHT
+    )
   );
 
-  paragraphs.push(createBodyParagraph(`ולראיה באתי על החתום, היום ${today}`));
+  paragraphs.push(createBodyParagraph(`ולראיה באתי על החתום, היום ${today}`, {}, AlignmentType.RIGHT));
 
   // Client signature - LEFT ALIGNED per lawyer request
   if (clientSignature) {
@@ -1307,6 +1325,7 @@ export function generateAttachmentsSection(
         new Paragraph({
           children: [
             new ImageRun({
+              type: 'png',
               data: imageData,
               transformation: {
                 width,

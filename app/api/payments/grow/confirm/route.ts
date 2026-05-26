@@ -281,6 +281,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Grow/Make can deliver the same paid event more than once. Once the
+    // session is paid, acknowledge retries without rewriting payment dates.
+    if (session.paymentStatus === 'paid') {
+      return NextResponse.json({
+        success: true,
+        duplicate: true,
+        sessionId: session.sessionId,
+        paymentStatus: 'paid',
+      });
+    }
+
     const transactionId = getTransactionId(body);
 
     await updateSessionPaymentStatus(
