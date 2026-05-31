@@ -9,9 +9,6 @@ export interface LawyerVideo {
   layout?: "landscape" | "portrait";
 }
 
-const homepageVideoUrl = process.env.NEXT_PUBLIC_HOMEPAGE_VIDEO_URL;
-const facebookPoster = "/images/video overlay ariel-min.webp";
-
 function facebookVideoEmbedUrl(sourceUrl: string): string {
   const params = new URLSearchParams({
     height: "640",
@@ -29,18 +26,6 @@ function facebookVideoEmbedUrl(sourceUrl: string): string {
  * iframe providers such as Facebook/YouTube/Vimeo use `embed`.
  */
 export const lawyerVideos: LawyerVideo[] = [
-  ...(homepageVideoUrl
-    ? [
-        {
-          id: "starting-divorce-process",
-          title: "איך מתחילים הליך גירושין?",
-          description: "עו״ד אריאל דרור מסביר על השלבים הראשונים בתהליך.",
-          videoUrl: homepageVideoUrl,
-          thumbnail: facebookPoster,
-          kind: "video" as const,
-        },
-      ]
-    : []),
   {
     id: "child-custody-questions",
     title: "אתם שואלים, אני עונה: משמורת על הילדים",
