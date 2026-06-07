@@ -171,18 +171,18 @@ const recognitionHighlights = [
   },
 ] as const;
 
-const founders = [
+const teamMembers = [
   {
     name: "עו\"ד אריאל דרור",
-    role: "מייסד שותף ומנכ\"ל",
+    role: "מייסד בעלים ומנכל",
     bio: "עו\"ד מומחה בדיני משפחה ורכוש מאז 2001. מחבר הספר 'חלוקת רכוש בהליך גירושין' המצוטט על ידי שופטים ומשמש בתי משפט ובתי ספר למשפטים. בעל ניסיון עשיר בניהול תיקים מורכבים ברחבי הארץ.",
     image: "/picture of lawyer.png",
   },
   {
-    name: "אלי שוורץ",
-    role: "מייסד שותף ומנהל",
-    bio: "דמות ראשית במטה האינטימי שלנו. בוגר ממר\"מ ואיש DBA עם 20 שנות ניסיון בעולם ה-MF. הקים את קומבלק לפני 13 שנים ועד היום מעורב בעשייה, בפרויקטים ובקשר הישיר מול לקוחות ועובדים.",
-    image: "/images/eli.webp",
+    name: "עו\"ד עופרה דרור",
+    role: "עורכת דין ומומחית בדיני משפחה",
+    bio: "עורכת הדין עופרה דרור היא משפטנית מוערכת ומומחית בדיני משפחה. היא הוסמכה בשנת 1989, התמחתה בבית המשפט העליון, וחיברה את הספר ״ענייני משפחה בעידן בית המשפט לענייני משפחה״.",
+    image: "/images/ofra-dror.webp",
   },
 ] as const;
 
@@ -381,7 +381,7 @@ export default function AboutPage() {
           <div className="max-w-[1200px] mx-auto px-6">
             <div className="text-center">
               <p style={TYPOGRAPHY.eyebrow} className="mb-6 text-primary">
-                הכירו את המייסדים
+                הכירו את הצוות
               </p>
               <h2 style={TYPOGRAPHY.h2}>
                 האנשים שמובילים את Law4Us קדימה
@@ -392,7 +392,7 @@ export default function AboutPage() {
               </p>
             </div>
 
-            {/* Bento Grid: Timeline column with stacked founders and benefits */}
+            {/* Bento Grid: Timeline column with stacked team members and benefits */}
             <div className="mt-12 grid gap-4 md:grid-cols-[minmax(0,0.9fr),minmax(0,1.6fr)]" dir="ltr">
               {/* Timeline - dedicated column that stretches alongside both rows */}
               <SlideInView direction="up">
@@ -461,10 +461,10 @@ export default function AboutPage() {
                 </div>
               </SlideInView>
 
-              {/* Right column: stacked founders row + benefits row */}
+              {/* Right column: stacked team row + benefits row */}
               <div className="flex flex-col gap-4 md:grid md:grid-rows-[minmax(360px,auto),minmax(260px,auto)]" dir="rtl">
                 <div className="grid gap-4 md:grid-cols-2">
-                  {/* Founder 1 (Ariel) */}
+                  {/* Team member 1 (Ariel) */}
                   <SlideInView direction="up" delay={80}>
                     <div
                       style={{
@@ -494,11 +494,11 @@ export default function AboutPage() {
                                 fontSize: "24px",
                               }}
                             >
-                              {founders[0].name}
+                              {teamMembers[0].name}
                             </h3>
                             <div className="inline-flex items-center gap-2 rounded-full bg-primary/15 px-4 py-1 text-xs font-semibold text-primary">
                               <Award className="h-4 w-4" />
-                              <span>{founders[0].role}</span>
+                              <span>{teamMembers[0].role}</span>
                             </div>
                             <p
                               style={{
@@ -508,12 +508,12 @@ export default function AboutPage() {
                               }}
                               className="text-neutral-700"
                             >
-                              {founders[0].bio}
+                              {teamMembers[0].bio}
                             </p>
                           </div>
                           <ProgressiveImage
-                            src={founders[0].image}
-                            alt={founders[0].name}
+                            src={teamMembers[0].image}
+                            alt={teamMembers[0].name}
                             width={120}
                             height={120}
                             placeholderSrc={generatePlaceholderDataURL(
@@ -528,7 +528,7 @@ export default function AboutPage() {
                     </div>
                   </SlideInView>
 
-                  {/* Founder 2 (Ariel) */}
+                  {/* Team member 2 (Ofra) */}
                   <SlideInView direction="up" delay={120}>
                     <div
                       style={{
@@ -558,11 +558,11 @@ export default function AboutPage() {
                                 fontSize: "24px",
                               }}
                             >
-                              {founders[1].name}
+                              {teamMembers[1].name}
                             </h3>
                             <div className="inline-flex items-center gap-2 rounded-full bg-primary/15 px-4 py-1 text-xs font-semibold text-primary">
                               <Award className="h-4 w-4" />
-                              <span>{founders[1].role}</span>
+                              <span>{teamMembers[1].role}</span>
                             </div>
                             <p
                               style={{
@@ -572,12 +572,12 @@ export default function AboutPage() {
                               }}
                               className="text-neutral-700"
                             >
-                              {founders[1].bio}
+                              {teamMembers[1].bio}
                             </p>
                           </div>
                           <ProgressiveImage
-                            src={founders[1].image}
-                            alt={founders[1].name}
+                            src={teamMembers[1].image}
+                            alt={teamMembers[1].name}
                             width={120}
                             height={120}
                             placeholderSrc={generatePlaceholderDataURL(
